@@ -1,881 +1,232 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Cycle Counter — Novus Ops</title>
+<title>Safety Reporter — Novus Ops</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-:root{--bg:#0b0c10;--surface:#16171d;--surface-2:#1e2028;--surface-3:#282a34;--border:#2e3040;--text:#e8e8ee;--text-2:#8e90a0;--text-3:#5c5e70;--accent:#4f8cff;--accent-dim:rgba(79,140,255,.08);--green:#22c55e;--green-bg:rgba(34,197,94,.1);--green-border:rgba(34,197,94,.25);--red:#ef4444;--red-bg:rgba(239,68,68,.1);--red-border:rgba(239,68,68,.25);--amber:#f59e0b;--amber-bg:rgba(245,158,11,.1);--amber-border:rgba(245,158,11,.25);--purple:#a78bfa;--purple-bg:rgba(167,139,250,.1);--cyan:#06b6d4;--cyan-bg:rgba(6,182,212,.1);--radius:14px;--radius-sm:10px}
+:root{--bg:#0b0c10;--surface:#16171d;--surface-2:#1e2028;--surface-3:#282a34;--border:#2e3040;--text:#e8e8ee;--text-2:#8e90a0;--text-3:#5c5e70;--accent:#4f8cff;--accent-dim:rgba(79,140,255,.08);--green:#22c55e;--green-bg:rgba(34,197,94,.1);--red:#ef4444;--red-bg:rgba(239,68,68,.1);--amber:#f59e0b;--amber-bg:rgba(245,158,11,.1);--radius:14px}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100dvh}
-button{font-family:inherit;border:none;cursor:pointer;-webkit-appearance:none}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh}
+button{font-family:inherit;border:none;cursor:pointer}
 button:active{transform:scale(.96)}
-input,textarea{font-family:inherit}
-.mono{font-family:'JetBrains Mono',monospace}
-.screen{display:none;flex-direction:column;height:100dvh;overflow:hidden}
+.screen{display:none;flex-direction:column;min-height:100dvh}
 .screen.active{display:flex}
+.header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.header h1{font-size:16px;font-weight:800}
+.hdr-btn{background:var(--surface-2);color:var(--text-2);padding:8px 14px;border-radius:10px;font-size:11px;font-weight:700;text-decoration:none}
+.report-btn{background:var(--red);color:#fff;padding:10px 18px;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase}
+.content{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch}
+.content::-webkit-scrollbar{display:none}
+.field-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);display:block;margin:18px 0 6px}
+.field-label:first-child{margin-top:0}
+.field{width:100%;padding:14px 16px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;font-size:15px;font-weight:600;color:var(--text);outline:none;font-family:inherit}
+.field:focus{border-color:var(--accent)}
+.field::placeholder{color:var(--text-3)}
+textarea.field{resize:none;line-height:1.5}
+.sev-row{display:flex;gap:6px}
+.sev-pill{flex:1;padding:16px 0;border-radius:12px;text-align:center;font-size:10px;font-weight:800;text-transform:uppercase;background:var(--surface-2);color:var(--text-3);border:2px solid transparent;min-height:52px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.sev-pill.active{border-color:var(--sc);color:var(--sc);background:var(--sb)}
+.photo-row{display:flex;gap:8px;margin-bottom:8px}
+.photo-btn{flex:1;padding:20px 0;border-radius:12px;text-align:center;font-size:11px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;min-height:60px;justify-content:center}
+.photo-btn.cam{background:var(--accent-dim);border:1.5px dashed rgba(79,140,255,.25);color:var(--accent)}
+.photo-btn.gal{background:var(--surface-2);border:1.5px dashed var(--border);color:var(--text-3)}
+.preview-wrap{position:relative;margin-bottom:8px}
+.preview-img{width:100%;border-radius:12px;border:1px solid var(--border);max-height:200px;object-fit:contain;background:var(--surface-2)}
+.preview-remove{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.7);color:#fff;width:30px;height:30px;border-radius:50%;font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center}
+.submit-btn{width:100%;margin-top:24px;padding:20px;border-radius:var(--radius);background:var(--red);color:#fff;font-size:14px;font-weight:800;text-transform:uppercase;min-height:60px}
+.submit-btn:disabled{opacity:.5;pointer-events:none}
+.inc-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px}
+.inc-top{display:flex;justify-content:space-between;margin-bottom:6px}
+.inc-sev,.inc-status{font-size:8px;font-weight:800;text-transform:uppercase;padding:3px 10px;border-radius:6px}
+.inc-sev.low{background:var(--green-bg);color:var(--green)}.inc-sev.medium{background:var(--amber-bg);color:var(--amber)}
+.inc-sev.high{background:var(--red-bg);color:var(--red)}.inc-sev.critical{background:var(--red-bg);color:#7c2d12;font-weight:900}
+.inc-status.open{background:var(--red-bg);color:var(--red)}.inc-status.resolved{background:var(--green-bg);color:var(--green)}
+.inc-loc{font-size:12px;font-weight:700;margin-bottom:3px}
+.inc-desc{font-size:11px;color:var(--text-2);line-height:1.4}
+.inc-footer{display:flex;justify-content:space-between;margin-top:8px;font-size:9px;color:var(--text-3);font-weight:600}
+.empty{text-align:center;padding:60px 24px;color:var(--text-3)}
+.empty-icon{font-size:42px;display:block;margin-bottom:10px}
+.success{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px}
+.success-icon{font-size:60px;margin-bottom:16px}
+.success h2{font-size:22px;font-weight:900;margin-bottom:6px}
+.success p{color:var(--text-2);font-size:13px}
 .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:12px;font-size:12px;font-weight:700;z-index:999;pointer-events:none;opacity:0;transition:opacity .3s}
 .toast.show{opacity:1}
-.toast.green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
-.toast.red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
-.toast.blue{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(79,140,255,.2)}
-.toast.amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
-
-/* ── Header ── */
-.header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(–surface);border-bottom:1px solid var(–border);flex-shrink:0}
-.header h1{font-size:15px;font-weight:800}
-.header-sub{font-size:10px;color:var(–text-2);font-weight:600}
-.header-right{display:flex;align-items:center;gap:8px}
-.hdr-btn{background:var(–surface-2);color:var(–text-2);padding:8px 12px;border-radius:var(–radius-sm);font-size:10px;font-weight:700}
-.sync-dot{width:8px;height:8px;border-radius:50%;background:var(–green)}
-.sync-dot.offline{background:var(–amber);animation:pulse 1.5s infinite}
-.queue-badge{background:var(–amber-bg);color:var(–amber);padding:3px 8px;border-radius:6px;font-size:9px;font-weight:800}
-@keyframes pulse{50%{opacity:.3}}
-
-/* ── Setup screen ── */
-.setup-content{flex:1;overflow-y:auto;padding:16px;padding-bottom:90px;-webkit-overflow-scrolling:touch}
-.setup-content::-webkit-scrollbar{display:none}
-.stat-row{display:flex;gap:8px;margin-bottom:16px}
-.stat-box{flex:1;background:var(–surface);border:1px solid var(–border);border-radius:var(–radius);padding:14px;text-align:center}
-.stat-val{font-family:‘JetBrains Mono’,monospace;font-size:22px;font-weight:700;color:var(–accent)}
-.stat-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(–text-3);margin-top:4px}
-.section-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(–text-3);margin:18px 0 10px}
-.aisle-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.aisle-btn{background:var(–surface);border:1.5px solid var(–border);border-radius:var(–radius);padding:20px 0;text-align:center;font-size:24px;font-weight:900;color:var(–text);position:relative;overflow:hidden}
-.aisle-btn.done{border-color:var(–green-border);background:var(–green-bg)}
-.aisle-btn .a-count{position:absolute;top:5px;right:7px;font-size:8px;font-weight:700;color:var(–text-3)}
-
-/* ── Counting screen ── */
-.phase-bar{display:flex;gap:2px;padding:10px 16px 0;background:var(–surface)}
-.phase-step{flex:1;height:4px;border-radius:2px;background:var(–surface-3)}
-.phase-step.active{background:var(–accent)}
-.phase-step.done{background:var(–green)}
-.phase-labels{display:flex;justify-content:space-between;padding:4px 16px 10px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(–text-3);background:var(–surface);border-bottom:1px solid var(–border)}
-.phase-labels span.active{color:var(–accent)}
-.phase-labels span.done{color:var(–green)}
-
-/* Bin nav */
-.bin-nav{display:flex;gap:6px;padding:12px 16px;background:var(–surface);border-bottom:1px solid var(–border);flex-shrink:0;align-items:center}
-.nav-btn{width:52px;height:52px;border-radius:12px;background:var(–surface-2);color:var(–text-3);font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.bin-input{flex:1;padding:14px;background:var(–surface-2);border:2px solid var(–border);border-radius:12px;font-family:‘JetBrains Mono’,monospace;font-size:20px;font-weight:700;color:var(–accent);text-transform:uppercase;text-align:center;outline:none}
-.bin-input:focus{border-color:var(–accent)}
-
-/* Bin strip */
-.bin-strip{display:flex;gap:3px;padding:8px 16px;overflow-x:auto;background:var(–surface);scrollbar-width:none;flex-shrink:0}
-.bin-strip::-webkit-scrollbar{display:none}
-.strip-dot{min-width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;background:var(–surface-2);color:var(–text-3);flex-shrink:0}
-.strip-dot.current{min-width:38px;font-size:10px;background:var(–accent);color:#fff}
-.strip-dot.done{background:var(–green-bg);color:var(–green);border:1px solid var(–green-border)}
-
-/* HU list */
-.hu-list{flex:1;overflow-y:auto;padding:12px 16px 260px;-webkit-overflow-scrolling:touch}
-.hu-list::-webkit-scrollbar{display:none}
-.hu-card{background:var(–surface);border:1.5px solid var(–border);border-radius:var(–radius);padding:16px;margin-bottom:8px}
-.hu-card.confirmed{border-color:var(–green-border);background:var(–green-bg)}
-.hu-card.missing{border-color:var(–red-border);background:var(–red-bg);opacity:.7}
-.hu-card.adjusted{border-color:var(–amber-border);background:var(–amber-bg)}
-.hu-card.extra{border-color:rgba(6,182,212,.25);background:var(–cyan-bg)}
-.hu-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.hu-id{font-family:‘JetBrains Mono’,monospace;font-size:11px;font-weight:700;color:var(–accent);background:var(–accent-dim);padding:3px 10px;border-radius:6px}
-.hu-badge{font-size:8px;font-weight:800;text-transform:uppercase;padding:3px 10px;border-radius:6px;letter-spacing:.5px}
-.hu-badge.ok{background:var(–green-bg);color:var(–green)}.hu-badge.miss{background:var(–red-bg);color:var(–red)}
-.hu-badge.adj{background:var(–amber-bg);color:var(–amber)}.hu-badge.ext{background:var(–cyan-bg);color:var(–cyan)}
-.hu-meta{display:flex;gap:16px;margin-bottom:6px}
-.meta-label{display:block;font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(–text-3)}
-.meta-val{font-size:13px;font-weight:700;margin-top:1px}
-.hu-desc{font-size:10px;color:var(–text-2);margin-bottom:10px}
-
-/* Qty stepper */
-.qty-row{display:flex;align-items:center;gap:6px;background:var(–surface-2);border-radius:12px;padding:6px;margin-bottom:8px}
-.qty-btn{width:64px;height:64px;border-radius:12px;background:var(–surface-3);font-size:28px;font-weight:900;color:var(–text-3);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.qty-btn.plus{color:var(–accent)}
-.qty-input{flex:1;background:transparent;border:none;text-align:center;font-family:‘JetBrains Mono’,monospace;font-size:38px;font-weight:700;color:var(–accent);outline:none;min-width:0}
-.qty-input::placeholder{color:var(–surface-3)}
-.sap-hint{text-align:center;font-size:9px;font-weight:700;color:var(–text-3);margin-bottom:8px}
-.hu-actions{display:flex;gap:6px}
-.act-btn{flex:1;padding:18px 0;border-radius:12px;font-size:12px;font-weight:800;text-transform:uppercase;min-height:56px;display:flex;align-items:center;justify-content:center}
-.act-btn.confirm{background:var(–green);color:#fff}
-.act-btn.miss{background:var(–surface-3);color:var(–red);border:1.5px solid var(–red-border)}
-.act-btn.miss.active{background:var(–red);color:#fff}
-.resolved-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(–surface-2);border-radius:var(–radius-sm);margin-bottom:6px}
-.resolved-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(–text-3)}
-.resolved-val{font-family:‘JetBrains Mono’,monospace;font-size:20px;font-weight:700}
-.resolved-val.match{color:var(–green)}.resolved-val.mismatch{color:var(–amber)}
-.undo-btn{width:100%;padding:8px;background:none;color:var(–text-3);font-size:9px;font-weight:700}
-.note-btn{width:100%;margin-top:6px;padding:10px 14px;background:var(–surface-2);border:1px solid var(–border);border-radius:var(–radius-sm);font-size:10px;font-weight:700;color:var(–text-3);text-align:left}
-.note-btn.has{background:var(–amber-bg);border-color:var(–amber-border);color:var(–amber)}
-.empty-bin{text-align:center;padding:48px 24px;color:var(–text-3)}
-.empty-bin .icon{font-size:40px;margin-bottom:10px;display:block}
-.counted-banner{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(–radius);margin-bottom:8px;background:var(–green-bg);border:1px solid var(–green-border)}
-.counted-banner strong{font-size:11px;color:var(–green);font-weight:800}
-.counted-banner small{font-size:9px;color:var(–text-2)}
-
-/* Bottom bar */
-.bottom-bar{position:fixed;bottom:0;left:0;right:0;padding:10px 16px calc(env(safe-area-inset-bottom,14px) + 10px);background:rgba(11,12,16,.92);backdrop-filter:blur(20px);border-top:1px solid var(–border);z-index:50}
-.bottom-row{display:flex;gap:6px;margin-bottom:8px}
-.btn-sec{flex:1;padding:14px 0;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;background:var(–surface-2);color:var(–text-2);border:1.5px solid var(–border);text-align:center;min-height:48px}
-.btn-pri{width:100%;padding:18px 0;border-radius:var(–radius);font-size:14px;font-weight:800;text-transform:uppercase;background:var(–green);color:#fff;min-height:60px;display:flex;align-items:center;justify-content:center}
-.btn-pri.disabled{background:var(–surface-3);color:var(–text-3);pointer-events:none}
-
-/* Setup nav */
-.setup-nav{position:fixed;bottom:0;left:0;right:0;display:flex;gap:6px;padding:10px 16px calc(env(safe-area-inset-bottom,14px) + 10px);background:rgba(11,12,16,.92);backdrop-filter:blur(20px);border-top:1px solid var(–border)}
-.setup-nav .nav-tab{flex:1;padding:14px 0;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;background:var(–surface-2);color:var(–text-2);border:1.5px solid var(–border);text-align:center;min-height:48px}
-.setup-nav .nav-tab.active{background:var(–accent);color:#fff;border-color:var(–accent)}
-
-/* Extra form */
-.extra-form{background:var(–surface);border:1.5px dashed var(–border);border-radius:var(–radius);padding:16px;margin-bottom:8px}
-.extra-form h3{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(–cyan);margin-bottom:10px}
-.field{width:100%;padding:14px;background:var(–surface-2);border:1.5px solid var(–border);border-radius:12px;font-size:15px;font-weight:600;color:var(–text);outline:none;margin-bottom:6px}
-.field:focus{border-color:var(–accent)}
-.field::placeholder{color:var(–text-3)}
-.field-row{display:flex;gap:6px}
-.hidden{display:none !important}
+.toast.green{background:var(--green-bg);color:var(--green);border:1px solid rgba(34,197,94,.25)}
+.toast.red{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.25)}
 </style>
-
 </head>
 <body>
 
 <div id="toast" class="toast"><span id="toast-text"></span></div>
 
-<!-- ═══ SETUP ═══ -->
-
-<div id="screen-setup" class="screen active">
+<div id="screen-list" class="screen active">
   <div class="header">
-    <div>
-      <h1>Cycle Counter</h1>
-      <div class="header-sub"><span id="stat-progress">0 / 0</span> bins counted</div>
-    </div>
-    <div class="header-right">
-      <span class="queue-badge hidden" id="queue-badge">0 queued</span>
-      <button class="hdr-btn" id="refresh-btn" onclick="refreshAll()">↻ Refresh</button>
-      <div class="sync-dot" id="sync-dot"></div>
-      <button class="hdr-btn" onclick="setName()">👤 <span id="name-display">Set Name</span></button>
+    <a href="index.html" class="hdr-btn">← Home</a>
+    <h1>Safety Reports</h1>
+    <div style="display:flex;gap:8px">
+      <button class="hdr-btn" style="font-size:14px;padding:8px 10px" onclick="NovusSettings.openModal()">⚙</button>
+      <button class="report-btn" onclick="showForm()">+ Report</button>
     </div>
   </div>
-  <div class="setup-content">
-    <div class="stat-row">
-      <div class="stat-box"><div class="stat-val" id="stat-loaded">0</div><div class="stat-label">SAP Items</div></div>
-      <div class="stat-box"><div class="stat-val" id="stat-bins">0</div><div class="stat-label">Bins</div></div>
-      <div class="stat-box"><div class="stat-val" id="stat-done">0</div><div class="stat-label">Done</div></div>
-    </div>
-
-```
-<div class="section-title">Count By Product</div>
-<div style="display:flex; gap:8px; margin-bottom: 24px;">
-  <input type="text" id="product-search" class="field mono" placeholder="Enter Product #..." style="flex:1; padding:12px; border-radius:12px; background:var(--surface); border:1px solid var(--border); color:var(--accent); font-weight:700; outline:none;">
-  <button class="hdr-btn" style="background:var(--accent); color:#fff; font-size:12px; padding:0 16px;" onclick="searchProduct()">Search</button>
+  <div class="content" id="incident-list"></div>
 </div>
 
-<div class="section-title">Select Aisle</div>
-<div class="aisle-grid" id="aisle-grid"></div>
-
-<div class="section-title" style="margin-top:24px;">Ad-Hoc Actions</div>
-<button class="btn-sec" style="width:100%; padding:16px; border-color:var(--purple); color:var(--purple); margin-bottom:16px;" onclick="showQuickMove()">
-  🔄 Quick Move (Out of Cycle)
-</button>
-```
-
-  </div>
-
-  <div class="setup-nav">
-    <button class="nav-tab active">Count</button>
-    <a href="index.html" class="nav-tab" style="text-decoration:none;display:flex;align-items:center;justify-content:center">Home</a>
-  </div>
-</div>
-
-<!-- ═══ COUNTING ═══ -->
-
-<div id="screen-counting" class="screen">
+<div id="screen-form" class="screen">
   <div class="header">
-    <button class="hdr-btn" onclick="backToSetup()">← Back</button>
-    <h1 id="count-bin-title">—</h1>
-    <div class="sync-dot"></div>
+    <button class="hdr-btn" onclick="showList()">← Back</button>
+    <h1>Report Incident</h1>
+    <div></div>
   </div>
-  <div class="phase-bar"><div class="phase-step" id="ph1"></div><div class="phase-step" id="ph2"></div><div class="phase-step" id="ph3"></div></div>
-  <div class="phase-labels"><span id="phl1">Check HUs</span><span id="phl2">Extras</span><span id="phl3">Finalize</span></div>
-  <div class="bin-nav">
-    <button class="nav-btn" onclick="stepBin(-1)">◀</button>
-    <input type="text" class="bin-input" id="bin-input" placeholder="SCAN BIN...">
-    <button class="nav-btn" onclick="stepBin(1)">▶</button>
-  </div>
-  <div class="bin-strip" id="bin-strip"></div>
-  <div class="hu-list" id="hu-list"></div>
-  <div class="bottom-bar" id="bottom-bar">
-    <div class="bottom-row">
-      <button class="btn-sec" onclick="toggleExtra()">+ Found Extra</button>
-      <button class="btn-sec" id="btn-confirm-all" onclick="confirmAll()">✓ Confirm All</button>
-    </div>
-    <button class="btn-pri" id="btn-finalize" onclick="finalizeBin()">Finalize & Next Bin →</button>
-  </div>
-</div>
-
-<!-- ═══ QUICK MOVE MODAL ═══ -->
-
-<div id="modal-move" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.8); backdrop-filter:blur(5px); z-index:100; align-items:center; justify-content:center; padding:20px;">
-  <div style="background:var(--surface); width:100%; max-width:400px; padding:20px; border-radius:var(--radius); border:1px solid var(--purple);">
-    <h3 style="color:var(--purple); font-size:16px; font-weight:800; margin-bottom:16px;">🔄 Quick Move Item</h3>
-    <label style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);display:block;margin-bottom:6px">Scan / Enter HU</label>
-    <input type="text" id="qm-hu" class="field mono" placeholder="HU Number" oninput="lookupQuickMove()" style="margin-bottom:0;">
-    <div id="qm-info" style="margin:8px 0 16px; font-size:11px; color:var(--text-2); min-height:40px; background:var(--surface-2); padding:8px; border-radius:8px;">
-      Enter HU to load SAP info...
-    </div>
-    <div style="display:flex; gap:8px;">
-      <div style="flex:2;">
-        <label style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);display:block;margin-bottom:6px">Found In Bin</label>
-        <input type="text" id="qm-bin" class="field mono" placeholder="e.g. WA12A" style="text-transform:uppercase;">
-      </div>
-      <div style="flex:1;">
-        <label style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);display:block;margin-bottom:6px">Actual Qty</label>
-        <input type="number" inputmode="numeric" id="qm-qty" class="field mono" placeholder="Qty">
+  <div class="content">
+    <label class="field-label">Your Name</label>
+    <input type="text" class="field" id="f-name" placeholder="Your name">
+    <label class="field-label">Location *</label>
+    <input type="text" class="field" id="f-location" placeholder="e.g. Aisle F, near bin WF12A">
+    <label class="field-label">Photo Evidence</label>
+    <div id="photo-area">
+      <div class="photo-row">
+        <input type="file" accept="image/*" capture="environment" id="cam-input" hidden onchange="handlePhoto(event)">
+        <label for="cam-input" class="photo-btn cam">📷 Camera</label>
+        <input type="file" accept="image/*" id="gal-input" hidden onchange="handlePhoto(event)">
+        <label for="gal-input" class="photo-btn gal">🖼️ Gallery</label>
       </div>
     </div>
-    <div style="display:flex; gap:8px; margin-top:24px;">
-      <button class="btn-sec" onclick="document.getElementById('modal-move').style.display='none'" style="flex:1;">Cancel</button>
-      <button class="act-btn" style="flex:2; background:var(--purple); color:#fff; border:none;" onclick="submitQuickMove()">Log Movement</button>
+    <div id="photo-preview"></div>
+    <label class="field-label">Description *</label>
+    <textarea class="field" id="f-desc" rows="4" placeholder="Describe the hazard or incident..."></textarea>
+    <label class="field-label">Severity</label>
+    <div class="sev-row" id="sev-row">
+      <button class="sev-pill" data-sev="low" style="--sc:#22c55e;--sb:rgba(34,197,94,.1)" onclick="setSev('low',this)">Low</button>
+      <button class="sev-pill active" data-sev="medium" style="--sc:#f59e0b;--sb:rgba(245,158,11,.1)" onclick="setSev('medium',this)">Medium</button>
+      <button class="sev-pill" data-sev="high" style="--sc:#ef4444;--sb:rgba(239,68,68,.1)" onclick="setSev('high',this)">High</button>
+      <button class="sev-pill" data-sev="critical" style="--sc:#7c2d12;--sb:rgba(239,68,68,.1)" onclick="setSev('critical',this)">Critical</button>
     </div>
+    <label class="field-label">Resolution (what you did to fix it)</label>
+    <textarea class="field" id="f-resolution" rows="3" placeholder="Describe what action was taken..."></textarea>
+    <button class="submit-btn" id="submit-btn" onclick="submitIncident()">Submit Report</button>
   </div>
 </div>
 
+<div id="screen-success" class="screen">
+  <div class="success">
+    <span class="success-icon">✅</span>
+    <h2>Report Submitted</h2>
+    <p>Your safety report has been logged</p>
+  </div>
+</div>
+
+<script src="novus-settings.js"></script>
 <script>
-// ══════════════════════════════════════════
-// CONFIG
-// ══════════════════════════════════════════
 const API_URL = 'https://script.google.com/macros/s/AKfycbwZ1Dhmf6cK_hWV2xLKYmwEImUvifIRCPqVm0Fz4E7gjvfcpyzoqhAFIgvgwrjBretc/exec';
-const AISLE_ROWS = 'ABCDEFGHJKLMNP'.split('');
+let incidents = [];
+let severity = 'medium';
+let photoBase64 = null;
 
-// ══════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════
-let sapMaster = JSON.parse(localStorage.getItem('novus_sap') || '[]');
-let binIndex = {};
-let huIndex = new Map();
-let completedBins = new Set(JSON.parse(localStorage.getItem('novus_done') || '[]'));
-let auditorName = localStorage.getItem('novus_name') || '';
-let currentBin = '';
-let currentItems = [];
-let phase = 1;
-let aisleBins = [];
-let binIdx = 0;
-let showingExtra = false;
-let targetProduct = null; 
-let offlineQueue = JSON.parse(localStorage.getItem('novus_queue') || '[]');
-let activeMoveIdx = -1;
-let isOnline = navigator.onLine;
+loadIncidents();
 
-// ══════════════════════════════════════════
-// INIT
-// ══════════════════════════════════════════
-document.getElementById('name-display').textContent = auditorName || 'Set Name';
-updateQueueBadge();
-updateSyncDot();
-
-window.addEventListener('online', () => { isOnline = true; updateSyncDot(); flushQueue(); });
-window.addEventListener('offline', () => { isOnline = false; updateSyncDot(); });
-
-if (sapMaster.length > 0) { buildIndexes(); showSetup(); }
-else { pullCloud(); }
-
-function updateSyncDot() {
-  const dot = document.getElementById('sync-dot');
-  dot.className = isOnline ? 'sync-dot' : 'sync-dot offline';
-}
-
-function updateQueueBadge() {
-  const badge = document.getElementById('queue-badge');
-  if (offlineQueue.length > 0) {
-    badge.textContent = `${offlineQueue.length} queued`;
-    badge.classList.remove('hidden');
-  } else {
-    badge.classList.add('hidden');
-  }
-}
-
-function buildIndexes() {
-  binIndex = {}; huIndex = new Map();
-  sapMaster.forEach(i => {
-    i.sapBin = String(i.sapBin || i.expectedBin || '').trim().toUpperCase();
-    i.hu = String(i.hu || '').trim();
-    i.product = String(i.product || '').trim();
-    i.batch = String(i.batch || '').trim();
-    i.desc = String(i.desc || '');
-    i.sapQty = Number(i.sapQty || i.expectedQty) || 0;
-    if (i.sapBin) { if (!binIndex[i.sapBin]) binIndex[i.sapBin] = []; binIndex[i.sapBin].push(i); }
-    if (i.hu) huIndex.set(i.hu, i);
-  });
-  document.getElementById('stat-loaded').textContent = sapMaster.length;
-  document.getElementById('stat-bins').textContent = Object.keys(binIndex).length;
-  updateDoneCount();
-}
-
-function showSetup() {
-  switchScreen('setup');
-  buildAisleGrid();
-}
-
-async function pullCloud() {
+async function loadIncidents() {
   try {
-    const res = await fetch(API_URL + '?type=sapdata');
+    const res = await fetch(API_URL + '?type=safety');
     const data = await res.json();
-    if (data.sapData && data.sapData.length > 0) {
-      sapMaster = data.sapData;
-      localStorage.setItem('novus_sap', JSON.stringify(sapMaster));
-      buildIndexes();
-      showSetup();
-      toast(`${sapMaster.length} items loaded`, 'blue');
-    }
-  } catch (e) {
-    isOnline = false; updateSyncDot();
-    if (sapMaster.length > 0) { buildIndexes(); showSetup(); }
-    else { toast('No data — upload from Control Center', 'amber'); showSetup(); }
+    incidents = data.incidents || [];
+  } catch { incidents = []; }
+  renderList();
+}
+
+function renderList() {
+  const list = document.getElementById('incident-list');
+  if (incidents.length === 0) {
+    list.innerHTML = '<div class="empty"><span class="empty-icon">🦺</span><p>No incidents reported</p></div>';
+    return;
   }
-}
-
-async function refreshAll() {
-  const btn = document.getElementById('refresh-btn');
-  btn.style.opacity = '.5'; btn.style.pointerEvents = 'none';
-  try {
-    const res = await fetch(API_URL + '?type=sapdata');
-    const data = await res.json();
-    if (data.sapData && data.sapData.length > 0) {
-      sapMaster = data.sapData;
-      localStorage.setItem('novus_sap', JSON.stringify(sapMaster));
-      buildIndexes();
-      buildAisleGrid();
-      isOnline = true; updateSyncDot();
-      toast(`Refreshed · ${sapMaster.length} items`, 'blue');
-    }
-  } catch { 
-    isOnline = false; updateSyncDot();
-    toast('Refresh failed — offline mode', 'red'); 
-  }
-  btn.style.opacity = ''; btn.style.pointerEvents = '';
-}
-
-function updateDoneCount() {
-  document.getElementById('stat-done').textContent = completedBins.size;
-  document.getElementById('stat-progress').textContent = `${completedBins.size} / ${Object.keys(binIndex).length}`;
-}
-
-// ══════════════════════════════════════════
-// IDEMPOTENCY KEY GENERATOR
-// Prevents duplicate writes when offline queue replays
-// ══════════════════════════════════════════
-function makeIdempotencyKey(bin, sessionId) {
-  return `${sessionId}|${bin}|${auditorName}|${Date.now()}`;
-}
-
-// ══════════════════════════════════════════
-// AISLE GRID & NAVIGATION
-// ══════════════════════════════════════════
-function buildAisleGrid() {
-  const grid = document.getElementById('aisle-grid');
-  grid.innerHTML = '';
-  AISLE_ROWS.forEach(letter => {
-    const bins = Object.keys(binIndex).filter(b => b.charAt(1) === letter);
-    const done = bins.filter(b => completedBins.has(b)).length;
-    const allDone = bins.length > 0 && done >= bins.length;
-    const btn = document.createElement('button');
-    btn.className = `aisle-btn${allDone ? ' done' : ''}`;
-    btn.innerHTML = `${letter}<span class="a-count">${done}/${bins.length}</span>`;
-    btn.onclick = () => selectAisle(letter);
-    grid.appendChild(btn);
-  });
-}
-
-function selectAisle(letter) {
-  targetProduct = null;
-  const limit = 'BC'.includes(letter) ? 25 : 38;
-  aisleBins = [];
-  for (let n = 0; n <= limit; n++) {
-    ['A','B','C'].forEach(s => aisleBins.push(`W${letter}${String(n).padStart(2,'0')}${s}`));
-  }
-  binIdx = 0;
-  navigateToBin(aisleBins[0]);
-}
-
-function searchProduct() {
-  const prod = document.getElementById('product-search').value.trim().toUpperCase();
-  if (!prod) return;
-  const binsWithProduct = [...new Set(
-    sapMaster.filter(i => i.product.toUpperCase() === prod).map(i => i.sapBin)
-  )].sort();
-  if (binsWithProduct.length === 0) { toast(`Product ${prod} not found`, 'amber'); return; }
-  targetProduct = prod;
-  aisleBins = binsWithProduct;
-  binIdx = 0;
-  toast(`Found ${prod} in ${binsWithProduct.length} bins`, 'blue');
-  navigateToBin(aisleBins[0]);
-}
-
-function navigateToBin(bin) {
-  if (!bin) return;
-  currentBin = bin.toUpperCase();
-  binIdx = aisleBins.indexOf(currentBin);
-  if (binIdx < 0) binIdx = 0;
-  
-  let expected = binIndex[currentBin] || [];
-  if (targetProduct) expected = expected.filter(i => i.product.toUpperCase() === targetProduct);
-
-  currentItems = expected.map(i => ({
-    hu: i.hu, product: i.product, desc: i.desc, batch: i.batch,
-    sapBin: i.sapBin, sapQty: i.sapQty,
-    scannedQty: 0, status: 'pending', isExtra: false, note: '',
-  }));
-  
-  phase = 1; showingExtra = false;
-  switchScreen('counting');
-  document.getElementById('count-bin-title').textContent = currentBin;
-  document.getElementById('bin-input').value = currentBin;
-  renderPhase(); renderStrip(); renderHUList(); updateFinalizeBtn();
-}
-
-function stepBin(dir) {
-  const next = binIdx + dir;
-  if (next >= 0 && next < aisleBins.length) navigateToBin(aisleBins[next]);
-}
-
-function renderStrip() {
-  const strip = document.getElementById('bin-strip');
-  strip.innerHTML = '';
-  const seen = {};
-  aisleBins.forEach(b => {
-    const num = b.substring(2, 4);
-    if (!seen[num]) {
-      seen[num] = true;
-      const isCurrent = currentBin.substring(2, 4) === num;
-      const isDone = aisleBins.filter(x => x.substring(2, 4) === num).some(x => completedBins.has(x));
-      const dot = document.createElement('button');
-      dot.className = `strip-dot${isCurrent ? ' current' : ''}${isDone && !isCurrent ? ' done' : ''}`;
-      dot.textContent = isCurrent ? num : (isDone ? '✓' : num);
-      dot.onclick = () => navigateToBin(`W${currentBin.charAt(1)}${num}A`);
-      strip.appendChild(dot);
-    }
-  });
-  setTimeout(() => {
-    const cur = strip.querySelector('.current');
-    if (cur) cur.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  }, 50);
-}
-
-function renderPhase() {
-  ['ph1','ph2','ph3'].forEach((id, i) => {
-    document.getElementById(id).className = 'phase-step' + (phase === i + 1 ? ' active' : '') + (phase > i + 1 ? ' done' : '');
-  });
-  ['phl1','phl2','phl3'].forEach((id, i) => {
-    document.getElementById(id).className = (phase === i + 1 ? 'active' : '') + (phase > i + 1 ? 'done' : '');
-  });
-}
-
-// ══════════════════════════════════════════
-// HU LIST RENDERING
-// ══════════════════════════════════════════
-function renderHUList() {
-  const list = document.getElementById('hu-list');
-  list.innerHTML = '';
-
-  if (completedBins.has(currentBin)) {
-    list.innerHTML += `<div class="counted-banner"><span>✅</span><div><strong>Already Counted</strong><small>Counting again replaces results</small></div></div>`;
-  }
-
-  if (currentItems.length === 0 && !showingExtra) {
-    list.innerHTML += `<div class="empty-bin"><span class="icon">📭</span><p>SAP shows this bin as empty</p><p style="color:var(--accent);font-weight:700;font-size:11px;margin-top:6px">Tap "+ Found Extra" if you find anything</p></div>`;
-  }
-
-  currentItems.filter(i => !i.isExtra).forEach((item, idx) => {
-    list.innerHTML += renderCard(item, idx);
-  });
-
-  const extras = currentItems.filter(i => i.isExtra);
-  if (extras.length) {
-    list.innerHTML += `<div class="section-title" style="color:var(--cyan)">🔍 Extra Items Found</div>`;
-    extras.forEach(item => {
-      list.innerHTML += renderCard(item, currentItems.indexOf(item));
-    });
-  }
-
-  if (showingExtra) {
-    list.innerHTML += `
-    <div class="extra-form">
-      <h3>🔍 Found Extra Item</h3>
-      <input type="text" class="field mono" id="extra-hu" placeholder="HU number (0 if no label)" oninput="extraLookup()">
-      <div id="extra-autofill"></div>
-      <div class="field-row">
-        <input type="text" class="field" id="extra-product" placeholder="Product #" style="flex:1">
-        <input type="number" inputmode="numeric" class="field mono" id="extra-qty" placeholder="Qty" style="width:90px;text-align:center">
+  list.innerHTML = incidents.map(i => `
+    <div class="inc-card">
+      <div class="inc-top">
+        <span class="inc-sev ${i.severity}">${i.severity}</span>
+        <span class="inc-status ${i.status}">${i.status}</span>
       </div>
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <button class="btn-sec" onclick="toggleExtra()" style="flex:1">Cancel</button>
-        <button class="act-btn confirm" onclick="addExtra()" style="flex:2">Add Item</button>
+      <div class="inc-loc">📍 ${i.location}</div>
+      <div class="inc-desc">${i.description}</div>
+      <div class="inc-footer">
+        <span>👤 ${i.reportedBy}</span>
+        <span>${new Date(i.timestamp).toLocaleDateString()}</span>
       </div>
-    </div>`;
-  }
-  updateFinalizeBtn();
+    </div>
+  `).join('');
 }
 
-function renderCard(item, idx) {
-  const isOk = item.status === 'confirmed';
-  const isMiss = item.status === 'missing';
-  const isAdj = item.status === 'adjusted';
-  const isPending = item.status === 'pending';
-  const cls = isMiss ? 'missing' : isOk ? 'confirmed' : isAdj ? 'adjusted' : item.isExtra ? 'extra' : '';
-  const badgeHTML = isOk ? '<span class="hu-badge ok">✓ Confirmed</span>' :
-    isMiss ? '<span class="hu-badge miss">✗ Missing</span>' :
-    isAdj ? '<span class="hu-badge adj">± Adjusted</span>' :
-    item.isExtra ? '<span class="hu-badge ext">+ Extra</span>' : '';
-  const qtyMatch = item.scannedQty === item.sapQty;
+function showForm() {
+  switchScreen('form');
+  document.getElementById('f-name').value = NovusSettings.getUser();
+}
 
-  let body = '';
-  if (isPending || isAdj) {
-    body = `
-      <div class="qty-row">
-        <button class="qty-btn" onclick="adjustQty(${idx},-1)">−</button>
-        <input type="number" inputmode="numeric" class="qty-input" value="${item.scannedQty || ''}" placeholder="${item.sapQty}" onfocus="this.select()" oninput="setQty(${idx},this.value)">
-        <button class="qty-btn plus" onclick="adjustQty(${idx},1)">+</button>
-      </div>
-      <div class="sap-hint">SAP expects <strong>${item.sapQty}</strong></div>
-      <div class="hu-actions">
-        <button class="act-btn confirm" onclick="confirmHU(${idx})">Confirm ${item.sapQty}</button>
-        <button class="act-btn miss${isMiss?' active':''}" onclick="markMissing(${idx})">Missing</button>
+function showList() { switchScreen('list'); loadIncidents(); }
+
+function setSev(val, el) {
+  severity = val;
+  document.querySelectorAll('.sev-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function handlePhoto(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    photoBase64 = ev.target.result;
+    document.getElementById('photo-preview').innerHTML = `
+      <div class="preview-wrap">
+        <img src="${photoBase64}" class="preview-img">
+        <button class="preview-remove" onclick="removePhoto()">✕</button>
       </div>`;
-  } else {
-    body = `
-      <div class="resolved-row">
-        <span class="resolved-label">Count</span>
-        <span class="resolved-val ${qtyMatch?'match':'mismatch'}">${item.scannedQty}</span>
-      </div>
-      <button class="undo-btn" onclick="resetHU(${idx})">↺ Undo</button>`;
-  }
-
-  return `<div class="hu-card ${cls}">
-    <div class="hu-top">
-      <span class="hu-id">HU ${item.hu || '—'}</span>
-      ${badgeHTML}
-    </div>
-    <div class="hu-meta">
-      <div><span class="meta-label">Product</span><span class="meta-val">${item.product}</span></div>
-      <div><span class="meta-label">SAP Qty</span><span class="meta-val mono">${item.sapQty}</span></div>
-    </div>
-    ${item.desc ? `<div class="hu-desc">${item.desc}</div>` : ''}
-    ${body}
-    <div style="display:flex; gap:6px; margin-top:6px;">
-      <button class="note-btn${item.note?' has':''}" style="margin-top:0; flex:1;" onclick="addNote(${idx})">📝 ${item.note?item.note.substring(0,30):'Add Note'}</button>
-      <button class="note-btn" style="margin-top:0; flex:1; color:var(--purple); border-color:rgba(167,139,250,.3); background:var(--purple-bg);" onclick="openMoveModal(${idx})">🔄 Move Bin</button>
-    </div>
-  </div>`;
-}
-
-// ══════════════════════════════════════════
-// HU ACTIONS
-// ══════════════════════════════════════════
-function confirmHU(idx) {
-  haptic();
-  currentItems[idx].scannedQty = currentItems[idx].scannedQty || currentItems[idx].sapQty;
-  currentItems[idx].status = currentItems[idx].scannedQty === currentItems[idx].sapQty ? 'confirmed' : 'adjusted';
-  checkPhaseAdvance(); renderHUList();
-}
-
-function markMissing(idx) {
-  haptic();
-  currentItems[idx].status = currentItems[idx].status === 'missing' ? 'pending' : 'missing';
-  if (currentItems[idx].status === 'missing') currentItems[idx].scannedQty = 0;
-  checkPhaseAdvance(); renderHUList();
-}
-
-function adjustQty(idx, delta) {
-  haptic();
-  currentItems[idx].scannedQty = Math.max(0, (currentItems[idx].scannedQty || 0) + delta);
-  currentItems[idx].status = 'adjusted';
-  renderHUList();
-}
-
-function setQty(idx, val) {
-  currentItems[idx].scannedQty = parseFloat(val) || 0;
-  if (currentItems[idx].scannedQty > 0) {
-    currentItems[idx].status = currentItems[idx].scannedQty === currentItems[idx].sapQty ? 'confirmed' : 'adjusted';
-  }
-  updateFinalizeBtn();
-}
-
-function resetHU(idx) {
-  haptic();
-  currentItems[idx].status = 'pending';
-  currentItems[idx].scannedQty = 0;
-  phase = 1; renderPhase(); renderHUList();
-}
-
-function confirmAll() {
-  haptic();
-  currentItems.forEach((item, i) => {
-    if (!item.isExtra && item.status === 'pending') {
-      currentItems[i].scannedQty = item.sapQty;
-      currentItems[i].status = 'confirmed';
-    }
-  });
-  checkPhaseAdvance(); renderHUList();
-}
-
-function addNote(idx) {
-  const note = prompt('Note:', currentItems[idx].note || '');
-  if (note !== null) { currentItems[idx].note = note; renderHUList(); }
-}
-
-function checkPhaseAdvance() {
-  const expected = currentItems.filter(i => !i.isExtra);
-  if (expected.every(i => i.status !== 'pending') && phase === 1) {
-    phase = 2; renderPhase();
-  }
-}
-
-// ── Move Modal ──
-function showQuickMove() {
-  activeMoveIdx = -1;
-  document.getElementById('qm-hu').value = '';
-  document.getElementById('qm-bin').value = '';
-  document.getElementById('qm-qty').value = '';
-  document.getElementById('qm-info').innerHTML = 'Enter HU to load SAP info...';
-  document.getElementById('modal-move').style.display = 'flex';
-}
-
-function openMoveModal(idx) {
-  activeMoveIdx = idx;
-  const item = currentItems[idx];
-  document.getElementById('qm-hu').value = item.hu;
-  document.getElementById('qm-qty').value = item.scannedQty || item.sapQty || 0;
-  document.getElementById('qm-bin').value = '';
-  document.getElementById('qm-info').innerHTML = `<span style="color:var(--accent); font-weight:800;">Moving from ${currentBin}</span><br>Product: ${item.product}`;
-  document.getElementById('modal-move').style.display = 'flex';
-}
-
-function lookupQuickMove() {
-  if (activeMoveIdx > -1) return;
-  const hu = document.getElementById('qm-hu').value.trim();
-  const info = document.getElementById('qm-info');
-  if (hu.length < 6) { info.innerHTML = 'Enter HU to load SAP info...'; return; }
-  const match = huIndex.get(hu);
-  if (match) {
-    info.innerHTML = `<span style="color:var(--green); font-weight:800;">✓ Found in SAP</span><br>Product: ${match.product}<br>Expected Bin: <strong class="mono" style="color:var(--accent)">${match.sapBin}</strong> | Qty: <strong class="mono">${match.sapQty}</strong>`;
-    document.getElementById('qm-qty').value = match.sapQty;
-  } else {
-    info.innerHTML = `<span style="color:var(--amber); font-weight:800;">⚠ Not found in SAP</span><br>Will be logged as unexpected.`;
-    document.getElementById('qm-qty').value = '';
-  }
-}
-
-async function submitQuickMove() {
-  const hu = document.getElementById('qm-hu').value.trim();
-  const scanBin = document.getElementById('qm-bin').value.trim().toUpperCase();
-  const scanQty = parseFloat(document.getElementById('qm-qty').value);
-
-  if (!hu || !scanBin || isNaN(scanQty)) { toast('Fill all fields', 'amber'); return; }
-
-  let type = 'unexpected', sapBin = '', sapQty = 0, product = 'UNKNOWN', desc = 'Ad-Hoc Move', batch = '';
-
-  if (activeMoveIdx > -1) {
-    const item = currentItems[activeMoveIdx];
-    sapBin = item.sapBin; sapQty = item.sapQty; product = item.product; desc = item.desc; batch = item.batch;
-    type = scanQty === sapQty ? 'move' : 'move_adj';
-    
-    if (item.isExtra) { currentItems.splice(activeMoveIdx, 1); }
-    else { item.scannedQty = 0; item.status = 'missing'; item.note = `Moved to ${scanBin}`; }
-    renderHUList(); checkPhaseAdvance();
-  } else {
-    const match = huIndex.get(hu);
-    if (match) {
-      sapBin = match.sapBin; sapQty = match.sapQty; product = match.product; desc = match.desc; batch = match.batch;
-      type = scanBin !== sapBin ? (scanQty === sapQty ? 'move' : 'move_adj') : (scanQty === sapQty ? 'ok' : 'adj');
-    }
-  }
-
-  const sessionId = (activeMoveIdx > -1 ? 'MOVE-' : 'QM-') + new Date().toISOString().split('T')[0];
-  const payload = {
-    action: 'logAudit', user: auditorName || 'Counter',
-    bin: scanBin, sessionId,
-    idempotencyKey: makeIdempotencyKey(scanBin, sessionId),
-    items: [{ hu, product, desc, batch, sapBin, sapQty, countQty: scanQty, type, note: 'Logged via Quick Move' }]
   };
-
-  document.getElementById('modal-move').style.display = 'none';
-  await sendPayload(payload, 'Movement logged');
+  reader.readAsDataURL(file);
+  e.target.value = '';
 }
 
-// ── Extras ──
-function toggleExtra() { showingExtra = !showingExtra; renderHUList(); }
-
-function extraLookup() {
-  const hu = document.getElementById('extra-hu').value.trim();
-  if (hu.length < 6) return;
-  const match = huIndex.get(hu);
-  if (match) {
-    document.getElementById('extra-product').value = match.product;
-    document.getElementById('extra-autofill').innerHTML = '<span style="font-size:9px;font-weight:700;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:6px;margin-bottom:6px;display:inline-block">Auto-filled from SAP</span>';
-  } else {
-    document.getElementById('extra-autofill').innerHTML = '';
-  }
+function removePhoto() {
+  photoBase64 = null;
+  document.getElementById('photo-preview').innerHTML = '';
 }
 
-function addExtra() {
-  const hu = document.getElementById('extra-hu').value.trim() || '0';
-  const product = document.getElementById('extra-product').value.trim();
-  const qty = parseFloat(document.getElementById('extra-qty').value) || 0;
-  if (!product || !qty) { toast('Enter product # and qty', 'amber'); return; }
-  const match = huIndex.get(hu);
-  currentItems.push({
-    hu, product,
-    desc: match ? match.desc : 'FOUND (Extra)',
-    batch: match ? match.batch : '',
-    sapBin: match ? match.sapBin : '',
-    sapQty: match ? match.sapQty : 0,
-    scannedQty: qty, status: 'confirmed', isExtra: true, note: '',
-  });
-  showingExtra = false;
-  renderHUList();
-  toast('Extra item added', 'blue');
-}
-
-// ══════════════════════════════════════════
-// FINALIZE & SYNC — BULLETPROOFED
-// ══════════════════════════════════════════
-function updateFinalizeBtn() {
-  const pending = currentItems.filter(i => i.status === 'pending').length;
-  const btn = document.getElementById('btn-finalize');
-  if (pending > 0) {
-    btn.className = 'btn-pri disabled';
-    btn.textContent = `${pending} item${pending > 1 ? 's' : ''} unchecked`;
-  } else {
-    btn.className = 'btn-pri';
-    btn.textContent = currentItems.length === 0 ? 'Skip Empty Bin →' : 'Finalize & Next Bin →';
-  }
-  const allDone = currentItems.filter(i => !i.isExtra).every(i => i.status !== 'pending');
-  document.getElementById('btn-confirm-all').style.display = allDone || currentItems.filter(i=>!i.isExtra).length <= 1 ? 'none' : '';
-}
-
-async function finalizeBin() {
-  if (currentItems.some(i => i.status === 'pending')) return;
-  haptic();
-
-  // ── Build items with correct type classification ──
-  const items = currentItems.map(i => {
-    let type = 'ok';
-    if (i.status === 'missing') {
-      // KEY: missing items are sent as 'miss' — the server writes them as 'missing_temp'
-      // They remain placeholders until finalizeReconciliation() is called
-      type = 'miss';
-    } else if (i.isExtra) {
-      if (i.sapBin && i.sapBin !== currentBin) {
-        type = i.scannedQty === i.sapQty ? 'move' : 'move_adj';
-      } else {
-        type = 'unexpected';
-      }
-    } else if (i.scannedQty !== i.sapQty) {
-      type = 'adj';
-    }
-    return {
-      hu: i.hu, product: i.product, desc: i.desc, batch: i.batch,
-      sapBin: i.sapBin, sapQty: i.sapQty,
-      countQty: i.scannedQty, type, note: i.note,
-    };
-  });
-
-  const sessionId = 'S-' + new Date().toISOString().split('T')[0];
-  const payload = {
-    action: 'logAudit', user: auditorName || 'Counter',
-    bin: currentBin, items, sessionId,
-    idempotencyKey: makeIdempotencyKey(currentBin, sessionId),
-  };
-
-  await sendPayload(payload);
-
-  completedBins.add(currentBin);
-  localStorage.setItem('novus_done', JSON.stringify([...completedBins]));
-  updateDoneCount();
-  stepBin(1);
-}
-
-// ══════════════════════════════════════════
-// NETWORK LAYER — Offline-safe with queue
-// ══════════════════════════════════════════
-async function sendPayload(payload, successMsg) {
+async function submitIncident() {
+  const location = document.getElementById('f-location').value.trim();
+  const description = document.getElementById('f-desc').value.trim();
+  if (!location || !description) { toast('Location and description required', 'red'); return; }
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = 'Submitting...';
   try {
-    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
-    const result = await res.json();
-    if (result.skipped) {
-      toast('Duplicate — already synced', 'amber');
-    } else if (successMsg) {
-      toast(successMsg, 'green');
-    }
-    isOnline = true; updateSyncDot();
-  } catch {
-    offlineQueue.push(payload);
-    localStorage.setItem('novus_queue', JSON.stringify(offlineQueue));
-    updateQueueBadge();
-    isOnline = false; updateSyncDot();
-    toast('Saved offline — will sync later', 'amber');
-  }
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'logSafety',
+        reportedBy: document.getElementById('f-name').value.trim() || 'Anonymous',
+        location, description, severity,
+        resolution: document.getElementById('f-resolution').value.trim(),
+        photoUrl: '',
+      }),
+    });
+    switchScreen('success');
+    setTimeout(() => { showList(); }, 2000);
+  } catch (err) { toast('Failed to submit: ' + err.message, 'red'); }
+  btn.disabled = false; btn.textContent = 'Submit Report';
 }
 
-async function flushQueue() {
-  if (!offlineQueue.length) return;
-  const batch = [...offlineQueue];
-  offlineQueue = [];
-  let failed = [];
-  for (const payload of batch) {
-    try {
-      await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
-    } catch {
-      failed.push(payload);
-    }
-  }
-  offlineQueue = failed;
-  localStorage.setItem('novus_queue', JSON.stringify(offlineQueue));
-  updateQueueBadge();
-  if (failed.length === 0 && batch.length > 0) {
-    toast(`${batch.length} queued items synced`, 'green');
-  }
-}
-
-// Periodic flush
-setInterval(flushQueue, 15000);
-
-// ══════════════════════════════════════════
-// UTILITIES
-// ══════════════════════════════════════════
 function switchScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
 }
 
-function backToSetup() {
-  targetProduct = null;
-  document.getElementById('product-search').value = '';
-  switchScreen('setup');
-  buildAisleGrid();
-}
-
-function setName() {
-  const name = prompt('Your name:', auditorName);
-  if (name !== null) {
-    auditorName = name.trim();
-    localStorage.setItem('novus_name', auditorName);
-    document.getElementById('name-display').textContent = auditorName || 'Set Name';
-  }
-}
-
 function toast(msg, color) {
   const t = document.getElementById('toast');
   document.getElementById('toast-text').textContent = msg;
-  t.className = `toast ${color || 'blue'} show`;
+  t.className = `toast ${color} show`;
   setTimeout(() => t.classList.remove('show'), 2500);
 }
-
-function haptic() { if (navigator.vibrate) navigator.vibrate(15); }
-
-document.getElementById('bin-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') navigateToBin(e.target.value);
-});
+window.toast = toast;
 </script>
-
 </body>
 </html>
