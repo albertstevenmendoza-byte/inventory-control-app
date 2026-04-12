@@ -307,8 +307,9 @@ function buildAisleGrid() {
   });
 }
 
+// ── MODIFIED: Reset state when going back ──
 function selectAisle(letter) {
-  // Build ALL physical bins for the aisle
+  targetProduct = null; // Clear target product
   const limit = 'BC'.includes(letter) ? 25 : 38;
   aisleBins = [];
   for (let n = 0; n <= limit; n++) {
@@ -321,17 +322,49 @@ function selectAisle(letter) {
 // ══════════════════════════════════════════
 // BIN NAVIGATION
 // ══════════════════════════════════════════
+// ── NEW: Product Search Routing ──
+function searchProduct() {
+  const prod = document.getElementById('product-search').value.trim().toUpperCase();
+  if (!prod) return;
+
+  // Find all unique bins that contain this product in the SAP Master
+  const binsWithProduct = [...new Set(
+    sapMaster.filter(i => i.product.toUpperCase() === prod).map(i => i.sapBin)
+  )].sort();
+
+  if (binsWithProduct.length === 0) {
+    toast(`Product ${prod} not found in SAP data`, 'amber');
+    return;
+  }
+
+  targetProduct = prod;
+  aisleBins = binsWithProduct; // Overwrite standard aisle route with custom product route
+  binIdx = 0;
+  
+  toast(`Found ${prod} in ${binsWithProduct.length} bins`, 'blue');
+  navigateToBin(aisleBins[0]);
+}
+
+// ── MODIFIED: navigateToBin ──
 function navigateToBin(bin) {
   if (!bin) return;
   currentBin = bin.toUpperCase();
   binIdx = aisleBins.indexOf(currentBin);
   if (binIdx < 0) binIdx = 0;
-  const expected = binIndex[currentBin] || [];
+  
+  let expected = binIndex[currentBin] || [];
+  
+  // NEW: Filter HUs if we are doing a product-specific count
+  if (targetProduct) {
+      expected = expected.filter(i => i.product.toUpperCase() === targetProduct);
+  }
+
   currentItems = expected.map(i => ({
     hu: i.hu, product: i.product, desc: i.desc, batch: i.batch,
     sapBin: i.sapBin, sapQty: i.sapQty,
     scannedQty: 0, status: 'pending', isExtra: false, note: '',
   }));
+  
   phase = 1; showingExtra = false;
   switchScreen('counting');
   document.getElementById('count-bin-title').textContent = currentBin;
@@ -643,6 +676,8 @@ function switchScreen(name) {
 }
 
 function backToSetup() {
+  targetProduct = null; // Clear target product
+  document.getElementById('product-search').value = '';
   switchScreen('setup');
   buildAisleGrid();
 }
