@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Novus Ops — Plant 1730</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0b0c10; --surface:#16171d; --surface-2:#1e2028; --surface-3:#282a34;
+  --border:#2e3040; --text:#e8e8ee; --text-2:#8e90a0; --text-3:#5c5e70;
+  --accent:#4f8cff; --accent-dim:rgba(79,140,255,.08);
+  --green:#22c55e; --red:#ef4444; --amber:#f59e0b; --cyan:#06b6d4;
+  --radius:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;align-items:center;justify-content:center}
+.hub{width:100%;max-width:520px;padding:32px 20px}
+.hero{text-align:center;margin-bottom:36px}
+.hero-badge{display:inline-block;padding:5px 14px;border-radius:20px;background:var(--accent-dim);color:var(--accent);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px}
+.hero h1{font-size:34px;font-weight:900;letter-spacing:-.8px;background:linear-gradient(135deg,#fff 30%,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:var(--text-2);font-size:13px;font-weight:500;margin-top:6px}
+.nav-grid{display:flex;flex-direction:column;gap:10px}
+.nav-card{display:flex;align-items:center;gap:16px;padding:20px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--text);transition:all .2s}
+.nav-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.nav-card:active{transform:scale(.97)}
+.nc-icon{font-size:32px;width:56px;height:56px;display:flex;align-items:center;justify-content:center;background:var(--surface-2);border-radius:14px;flex-shrink:0}
+.nc-info h2{font-size:15px;font-weight:800}
+.nc-info p{font-size:11px;color:var(--text-2);font-weight:500;margin-top:3px}
+.nc-arrow{margin-left:auto;color:var(--text-3);font-size:18px;font-weight:900;transition:color .2s}
+.nav-card:hover .nc-arrow{color:var(--accent)}
+.api-bar{margin-top:28px;text-align:center;font-size:10px;font-weight:600;color:var(--text-3)}
+.api-bar .dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.dot.ok{background:var(--green)} .dot.err{background:var(--red)} .dot.load{background:var(--amber);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.3}}
+.footer{text-align:center;margin-top:24px;font-size:9px;color:var(--text-3);letter-spacing:.5px}
+</style>
+</head>
+<body>
+<div class="hub">
+  <div class="hero">
+    <span class="hero-badge">Plant 1730</span>
+    <h1>Novus Ops</h1>
+    <p>Warehouse Management Platform</p>
+  </div>
+
+  <nav class="nav-grid">
+    <a href="scanner.html" class="nav-card">
+      <span class="nc-icon">📋</span>
+      <div class="nc-info"><h2>Cycle Counter</h2><p>Mobile bin-by-bin counting</p></div>
+      <span class="nc-arrow">→</span>
+    </a>
+    <a href="safety.html" class="nav-card">
+      <span class="nc-icon">🦺</span>
+      <div class="nc-info"><h2>Safety Reporter</h2><p>Log hazards & incidents</p></div>
+      <span class="nc-arrow">→</span>
+    </a>
+    <a href="monitor.html" class="nav-card">
+      <span class="nc-icon">📊</span>
+      <div class="nc-info"><h2>Control Center</h2><p>Dashboard · SAP upload · assignments</p></div>
+      <span class="nc-arrow">→</span>
+    </a>
+  </nav>
+
+  <div class="api-bar" id="api-bar">
+    <span class="dot load"></span> Checking API...
+  </div>
+  <div class="footer">Novus Foods · Buena Park, CA</div>
+</div>
+
+<script>
+// ── Replace with your deployed Apps Script URL ──
+const API_URL = 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+
+(async () => {
+  const bar = document.getElementById('api-bar');
+  try {
+    const res = await fetch(API_URL);
+    const data = await res.json();
+    const count = data.sapData ? data.sapData.length : 0;
+    bar.innerHTML = `<span class="dot ok"></span> API connected · ${count.toLocaleString()} SAP items loaded`;
+  } catch {
+    bar.innerHTML = `<span class="dot err"></span> API not reachable — check your Apps Script URL`;
+  }
+})();
+</script>
+</body>
+</html>
