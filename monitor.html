@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Control Center — Novus Ops</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#0b0c10;--surface:#16171d;--surface-2:#1e2028;--surface-3:#282a34;--border:#2e3040;--text:#e8e8ee;--text-2:#8e90a0;--text-3:#5c5e70;--accent:#4f8cff;--accent-dim:rgba(79,140,255,.08);--green:#22c55e;--green-bg:rgba(34,197,94,.1);--red:#ef4444;--red-bg:rgba(239,68,68,.1);--amber:#f59e0b;--amber-bg:rgba(245,158,11,.1);--purple:#a78bfa;--cyan:#06b6d4;--radius:14px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* ── Dashboard layout ── */
+.dashboard{display:flex;flex-direction:column;height:100vh}
+
+/* Topbar */
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.logo{font-size:20px}
+.topbar h1{font-size:15px;font-weight:800}
+.topbar-sub{font-size:9px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.5px}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.freshness{padding:5px 12px;border-radius:8px;font-size:10px;font-weight:700}
+.freshness.fresh{background:var(--green-bg);color:var(--green)}.freshness.stale{background:var(--amber-bg);color:var(--amber)}
+.freshness.old{background:var(--red-bg);color:var(--red)}.freshness.none{background:var(--surface-2);color:var(--text-3)}
+.live-pill{display:flex;align-items:center;gap:6px;padding:5px 12px;background:var(--surface-2);border-radius:8px;font-size:10px;font-weight:700;color:var(--text-2)}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite}
+@keyframes pulse{50%{opacity:.3}}
+.home-link{background:var(--surface-2);color:var(--text-2);padding:6px 14px;border-radius:8px;font-size:10px;font-weight:700;text-decoration:none}
+
+/* Metrics row */
+.metrics-row{display:flex;gap:1px;background:var(--border);border-bottom:1px solid var(--border);flex-shrink:0}
+.metric{flex:1;background:var(--surface);padding:12px 16px}
+.m-label{display:block;font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3)}
+.m-val{display:block;font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;margin-top:2px}
+.m-val small{font-size:9px;font-weight:600;color:var(--text-3)}
+.green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}.cyan{color:var(--cyan)}.purple{color:var(--purple)}
+
+/* Panes */
+.panes{flex:1;display:flex;overflow:hidden}
+
+/* Left rail */
+.rail{width:280px;border-right:1px solid var(--border);background:var(--surface);overflow-y:auto;flex-shrink:0}
+.rail::-webkit-scrollbar{width:4px}.rail::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:2px}
+.rail-section{padding:14px 16px;border-bottom:1px solid var(--border)}
+.rail-section h3{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);margin-bottom:10px}
+
+/* Upload zone */
+.upload-zone{display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px;border:2px dashed var(--border);border-radius:12px;cursor:pointer;transition:all .2s;text-align:center}
+.upload-zone:hover{border-color:var(--accent);background:var(--accent-dim)}
+.upload-zone.uploading{border-color:var(--amber);background:var(--amber-bg);pointer-events:none}
+.upload-zone.success{border-color:var(--green);background:var(--green-bg)}
+.uz-icon{font-size:20px}.uz-label{font-size:10px;font-weight:700;color:var(--text-2)}.uz-status{font-size:10px;font-weight:700}
+.upload-meta{font-size:9px;color:var(--text-3);margin-top:8px;line-height:1.6}
+.upload-meta strong{color:var(--text-2)}
+
+/* Assignments */
+.assign-row{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
+.aisle-pick{padding:6px 10px;border-radius:8px;background:var(--surface-2);border:1.5px solid var(--border);font-size:11px;font-weight:800;color:var(--text-3);cursor:pointer}
+.aisle-pick.on{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.assign-input{width:100%;padding:8px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text);outline:none;font-family:inherit;margin-top:6px}
+.assign-input:focus{border-color:var(--accent)}
+.assign-actions{display:flex;gap:4px;margin-top:8px}
+.assign-btn{padding:6px 12px;border-radius:8px;font-size:10px;font-weight:800;text-transform:uppercase}
+.assign-btn.push{background:var(--accent);color:#fff}
+.assign-btn.clear{background:var(--surface-3);color:var(--text-3)}
+
+/* Main content */
+.main-pane{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* Status pills */
+.status-pills{display:flex;gap:6px;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;flex-wrap:wrap}
+.pill{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:8px;background:var(--surface-2)}
+.pill-count{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px}
+.pill-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text-3)}
+
+/* Table */
+.table-wrap{flex:1;overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead{position:sticky;top:0;background:var(--surface);z-index:5}
+th{padding:10px 12px;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-3);text-align:left;border-bottom:2px solid var(--border)}
+td{padding:7px 12px;border-bottom:1px solid var(--border);font-weight:500}
+tr:hover{background:var(--surface-2)}
+.status-tag{font-size:8px;font-weight:800;text-transform:uppercase;padding:3px 8px;border-radius:5px}
+.status-tag.ok{background:var(--green-bg);color:var(--green)}.status-tag.miss{background:var(--red-bg);color:var(--red)}
+.status-tag.adj{background:var(--amber-bg);color:var(--amber)}.status-tag.unexpected{background:rgba(6,182,212,.1);color:var(--cyan)}
+.status-tag.move{background:rgba(167,139,250,.1);color:var(--purple)}
+
+.empty-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-3)}
+.empty-main span{font-size:48px;margin-bottom:16px;opacity:.4}
+.empty-main h2{font-size:16px;font-weight:800}
+
+/* Toast */
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:12px;font-size:12px;font-weight:700;z-index:999;pointer-events:none;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+.toast.green{background:var(--green-bg);color:var(--green);border:1px solid rgba(34,197,94,.25)}
+.toast.blue{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(79,140,255,.2)}
+.toast.red{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+</style>
+</head>
+<body>
+
+<div id="toast" class="toast"><span id="toast-text"></span></div>
+
+<div class="dashboard">
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="logo">📊</span>
+      <div><h1>Control Center</h1><span class="topbar-sub">Plant 1730</span></div>
+    </div>
+    <div class="topbar-right">
+      <div class="freshness none" id="freshness-badge">📋 Loading...</div>
+      <div class="live-pill"><div class="live-dot"></div> Live</div>
+      <a href="index.html" class="home-link">← Home</a>
+    </div>
+  </header>
+
+  <!-- METRICS ROW -->
+  <div class="metrics-row">
+    <div class="metric"><span class="m-label">SAP Items</span><span class="m-val" id="m-items">—</span></div>
+    <div class="metric"><span class="m-label">Bins Counted</span><span class="m-val" id="m-bins">—</span></div>
+    <div class="metric"><span class="m-label">Total Audited</span><span class="m-val" id="m-total">—</span></div>
+    <div class="metric"><span class="m-label">OK</span><span class="m-val green" id="m-ok">—</span></div>
+    <div class="metric"><span class="m-label">Discrepancies</span><span class="m-val amber" id="m-disc">—</span></div>
+    <div class="metric"><span class="m-label">Accuracy</span><span class="m-val green" id="m-acc">—</span></div>
+    <div class="metric"><span class="m-label">Open Actions</span><span class="m-val red" id="m-open">—</span></div>
+  </div>
+
+  <!-- PANES -->
+  <div class="panes">
+    <!-- LEFT RAIL -->
+    <aside class="rail">
+      <!-- SAP Upload -->
+      <div class="rail-section">
+        <h3>SAP Data Feed</h3>
+        <label class="upload-zone" id="upload-zone">
+          <input type="file" accept=".xlsx,.xls,.csv" id="file-input" hidden>
+          <span class="uz-icon" id="uz-icon">📂</span>
+          <span class="uz-label" id="uz-label">Drop SAP Export (.xlsx)</span>
+        </label>
+        <div class="upload-meta" id="upload-meta"></div>
+      </div>
+
+      <!-- Assignments -->
+      <div class="rail-section">
+        <h3>Aisle Assignments</h3>
+        <div class="assign-row" id="aisle-picker"></div>
+        <input type="text" class="assign-input" id="prod-assign" placeholder="Product # (for product count)">
+        <div class="assign-actions">
+          <button class="assign-btn push" onclick="pushAssignments()">Push to Team</button>
+          <button class="assign-btn clear" onclick="clearAssignments()">Clear</button>
+        </div>
+      </div>
+
+      <!-- Export -->
+      <div class="rail-section">
+        <h3>Export</h3>
+        <button class="assign-btn push" onclick="exportAudit()" style="width:100%;padding:10px;font-size:11px">📥 Export Audit Data</button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-pane">
+      <!-- Status pills -->
+      <div class="status-pills" id="status-pills"></div>
+
+      <!-- Table -->
+      <div class="table-wrap" id="table-wrap">
+        <div class="empty-main" id="empty-main">
+          <span>📡</span>
+          <h2>Upload SAP data & start counting</h2>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+const API_URL = 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+const AISLE_ROWS = 'ABCDEFGHJKLMNP'.split('');
+let sapMeta = null, report = [], assignments = [];
+let assignAisles = new Set(), pendingProdAssigns = [];
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+fetchData();
+initAislePicker();
+setInterval(fetchData, 10000);
+
+async function fetchData() {
+  try {
+    const res = await fetch(API_URL);
+    const data = await res.json();
+    sapMeta = data.sapMeta;
+    report = data.report || [];
+    assignments = data.assignments || [];
+    updateFreshness();
+    updateMetrics();
+    renderTable();
+    renderPills();
+  } catch {}
+}
+
+// ══════════════════════════════════════════
+// SAP XLSX UPLOAD (client-side parse → push to GAS)
+// ══════════════════════════════════════════
+document.getElementById('file-input').addEventListener('change', async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const zone = document.getElementById('upload-zone');
+  zone.classList.add('uploading');
+  document.getElementById('uz-icon').textContent = '⏳';
+  document.getElementById('uz-label').textContent = 'Parsing...';
+
+  try {
+    const data = await file.arrayBuffer();
+    const wb = XLSX.read(new Uint8Array(data), { type: 'array' });
+    const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+
+    // Map columns (flexible — tries multiple column name variations)
+    const rows = json.map(r => [
+      String(findCol(r, ['Storage Bin','Bin','storage_bin']) || '').trim().toUpperCase(),
+      String(findCol(r, ['Handling Unit','HU','handling_unit']) || '').trim(),
+      String(findCol(r, ['Product','Material','SKU','product']) || '').trim(),
+      String(findCol(r, ['Batch','batch']) || '').trim(),
+      String(findCol(r, ['Product Short Description','Description','desc']) || '').trim(),
+      parseFloat(findCol(r, ['Quantity','Qty','quantity'])) || 0,
+      String(findCol(r, ['Unit','UOM']) || 'LB').trim(),
+      String(findCol(r, ['Stock Type','stock_type','Stock Typ']) || 'F2').trim(),
+      String(findCol(r, ['Goods Receipt Date','GR Date','gr_date']) || ''),
+      String(findCol(r, ['Shelf Life Expiration Date','SLED','Expiration']) || ''),
+    ]).filter(r => r[0] && r[1]); // Drop rows with no bin or HU
+
+    // Push to Google Sheets
+    document.getElementById('uz-label').textContent = `Uploading ${rows.length} rows...`;
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'uploadSAPData', rows, uploader: 'Control Center', filename: file.name }),
+    });
+    const result = await res.json();
+
+    if (result.success) {
+      zone.classList.remove('uploading');
+      zone.classList.add('success');
+      document.getElementById('uz-icon').textContent = '✅';
+      document.getElementById('uz-label').textContent = `${result.rowCount} items loaded`;
+      setTimeout(() => {
+        zone.classList.remove('success');
+        document.getElementById('uz-icon').textContent = '📂';
+        document.getElementById('uz-label').textContent = 'Drop SAP Export (.xlsx)';
+      }, 4000);
+      fetchData();
+    }
+  } catch (err) {
+    toast('Upload failed: ' + err.message, 'red');
+    zone.classList.remove('uploading');
+    document.getElementById('uz-icon').textContent = '📂';
+    document.getElementById('uz-label').textContent = 'Drop SAP Export (.xlsx)';
+  }
+  e.target.value = '';
+});
+
+// Flexible column finder — tries multiple header name variations
+function findCol(row, names) {
+  for (const n of names) {
+    if (row[n] !== undefined) return row[n];
+  }
+  // Case-insensitive fallback
+  const keys = Object.keys(row);
+  for (const n of names) {
+    const match = keys.find(k => k.toLowerCase().trim() === n.toLowerCase().trim());
+    if (match) return row[match];
+  }
+  return null;
+}
+
+// ══════════════════════════════════════════
+// FRESHNESS BADGE
+// ══════════════════════════════════════════
+function updateFreshness() {
+  const badge = document.getElementById('freshness-badge');
+  const meta = document.getElementById('upload-meta');
+  if (!sapMeta || !sapMeta.timestamp) {
+    badge.className = 'freshness none'; badge.textContent = '📋 No SAP Data';
+    meta.innerHTML = '';
+    return;
+  }
+  const ts = new Date(sapMeta.timestamp);
+  const mins = Math.round((Date.now() - ts) / 60000);
+  const hrs = Math.round(mins / 60);
+  const count = (sapMeta.rowCount || 0).toLocaleString();
+  document.getElementById('m-items').textContent = count;
+
+  if (mins < 120) {
+    badge.className = 'freshness fresh';
+    badge.textContent = `📋 Fresh (${mins}m) · ${count}`;
+  } else if (hrs < 8) {
+    badge.className = 'freshness stale';
+    badge.textContent = `📋 ${hrs}h ago · ${count}`;
+  } else {
+    badge.className = 'freshness old';
+    badge.textContent = `⚠ ${hrs}h old · ${count}`;
+  }
+  meta.innerHTML = `<strong>Last upload:</strong> ${ts.toLocaleString()}<br><strong>By:</strong> ${sapMeta.uploader}<br><strong>File:</strong> ${sapMeta.filename || '—'}`;
+}
+
+// ══════════════════════════════════════════
+// METRICS
+// ══════════════════════════════════════════
+function updateMetrics() {
+  const total = report.length;
+  const ok = report.filter(r => r.type === 'ok').length;
+  const disc = total - ok;
+  const bins = new Set(report.map(r => r.scanBin).filter(Boolean)).size;
+  const acc = total > 0 ? Math.round((ok / total) * 10000) / 100 : 0;
+
+  document.getElementById('m-bins').textContent = bins;
+  document.getElementById('m-total').textContent = total;
+  document.getElementById('m-ok').textContent = ok;
+  document.getElementById('m-disc').textContent = disc;
+  document.getElementById('m-acc').textContent = acc + '%';
+  document.getElementById('m-open').textContent = disc;
+}
+
+// ══════════════════════════════════════════
+// STATUS PILLS
+// ══════════════════════════════════════════
+function renderPills() {
+  const counts = {};
+  report.forEach(r => { counts[r.type] = (counts[r.type] || 0) + 1; });
+  const el = document.getElementById('status-pills');
+  el.innerHTML = Object.entries(counts).map(([status, count]) => {
+    const colors = { ok: 'green', miss: 'red', adj: 'amber', unexpected: 'cyan', move: 'purple' };
+    return `<div class="pill"><span class="pill-count ${colors[status] || ''}">${count}</span><span class="pill-label">${status}</span></div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// RESULTS TABLE
+// ══════════════════════════════════════════
+function renderTable() {
+  if (report.length === 0) {
+    document.getElementById('table-wrap').innerHTML = '<div class="empty-main"><span>📡</span><h2>No audit data yet</h2></div>';
+    return;
+  }
+  document.getElementById('table-wrap').innerHTML = `<table>
+    <thead><tr>
+      <th>Time</th><th>User</th><th>Bin</th><th>HU</th><th>Product</th>
+      <th>SAP Qty</th><th>Count Qty</th><th>Variance</th><th>Status</th><th>Note</th>
+    </tr></thead>
+    <tbody>${report.map(r => {
+      const variance = (r.scanQty || 0) - (r.sapQty || 0);
+      const vClass = variance < 0 ? 'red' : variance > 0 ? 'amber' : '';
+      return `<tr>
+        <td style="font-size:9px;color:var(--text-3)">${new Date(r.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</td>
+        <td>${r.user || '—'}</td>
+        <td class="mono" style="color:var(--accent);font-weight:700">${r.scanBin}</td>
+        <td class="mono" style="font-size:10px">${(r.hu||'').slice(-6)}</td>
+        <td>${r.prod || '—'}</td>
+        <td class="mono">${r.sapQty}</td>
+        <td class="mono">${r.scanQty}</td>
+        <td class="mono ${vClass}">${variance > 0 ? '+' : ''}${variance}</td>
+        <td><span class="status-tag ${r.type}">${r.type}</span></td>
+        <td style="font-size:9px;color:var(--text-3);max-width:120px;overflow:hidden;text-overflow:ellipsis">${r.note || ''}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+// ══════════════════════════════════════════
+// ASSIGNMENTS
+// ══════════════════════════════════════════
+function initAislePicker() {
+  const c = document.getElementById('aisle-picker');
+  AISLE_ROWS.forEach(r => {
+    const btn = document.createElement('button');
+    btn.className = 'aisle-pick';
+    btn.textContent = r;
+    btn.onclick = () => { assignAisles.has(r) ? assignAisles.delete(r) : assignAisles.add(r); btn.classList.toggle('on'); };
+    c.appendChild(btn);
+  });
+}
+
+async function pushAssignments() {
+  const list = [];
+  assignAisles.forEach(r => list.push({ type: 'aisle', value: `W${r}`, description: `W${r} Full aisle` }));
+  const prod = document.getElementById('prod-assign').value.trim();
+  if (prod) list.push({ type: 'product', value: prod, description: `Product: ${prod}` });
+  if (!list.length) return;
+
+  try {
+    await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'setAssignments', assignments: list, assignedBy: 'Control Center' }) });
+    toast('Assignments pushed', 'green');
+    assignAisles.clear();
+    document.querySelectorAll('.aisle-pick').forEach(b => b.classList.remove('on'));
+    document.getElementById('prod-assign').value = '';
+  } catch { toast('Push failed', 'red'); }
+}
+
+async function clearAssignments() {
+  try {
+    await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'setAssignments', assignments: [], assignedBy: 'Control Center' }) });
+    toast('Assignments cleared', 'blue');
+  } catch {}
+}
+
+// ══════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════
+function exportAudit() {
+  if (!report.length) { toast('No data to export', 'red'); return; }
+  const now = new Date();
+  const weekNum = Math.ceil(((now - new Date(now.getFullYear(),0,1)) / 86400000 + new Date(now.getFullYear(),0,1).getDay() + 1) / 7);
+  const rows = report.map((r, i) => [
+    now.getFullYear(), now.getMonth() + 1, weekNum, i + 1,
+    new Date(r.timestamp).toLocaleDateString(),
+    '', // SKU Type
+    r.scanBin, r.hu, r.prod, r.desc,
+    r.scanQty, r.batch || '', r.unit || 'LB', '', '', '',
+  ]);
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['Year','Month','Week#','CT#','Date','SKU Type','Storage Bin','Handling Unit','Product','Product Short Description','Quantity','Batch','Unit','Stock Type','Goods Receipt Date','Shelf Life Expiration Date'],
+    ...rows,
+  ]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Audit Data');
+  XLSX.writeFile(wb, `Cycle_Count_${now.toISOString().split('T')[0]}.xlsx`);
+  toast('Exported!', 'green');
+}
+
+function toast(msg, color) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-text').textContent = msg;
+  t.className = `toast ${color || 'blue'} show`;
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
