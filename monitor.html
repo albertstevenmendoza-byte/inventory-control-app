@@ -104,6 +104,52 @@ tr:hover{background:var(--surface-2)}
 
 <div id="toast" class="toast"><span id="toast-text"></span></div>
 
+<div id="training-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(5px); z-index:100; align-items:center; justify-content:center; padding:20px;">
+  <div style="background:var(--surface); width:100%; max-width:600px; border-radius:var(--radius); border:1.5px solid var(--border); display:flex; flex-direction:column;">
+    <div style="padding:16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+      <h3 style="font-size:14px; font-weight:800;" id="modal-title">Edit Training Module</h3>
+      <button onclick="closeTrainingEditor()" style="background:none; color:var(--text-3); font-size:16px; font-weight:900;">✕</button>
+    </div>
+    
+    <div style="padding:16px; display:flex; flex-direction:column; gap:12px; overflow-y:auto; max-height:60vh;">
+      <input type="hidden" id="sop-id">
+      
+      <div>
+        <label class="m-label">Title</label>
+        <input type="text" id="sop-title" class="assign-input" placeholder="e.g. Near Miss Reporting Procedure">
+      </div>
+      
+      <div style="display:flex; gap:12px;">
+        <div style="flex:1;">
+          <label class="m-label">Category</label>
+          <select id="sop-category" class="assign-input">
+            <option value="Safety">Safety</option>
+            <option value="Cycle Count">Cycle Count</option>
+            <option value="SAP Navigation">SAP Navigation</option>
+          </select>
+        </div>
+        <div style="flex:1;">
+          <label class="m-label">Content Type</label>
+          <select id="sop-type" class="assign-input">
+            <option value="Text">Standard Text</option>
+            <option value="Link">External Link / Video</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="m-label">Content Body / URL</label>
+        <textarea id="sop-body" class="assign-input" rows="8" style="resize:vertical;" placeholder="Enter guidelines or paste a link..."></textarea>
+      </div>
+    </div>
+    
+    <div style="padding:16px; border-top:1px solid var(--border); display:flex; gap:8px;">
+      <button class="assign-btn clear" style="flex:1; padding:12px;" onclick="closeTrainingEditor()">Cancel</button>
+      <button class="assign-btn push" style="flex:2; padding:12px;" onclick="saveTrainingModule()">Save & Publish</button>
+    </div>
+  </div>
+</div>
+  
 <div class="dashboard">
   <!-- TOPBAR -->
   <header class="topbar">
@@ -155,6 +201,15 @@ tr:hover{background:var(--surface-2)}
         </div>
       </div>
 
+
+      <!-- Training & SOPs -->
+    <div class="rail-section">
+        <h3>Training & SOPs</h3>
+        <button class="assign-btn" onclick="toggleTrainingView()" style="width:100%; padding:10px; font-size:11px; background:var(--surface-3); color:var(--text); border:1px solid var(--border);">
+          📚 Manage Modules
+        </button>
+      </div>
+      
       <!-- Export -->
       <div class="rail-section">
         <h3>Export</h3>
@@ -164,16 +219,29 @@ tr:hover{background:var(--surface-2)}
 
     <!-- MAIN -->
     <main class="main-pane">
-      <!-- Status pills -->
-      <div class="status-pills" id="status-pills"></div>
-
-      <!-- Table -->
-      <div class="table-wrap" id="table-wrap">
-        <div class="empty-main" id="empty-main">
-          <span>📡</span>
-          <h2>Upload SAP data & start counting</h2>
+      
+      <div id="view-audit" style="display:flex; flex-direction:column; height:100%;">
+        <div class="status-pills" id="status-pills"></div>
+        <div class="table-wrap" id="table-wrap">
+          <div class="empty-main" id="empty-main">
+            <span>📡</span>
+            <h2>Upload SAP data & start counting</h2>
+          </div>
         </div>
       </div>
+
+      <div id="view-training" style="display:none; flex-direction:column; height:100%; background:var(--bg);">
+        <div class="status-pills" style="justify-content: space-between;">
+          <h2 style="font-size:14px; font-weight:800; display:flex; align-items:center;">Training Modules</h2>
+          <button class="assign-btn push" onclick="openTrainingEditor()">+ New SOP</button>
+        </div>
+        
+        <div class="table-wrap" style="padding: 16px;">
+          <div id="training-list-container" style="display:flex; flex-direction:column; gap:10px;">
+            </div>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -437,6 +505,116 @@ function toast(msg, color) {
   document.getElementById('toast-text').textContent = msg;
   t.className = `toast ${color || 'blue'} show`;
   setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+  // ── TRAINING MODULE LOGIC ──
+let trainingData = [];
+
+function toggleTrainingView() {
+  const auditView = document.getElementById('view-audit');
+  const trainingView = document.getElementById('view-training');
+  
+  if (auditView.style.display !== 'none') {
+    auditView.style.display = 'none';
+    trainingView.style.display = 'flex';
+    loadTrainingData();
+  } else {
+    auditView.style.display = 'flex';
+    trainingView.style.display = 'none';
+  }
+}
+
+async function loadTrainingData() {
+  try {
+    const res = await fetch(API_URL + '?type=training');
+    const data = await res.json();
+    trainingData = data.categories || [];
+    renderTrainingList();
+  } catch (err) {
+    toast('Failed to load training data', 'red');
+  }
+}
+
+function renderTrainingList() {
+  const container = document.getElementById('training-list-container');
+  if (trainingData.length === 0) {
+    container.innerHTML = `<div class="empty-main"><span>📚</span><h2>No training modules active</h2></div>`;
+    return;
+  }
+  
+  container.innerHTML = trainingData.map((sop, idx) => `
+    <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:12px; padding:16px; display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <span class="status-tag ${sop.category === 'Safety' ? 'ok' : 'move'}">${sop.category}</span>
+        <h3 style="font-size:14px; font-weight:700; margin:6px 0 2px;">${sop.title}</h3>
+        <p style="font-size:10px; color:var(--text-2);">Last updated: ${new Date(sop.updatedAt).toLocaleDateString()}</p>
+      </div>
+      <button class="hdr-btn" onclick="editTrainingModule(${idx})">Edit</button>
+    </div>
+  `).join('');
+}
+
+function openTrainingEditor(idx = null) {
+  document.getElementById('training-modal').style.display = 'flex';
+  
+  if (idx !== null) {
+    // Edit existing
+    const sop = trainingData[idx];
+    document.getElementById('sop-id').value = sop.id;
+    document.getElementById('sop-title').value = sop.title;
+    document.getElementById('sop-category').value = sop.category;
+    document.getElementById('sop-type').value = sop.type;
+    document.getElementById('sop-body').value = sop.body;
+  } else {
+    // New SOP
+    document.getElementById('sop-id').value = Date.now().toString(); // Simple ID generation
+    document.getElementById('sop-title').value = '';
+    document.getElementById('sop-body').value = '';
+  }
+}
+
+function closeTrainingEditor() {
+  document.getElementById('training-modal').style.display = 'none';
+}
+
+async function saveTrainingModule() {
+  const id = document.getElementById('sop-id').value;
+  const newSop = {
+    id: id,
+    title: document.getElementById('sop-title').value.trim(),
+    category: document.getElementById('sop-category').value,
+    type: document.getElementById('sop-type').value,
+    body: document.getElementById('sop-body').value.trim(),
+    updatedAt: new Date().toISOString()
+  };
+  
+  if (!newSop.title || !newSop.body) {
+    toast('Title and Body are required', 'amber');
+    return;
+  }
+
+  // Update local array
+  const existingIdx = trainingData.findIndex(s => s.id === id);
+  if (existingIdx > -1) {
+    trainingData[existingIdx] = newSop;
+  } else {
+    trainingData.push(newSop);
+  }
+
+  closeTrainingEditor();
+  renderTrainingList();
+  toast('Saving...', 'blue');
+
+  // Push to GAS
+  try {
+    await fetch(API_URL, { 
+      method: 'POST', 
+      body: JSON.stringify({ action: 'saveTraining', categories: trainingData }) 
+    });
+    toast('Training module published', 'green');
+  } catch {
+    toast('Failed to sync to database', 'red');
+  }
 }
 </script>
 </body>
