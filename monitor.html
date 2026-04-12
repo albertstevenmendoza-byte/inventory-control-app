@@ -9,7 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 <style>
-:root{--bg:#0b0c10;--surface:#16171d;--surface-2:#1e2028;--surface-3:#282a34;--border:#2e3040;--text:#e8e8ee;--text-2:#8e90a0;--text-3:#5c5e70;--accent:#4f8cff;--accent-dim:rgba(79,140,255,.08);--green:#22c55e;--green-bg:rgba(34,197,94,.1);--red:#ef4444;--red-bg:rgba(239,68,68,.1);--amber:#f59e0b;--amber-bg:rgba(245,158,11,.1);--purple:#a78bfa;--purple-bg:rgba(167,139,250,.1);--cyan:#06b6d4;--cyan-bg:rgba(6,182,212,.1);--radius:14px}
+:root{--bg:#0f1117;--surface:#181a23;--surface-2:#1f2230;--surface-3:#2a2d3a;--border:#313546;--text:#eceef4;--text-2:#9ba1b5;--text-3:#6c7189;--accent:#5b9aff;--accent-dim:rgba(91,154,255,.1);--green:#34d399;--green-bg:rgba(52,211,153,.1);--red:#f87171;--red-bg:rgba(248,113,113,.1);--amber:#fbbf24;--amber-bg:rgba(251,191,36,.1);--purple:#a78bfa;--purple-bg:rgba(167,139,250,.1);--cyan:#22d3ee;--cyan-bg:rgba(34,211,238,.1);--radius:14px}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh}
 .mono{font-family:'JetBrains Mono',monospace}
@@ -354,9 +354,9 @@ window.toast = toast;
 mermaid.initialize({
   startOnLoad: false, theme: 'dark',
   themeVariables: {
-    darkMode: true, primaryColor: '#4f8cff', primaryTextColor: '#e8e8ee',
-    primaryBorderColor: '#2e3040', lineColor: '#5c5e70', secondaryColor: '#1e2028',
-    tertiaryColor: '#282a34', fontFamily: 'DM Sans, sans-serif', fontSize: '13px',
+    darkMode: true, primaryColor: '#5b9aff', primaryTextColor: '#eceef4',
+    primaryBorderColor: '#313546', lineColor: '#6c7189', secondaryColor: '#1f2230',
+    tertiaryColor: '#2a2d3a', fontFamily: 'DM Sans, sans-serif', fontSize: '13px',
   },
   flowchart: { curve: 'basis', padding: 16 },
 });
@@ -373,8 +373,14 @@ setInterval(pollLightweight, 10000);
 /** ONE-TIME heavy fetch — includes SAP master data */
 async function fetchFullDashboard() {
   try {
-    const res = await fetch(API_URL);
-    const data = await res.json();
+    const res = await fetch(API_URL, { redirect: 'follow' });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch {
+      console.error('Dashboard returned non-JSON:', text.substring(0, 300));
+      toast('API returned invalid data — check Apps Script deployment', 'red');
+      return;
+    }
     sapMeta = data.sapMeta;
     report = data.report || [];
     assignments = data.assignments || [];
@@ -382,14 +388,25 @@ async function fetchFullDashboard() {
     updateMetrics();
     renderPills();
     renderTable();
-  } catch { /* silent on init */ }
+  } catch (err) {
+    console.error('Dashboard fetch failed:', err);
+    toast('Cannot reach API — check connection', 'red');
+  }
 }
 
 /** LIGHTWEIGHT poll — no SAP master rows, just dynamic data */
+let _pollFailCount = 0;
 async function pollLightweight() {
   try {
-    const res = await fetch(API_URL + '?type=poll');
-    const data = await res.json();
+    const res = await fetch(API_URL + '?type=poll', { redirect: 'follow' });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch {
+      _pollFailCount++;
+      if (_pollFailCount <= 2) console.warn('Poll returned non-JSON:', text.substring(0, 200));
+      return; // don't overwrite good data with bad parse
+    }
+    _pollFailCount = 0;
     sapMeta = data.sapMeta;
     report = data.report || [];
     assignments = data.assignments || [];
@@ -397,7 +414,11 @@ async function pollLightweight() {
     updateMetrics();
     renderPills();
     renderTable();
-  } catch { /* silent on poll failure */ }
+  } catch (err) {
+    _pollFailCount++;
+    // Only log the first few failures to avoid console spam
+    if (_pollFailCount <= 3) console.warn('Poll failed:', err.message);
+  }
 }
 
 // ══════════════════════════════════════════
@@ -475,9 +496,15 @@ document.getElementById('file-input').addEventListener('change', async (e) => {
     document.getElementById('uz-label').textContent = `Uploading ${rows.length} rows...`;
     const res = await fetch(API_URL, {
       method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      redirect: 'follow',
       body: JSON.stringify({ action: 'uploadSAPData', rows, uploader: NovusSettings.getUser() || 'Control Center', filename: file.name }),
     });
-    const result = await res.json();
+    const resText = await res.text();
+    let result;
+    try { result = JSON.parse(resText); } catch {
+      throw new Error('Server returned invalid response');
+    }
 
     if (result.success) {
       zone.classList.remove('uploading');
@@ -657,11 +684,18 @@ async function finalizeReconciliation() {
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      redirect: 'follow',
       body: JSON.stringify({ action: 'finalizeReconciliation', user: NovusSettings.getUser() || 'Control Center' }),
     });
-    const result = await res.json();
+    const text = await res.text();
+    let result;
+    try { result = JSON.parse(text); } catch {
+      toast('Server returned invalid response', 'red'); return;
+    }
     if (result.success) { toast(`${result.finalized} items finalized`, 'green'); pollLightweight(); }
-  } catch { toast('Finalization failed', 'red'); }
+    else { toast('Finalization error: ' + (result.error || 'unknown'), 'red'); }
+  } catch (err) { toast('Finalization failed: ' + err.message, 'red'); }
 }
 
 // ══════════════════════════════════════════
@@ -684,7 +718,7 @@ async function pushAssignments() {
   if (prod) list.push({ type: 'product', value: prod, description: `Product: ${prod}` });
   if (!list.length) return;
   try {
-    await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'setAssignments', assignments: list, assignedBy: NovusSettings.getUser() || 'Control Center' }) });
+    await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, redirect: 'follow', body: JSON.stringify({ action: 'setAssignments', assignments: list, assignedBy: NovusSettings.getUser() || 'Control Center' }) });
     toast('Assignments pushed', 'green');
     assignAisles.clear();
     document.querySelectorAll('.aisle-pick').forEach(b => b.classList.remove('on'));
@@ -694,7 +728,7 @@ async function pushAssignments() {
 
 async function clearAssignments() {
   try {
-    await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'setAssignments', assignments: [], assignedBy: NovusSettings.getUser() || 'Control Center' }) });
+    await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, redirect: 'follow', body: JSON.stringify({ action: 'setAssignments', assignments: [], assignedBy: NovusSettings.getUser() || 'Control Center' }) });
     toast('Assignments cleared', 'blue');
   } catch {}
 }
@@ -865,7 +899,7 @@ const id = document.getElementById(‘sop-id’).value;
 if (!id || !confirm(‘Delete this module?’)) return;
 trainingData = trainingData.filter(s => s.id !== id);
 closeTrainingEditor(); renderTrainingList();
-fetch(API_URL, { method: ‘POST’, body: JSON.stringify({ action: ‘saveTraining’, categories: trainingData }) });
+fetch(API_URL, { method: ‘POST’, headers: { ‘Content-Type’: ‘text/plain’ }, redirect: ‘follow’, body: JSON.stringify({ action: ‘saveTraining’, categories: trainingData }) });
 toast(‘Module deleted’, ‘amber’);
 }
 
@@ -888,7 +922,7 @@ const existingIdx = trainingData.findIndex(s => s.id === id);
 if (existingIdx > -1) trainingData[existingIdx] = newSop; else trainingData.push(newSop);
 closeTrainingEditor(); renderTrainingList(); toast(‘Saving…’, ‘blue’);
 try {
-await fetch(API_URL, { method: ‘POST’, body: JSON.stringify({ action: ‘saveTraining’, categories: trainingData }) });
+await fetch(API_URL, { method: ‘POST’, headers: { ‘Content-Type’: ‘text/plain’ }, redirect: ‘follow’, body: JSON.stringify({ action: ‘saveTraining’, categories: trainingData }) });
 toast(‘Published’, ‘green’);
 } catch { toast(‘Sync failed’, ‘red’); }
 }
