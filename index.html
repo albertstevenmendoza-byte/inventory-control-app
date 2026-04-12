@@ -7,18 +7,18 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:#0b0c10; --surface:#16171d; --surface-2:#1e2028; --surface-3:#282a34;
-  --border:#2e3040; --text:#e8e8ee; --text-2:#8e90a0; --text-3:#5c5e70;
-  --accent:#4f8cff; --accent-dim:rgba(79,140,255,.08);
-  --green:#22c55e; --red:#ef4444; --amber:#f59e0b; --cyan:#06b6d4;
-  --radius:16px;
+  --bg:#0b0c10;--surface:#16171d;--surface-2:#1e2028;--surface-3:#282a34;
+  --border:#2e3040;--text:#e8e8ee;--text-2:#8e90a0;--text-3:#5c5e70;
+  --accent:#4f8cff;--accent-dim:rgba(79,140,255,.08);
+  --green:#22c55e;--green-bg:rgba(34,197,94,.1);--red:#ef4444;--red-bg:rgba(239,68,68,.1);
+  --amber:#f59e0b;--amber-bg:rgba(245,158,11,.1);--cyan:#06b6d4;--radius:16px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;align-items:center;justify-content:center}
 .hub{width:100%;max-width:520px;padding:32px 20px}
 .hero{text-align:center;margin-bottom:36px}
 .hero-badge{display:inline-block;padding:5px 14px;border-radius:20px;background:var(--accent-dim);color:var(--accent);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px}
-.hero h1{font-size:34px;font-weight:900;letter-spacing:-.8px;background:linear-gradient(135deg,#fff 30%,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero h1{font-size:34px;font-weight:900;letter-spacing:-.8px;background:linear-gradient(135deg,var(--text) 30%,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .hero p{color:var(--text-2);font-size:13px;font-weight:500;margin-top:6px}
 .nav-grid{display:flex;flex-direction:column;gap:10px}
 .nav-card{display:flex;align-items:center;gap:16px;padding:20px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--text);transition:all .2s}
@@ -31,12 +31,20 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .nav-card:hover .nc-arrow{color:var(--accent)}
 .api-bar{margin-top:28px;text-align:center;font-size:10px;font-weight:600;color:var(--text-3)}
 .api-bar .dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:middle}
-.dot.ok{background:var(--green)} .dot.err{background:var(--red)} .dot.load{background:var(--amber);animation:pulse 1s infinite}
+.dot.ok{background:var(--green)}.dot.err{background:var(--red)}.dot.load{background:var(--amber);animation:pulse 1s infinite}
 @keyframes pulse{50%{opacity:.3}}
-.footer{text-align:center;margin-top:24px;font-size:9px;color:var(--text-3);letter-spacing:.5px}
+.footer{display:flex;justify-content:center;align-items:center;gap:12px;margin-top:24px;font-size:9px;color:var(--text-3);letter-spacing:.5px}
+.gear-link{background:var(--surface-2);color:var(--text-2);padding:5px 12px;border-radius:8px;font-size:12px;border:none;cursor:pointer;font-family:inherit}
+.gear-link:hover{background:var(--accent-dim);color:var(--accent)}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:12px;font-size:12px;font-weight:700;z-index:999;pointer-events:none;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+.toast.green{background:var(--green-bg);color:var(--green);border:1px solid rgba(34,197,94,.25)}
+.toast.red{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.25)}
 </style>
 </head>
 <body>
+<div id="toast" class="toast"><span id="toast-text"></span></div>
+
 <div class="hub">
   <div class="hero">
     <span class="hero-badge">Plant 1730</span>
@@ -65,20 +73,30 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="api-bar" id="api-bar">
     <span class="dot load"></span> Checking API...
   </div>
-  <div class="footer">Novus Foods · Buena Park, CA</div>
+  <div class="footer">
+    <span>Novus Foods · Buena Park, CA</span>
+    <button class="gear-link" onclick="NovusSettings.openModal()">⚙ Settings</button>
+  </div>
 </div>
 
+<script src="novus-settings.js"></script>
 <script>
-// ── Replace with your deployed Apps Script URL ──
 const API_URL = 'https://script.google.com/macros/s/AKfycbwZ1Dhmf6cK_hWV2xLKYmwEImUvifIRCPqVm0Fz4E7gjvfcpyzoqhAFIgvgwrjBretc/exec';
+
+window.toast = function(msg, color) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-text').textContent = msg;
+  t.className = `toast ${color} show`;
+  setTimeout(() => t.classList.remove('show'), 2000);
+};
 
 (async () => {
   const bar = document.getElementById('api-bar');
   try {
-    const res = await fetch(API_URL);
+    const res = await fetch(API_URL + '?type=poll');
     const data = await res.json();
-    const count = data.sapData ? data.sapData.length : 0;
-    bar.innerHTML = `<span class="dot ok"></span> API connected · ${count.toLocaleString()} SAP items loaded`;
+    const count = data.sapMeta?.rowCount || 0;
+    bar.innerHTML = `<span class="dot ok"></span> API connected · ${Number(count).toLocaleString()} SAP items loaded`;
   } catch {
     bar.innerHTML = `<span class="dot err"></span> API not reachable — check your Apps Script URL`;
   }
