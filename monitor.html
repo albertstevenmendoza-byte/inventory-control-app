@@ -70,9 +70,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);ove
 /* Main content */
 .main-pane{flex:1;display:flex;flex-direction:column;overflow:hidden}
 
-/* Status pills */
+/* Status pills / Tabs */
 .status-pills{display:flex;gap:6px;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;flex-wrap:wrap}
-.pill{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:8px;background:var(--surface-2)}
+.pill{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:8px;background:var(--surface-2); cursor:pointer; border:1.5px solid transparent; transition:all 0.2s}
+.pill:hover{filter:brightness(1.2)}
+.pill.active{border-color:var(--accent); background:var(--accent-dim)}
 .pill-count{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px}
 .pill-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text-3)}
 
@@ -90,7 +92,7 @@ tr:hover{background:var(--surface-2)}
 
 .empty-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-3)}
 .empty-main span{font-size:48px;margin-bottom:16px;opacity:.4}
-.empty-main h2{font-size:16px;font-weight:800}
+.empty-main h2{font-size:16px;font-weight:800; color:var(--text-2)}
 
 /* Toast */
 .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:12px;font-size:12px;font-weight:700;z-index:999;pointer-events:none;opacity:0;transition:opacity .3s}
@@ -244,6 +246,9 @@ const AISLE_ROWS = 'ABCDEFGHJKLMNP'.split('');
 let sapMeta = null, report = [], assignments = [];
 let assignAisles = new Set(), pendingProdAssigns = [];
 
+// NEW: Added state to track active filter tab
+let currentStatusFilter = 'all';
+
 // ══════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════
@@ -260,8 +265,8 @@ async function fetchData() {
     assignments = data.assignments || [];
     updateFreshness();
     updateMetrics();
-    renderTable();
-    renderPills();
+    renderPills(); // Generate the tabs
+    renderTable(); // Render table based on current active tab
   } catch {}
 }
 
@@ -383,32 +388,62 @@ function updateMetrics() {
 }
 
 // ══════════════════════════════════════════
-// STATUS PILLS
+// STATUS PILLS (Now Interactive Tabs)
 // ══════════════════════════════════════════
 function renderPills() {
   const counts = {};
   report.forEach(r => { counts[r.type] = (counts[r.type] || 0) + 1; });
   const el = document.getElementById('status-pills');
-  el.innerHTML = Object.entries(counts).map(([status, count]) => {
+  
+  // Add the "All" pill
+  let html = `<div class="pill ${currentStatusFilter === 'all' ? 'active' : ''}" onclick="filterTable('all')">
+                <span class="pill-count" style="color:var(--text)">${report.length}</span>
+                <span class="pill-label">ALL</span>
+              </div>`;
+
+  html += Object.entries(counts).map(([status, count]) => {
     const colors = { ok: 'green', miss: 'red', adj: 'amber', unexpected: 'cyan', move: 'purple' };
-    return `<div class="pill"><span class="pill-count ${colors[status] || ''}">${count}</span><span class="pill-label">${status}</span></div>`;
+    const isActive = currentStatusFilter === status ? 'active' : '';
+    return `<div class="pill ${isActive}" onclick="filterTable('${status}')">
+              <span class="pill-count ${colors[status] || ''}">${count}</span>
+              <span class="pill-label">${status}</span>
+            </div>`;
   }).join('');
+  
+  el.innerHTML = html;
+}
+
+// Triggered when a pill is clicked
+function filterTable(status) {
+  currentStatusFilter = status;
+  renderPills(); // Re-render pills to show active state
+  renderTable(); // Re-render table with filtered data
 }
 
 // ══════════════════════════════════════════
-// RESULTS TABLE
+// RESULTS TABLE (Now Filterable)
 // ══════════════════════════════════════════
 function renderTable() {
-  if (report.length === 0) {
-    document.getElementById('table-wrap').innerHTML = '<div class="empty-main"><span>📡</span><h2>No audit data yet</h2></div>';
+  // Filter the report array based on active tab
+  const filteredReport = currentStatusFilter === 'all' 
+    ? report 
+    : report.filter(r => r.type === currentStatusFilter);
+
+  if (filteredReport.length === 0) {
+    if (report.length === 0) {
+      document.getElementById('table-wrap').innerHTML = '<div class="empty-main"><span>📡</span><h2>No audit data yet</h2></div>';
+    } else {
+      document.getElementById('table-wrap').innerHTML = `<div class="empty-main"><span>🔍</span><h2>No ${currentStatusFilter.toUpperCase()} items found</h2></div>`;
+    }
     return;
   }
+  
   document.getElementById('table-wrap').innerHTML = `<table>
     <thead><tr>
       <th>Time</th><th>User</th><th>Bin</th><th>HU</th><th>Product</th>
       <th>SAP Qty</th><th>Count Qty</th><th>Variance</th><th>Status</th><th>Note</th>
     </tr></thead>
-    <tbody>${report.map(r => {
+    <tbody>${filteredReport.map(r => {
       const variance = (r.scanQty || 0) - (r.sapQty || 0);
       const vClass = variance < 0 ? 'red' : variance > 0 ? 'amber' : '';
       return `<tr>
@@ -520,7 +555,6 @@ async function loadTrainingData() {
     const data = await res.json();
     trainingData = data.categories || [];
 
-    // Inject demo content if database is empty so users have something to look at immediately
     if (trainingData.length === 0) {
       trainingData.push({
         id: 'demo-1',
@@ -561,20 +595,18 @@ function openTrainingEditor(idx = null) {
   document.getElementById('training-modal').style.display = 'flex';
   
   if (idx !== null) {
-    // Edit existing
     const sop = trainingData[idx];
     document.getElementById('sop-id').value = sop.id;
     document.getElementById('sop-title').value = sop.title;
     document.getElementById('sop-category').value = sop.category;
     document.getElementById('sop-type').value = sop.type;
     document.getElementById('sop-body').value = sop.body;
-    document.getElementById('btn-delete-sop').style.display = 'block'; // Show delete button
+    document.getElementById('btn-delete-sop').style.display = 'block'; 
   } else {
-    // New SOP
     document.getElementById('sop-id').value = Date.now().toString(); 
     document.getElementById('sop-title').value = '';
     document.getElementById('sop-body').value = '';
-    document.getElementById('btn-delete-sop').style.display = 'none'; // Hide delete button for new entries
+    document.getElementById('btn-delete-sop').style.display = 'none'; 
   }
 }
 
@@ -614,12 +646,10 @@ async function saveTrainingModule() {
     return;
   }
 
-  // Update local array
   const existingIdx = trainingData.findIndex(s => s.id === id);
   if (existingIdx > -1) {
     trainingData[existingIdx] = newSop;
   } else {
-    // Remove the demo fallback if they save their first real one
     if(trainingData.length === 1 && trainingData[0].id === 'demo-1') {
         trainingData = [];
     }
@@ -630,7 +660,6 @@ async function saveTrainingModule() {
   renderTrainingList();
   toast('Saving...', 'blue');
 
-  // Push to GAS
   try {
     await fetch(API_URL, { 
       method: 'POST', 
