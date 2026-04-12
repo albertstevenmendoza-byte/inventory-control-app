@@ -156,6 +156,13 @@ input,textarea{font-family:inherit}
       <div class="stat-box"><div class="stat-val" id="stat-bins">0</div><div class="stat-label">Bins</div></div>
       <div class="stat-box"><div class="stat-val" id="stat-done">0</div><div class="stat-label">Done</div></div>
     </div>
+
+    <div class="section-title">Count By Product</div>
+    <div style="display:flex; gap:8px; margin-bottom: 24px;">
+      <input type="text" id="product-search" class="field mono" placeholder="Enter Product #..." style="flex:1; padding:12px; border-radius:12px; background:var(--surface); border:1px solid var(--border); color:var(--accent); font-weight:700; outline:none;">
+      <button class="hdr-btn" style="background:var(--accent); color:#fff; font-size:12px; padding:0 16px;" onclick="searchProduct()">Search</button>
+    </div>
+    
     <div class="section-title">Select Aisle</div>
     <div class="aisle-grid" id="aisle-grid"></div>
   </div>
