@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -13,243 +12,189 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh}
 .mono{font-family:'JetBrains Mono',monospace}
-
-/* Dashboard layout */
 .dashboard{display:flex;flex-direction:column;height:100vh}
-
-/* Topbar */
-.topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:var(–surface);border-bottom:1px solid var(–border);flex-shrink:0}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
 .topbar-left{display:flex;align-items:center;gap:12px}
 .logo{font-size:20px}
 .topbar h1{font-size:15px;font-weight:800}
-.topbar-sub{font-size:9px;font-weight:700;color:var(–accent);text-transform:uppercase;letter-spacing:1.5px}
+.topbar-sub{font-size:9px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.5px}
 .topbar-right{display:flex;align-items:center;gap:10px}
 .freshness{padding:5px 12px;border-radius:8px;font-size:10px;font-weight:700}
-.freshness.fresh{background:var(–green-bg);color:var(–green)}.freshness.stale{background:var(–amber-bg);color:var(–amber)}
-.freshness.old{background:var(–red-bg);color:var(–red)}.freshness.none{background:var(–surface-2);color:var(–text-3)}
-.live-pill{display:flex;align-items:center;gap:6px;padding:5px 12px;background:var(–surface-2);border-radius:8px;font-size:10px;font-weight:700;color:var(–text-2)}
-.live-dot{width:7px;height:7px;border-radius:50%;background:var(–green);animation:pulse 1.5s infinite}
+.freshness.fresh{background:var(--green-bg);color:var(--green)}.freshness.stale{background:var(--amber-bg);color:var(--amber)}
+.freshness.old{background:var(--red-bg);color:var(--red)}.freshness.none{background:var(--surface-2);color:var(--text-3)}
+.live-pill{display:flex;align-items:center;gap:6px;padding:5px 12px;background:var(--surface-2);border-radius:8px;font-size:10px;font-weight:700;color:var(--text-2)}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite}
 @keyframes pulse{50%{opacity:.3}}
-.home-link{background:var(–surface-2);color:var(–text-2);padding:6px 14px;border-radius:8px;font-size:10px;font-weight:700;text-decoration:none}
-
-/* Metrics row */
-.metrics-row{display:flex;gap:1px;background:var(–border);border-bottom:1px solid var(–border);flex-shrink:0}
-.metric{flex:1;background:var(–surface);padding:12px 16px}
-.m-label{display:block;font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(–text-3)}
-.m-val{display:block;font-family:‘JetBrains Mono’,monospace;font-size:20px;font-weight:700;margin-top:2px}
-.m-val small{font-size:9px;font-weight:600;color:var(–text-3)}
-.green{color:var(–green)}.red{color:var(–red)}.amber{color:var(–amber)}.cyan{color:var(–cyan)}.purple{color:var(–purple)}
-
-/* Panes */
+.home-link{background:var(--surface-2);color:var(--text-2);padding:6px 14px;border-radius:8px;font-size:10px;font-weight:700;text-decoration:none}
+.gear-btn{background:var(--surface-2);color:var(--text-2);padding:6px 10px;border-radius:8px;font-size:14px;border:none;cursor:pointer}
+.gear-btn:hover{background:var(--accent-dim);color:var(--accent)}
+.metrics-row{display:flex;gap:1px;background:var(--border);border-bottom:1px solid var(--border);flex-shrink:0}
+.metric{flex:1;background:var(--surface);padding:12px 16px}
+.m-label{display:block;font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3)}
+.m-val{display:block;font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;margin-top:2px}
+.m-val small{font-size:9px;font-weight:600;color:var(--text-3)}
+.green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}.cyan{color:var(--cyan)}.purple{color:var(--purple)}
 .panes{flex:1;display:flex;overflow:hidden}
-
-/* Left rail */
-.rail{width:280px;border-right:1px solid var(–border);background:var(–surface);overflow-y:auto;flex-shrink:0}
-.rail::-webkit-scrollbar{width:4px}.rail::-webkit-scrollbar-thumb{background:var(–surface-3);border-radius:2px}
-.rail-section{padding:14px 16px;border-bottom:1px solid var(–border)}
-.rail-section h3{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(–text-3);margin-bottom:10px}
-
-/* Upload zone */
-.upload-zone{display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px;border:2px dashed var(–border);border-radius:12px;cursor:pointer;transition:all .2s;text-align:center}
-.upload-zone:hover{border-color:var(–accent);background:var(–accent-dim)}
-.upload-zone.uploading{border-color:var(–amber);background:var(–amber-bg);pointer-events:none}
-.upload-zone.success{border-color:var(–green);background:var(–green-bg)}
-.uz-icon{font-size:20px}.uz-label{font-size:10px;font-weight:700;color:var(–text-2)}.uz-status{font-size:10px;font-weight:700}
-.upload-meta{font-size:9px;color:var(–text-3);margin-top:8px;line-height:1.6}
-.upload-meta strong{color:var(–text-2)}
-
-/* Assignments */
+.rail{width:280px;border-right:1px solid var(--border);background:var(--surface);overflow-y:auto;flex-shrink:0}
+.rail::-webkit-scrollbar{width:4px}.rail::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:2px}
+.rail-section{padding:14px 16px;border-bottom:1px solid var(--border)}
+.rail-section h3{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);margin-bottom:10px}
+.upload-zone{display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px;border:2px dashed var(--border);border-radius:12px;cursor:pointer;transition:all .2s;text-align:center}
+.upload-zone:hover{border-color:var(--accent);background:var(--accent-dim)}
+.upload-zone.uploading{border-color:var(--amber);background:var(--amber-bg);pointer-events:none}
+.upload-zone.success{border-color:var(--green);background:var(--green-bg)}
+.upload-zone.error{border-color:var(--red);background:var(--red-bg)}
+.uz-icon{font-size:20px}.uz-label{font-size:10px;font-weight:700;color:var(--text-2)}
+.upload-meta{font-size:9px;color:var(--text-3);margin-top:8px;line-height:1.6}
+.upload-meta strong{color:var(--text-2)}
 .assign-row{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
-.aisle-pick{padding:6px 10px;border-radius:8px;background:var(–surface-2);border:1.5px solid var(–border);font-size:11px;font-weight:800;color:var(–text-3);cursor:pointer}
-.aisle-pick.on{background:var(–accent-dim);border-color:var(–accent);color:var(–accent)}
-.assign-input{width:100%;padding:8px 10px;background:var(–surface-2);border:1px solid var(–border);border-radius:8px;font-size:11px;color:var(–text);outline:none;font-family:inherit;margin-top:6px}
-.assign-input:focus{border-color:var(–accent)}
+.aisle-pick{padding:6px 10px;border-radius:8px;background:var(--surface-2);border:1.5px solid var(--border);font-size:11px;font-weight:800;color:var(--text-3);cursor:pointer}
+.aisle-pick.on{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.assign-input{width:100%;padding:8px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text);outline:none;font-family:inherit;margin-top:6px}
+.assign-input:focus{border-color:var(--accent)}
 .assign-actions{display:flex;gap:4px;margin-top:8px}
-.assign-btn{padding:6px 12px;border-radius:8px;font-size:10px;font-weight:800;text-transform:uppercase;cursor:pointer;border:none;}
-.assign-btn.push{background:var(–accent);color:#fff}
-.assign-btn.clear{background:var(–surface-3);color:var(–text-3)}
-
-/* Main content */
+.assign-btn{padding:6px 12px;border-radius:8px;font-size:10px;font-weight:800;text-transform:uppercase;cursor:pointer;border:none}
+.assign-btn.push{background:var(--accent);color:#fff}
+.assign-btn.clear{background:var(--surface-3);color:var(--text-3)}
 .main-pane{flex:1;display:flex;flex-direction:column;overflow:hidden}
-
-/* Status pills */
-.status-pills{display:flex;gap:6px;padding:10px 16px;border-bottom:1px solid var(–border);background:var(–surface);flex-shrink:0;flex-wrap:wrap}
-.pill{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:8px;background:var(–surface-2);cursor:pointer;border:1.5px solid transparent;transition:all 0.2s}
+.status-pills{display:flex;gap:6px;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;flex-wrap:wrap}
+.pill{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:8px;background:var(--surface-2);cursor:pointer;border:1.5px solid transparent;transition:all 0.2s}
 .pill:hover{filter:brightness(1.2)}
-.pill.active{border-color:var(–accent);background:var(–accent-dim)}
-.pill-count{font-family:‘JetBrains Mono’,monospace;font-weight:700;font-size:13px}
-.pill-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(–text-3)}
-
-/* Table */
+.pill.active{border-color:var(--accent);background:var(--accent-dim)}
+.pill-count{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px}
+.pill-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text-3)}
 .table-wrap{flex:1;overflow:auto}
 table{width:100%;border-collapse:collapse;font-size:11px}
-thead{position:sticky;top:0;background:var(–surface);z-index:5}
-th{padding:10px 12px;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(–text-3);text-align:left;border-bottom:2px solid var(–border)}
-td{padding:7px 12px;border-bottom:1px solid var(–border);font-weight:500}
-tr:hover{background:var(–surface-2)}
+thead{position:sticky;top:0;background:var(--surface);z-index:5}
+th{padding:10px 12px;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-3);text-align:left;border-bottom:2px solid var(--border)}
+td{padding:7px 12px;border-bottom:1px solid var(--border);font-weight:500}
+tr:hover{background:var(--surface-2)}
 .status-tag{font-size:8px;font-weight:800;text-transform:uppercase;padding:3px 8px;border-radius:5px}
-.status-tag.ok{background:var(–green-bg);color:var(–green)}
-.status-tag.miss,.status-tag.missing,.status-tag.missing_temp{background:var(–red-bg);color:var(–red)}
-.status-tag.adj{background:var(–amber-bg);color:var(–amber)}
-.status-tag.unexpected{background:var(–cyan-bg);color:var(–cyan)}
-.status-tag.move{background:var(–purple-bg);color:var(–purple)}
-.status-tag.move_adj{background:var(–surface-2);color:var(–purple);border:1px dashed var(–purple)}
-.status-tag.found_moved{background:var(–green-bg);color:var(–green);border:1px dashed var(–green)}
-
-.empty-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(–text-3)}
+.status-tag.ok{background:var(--green-bg);color:var(--green)}
+.status-tag.miss,.status-tag.missing,.status-tag.missing_temp{background:var(--red-bg);color:var(--red)}
+.status-tag.adj{background:var(--amber-bg);color:var(--amber)}
+.status-tag.unexpected{background:var(--cyan-bg);color:var(--cyan)}
+.status-tag.move{background:var(--purple-bg);color:var(--purple)}
+.status-tag.move_adj{background:var(--surface-2);color:var(--purple);border:1px dashed var(--purple)}
+.status-tag.found_moved{background:var(--green-bg);color:var(--green);border:1px dashed var(--green)}
+.empty-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-3)}
 .empty-main span{font-size:48px;margin-bottom:16px;opacity:.4}
-.empty-main h2{font-size:16px;font-weight:800;color:var(–text-2)}
-
-/* Toast */
+.empty-main h2{font-size:16px;font-weight:800;color:var(--text-2)}
 .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:12px;font-size:12px;font-weight:700;z-index:999;pointer-events:none;opacity:0;transition:opacity .3s}
 .toast.show{opacity:1}
-.toast.green{background:var(–green-bg);color:var(–green);border:1px solid rgba(34,197,94,.25)}
-.toast.blue{background:var(–accent-dim);color:var(–accent);border:1px solid rgba(79,140,255,.2)}
-.toast.red{background:var(–red-bg);color:var(–red);border:1px solid rgba(239,68,68,.25)}
-.toast.amber{background:var(–amber-bg);color:var(–amber);border:1px solid rgba(245,158,11,.25)}
-
-/* ═══════════════════════════════════════════
-TRAINING CMS STYLES
-═══════════════════════════════════════════ */
-
-/* Modal overlay */
+.toast.green{background:var(--green-bg);color:var(--green);border:1px solid rgba(34,197,94,.25)}
+.toast.blue{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(79,140,255,.2)}
+.toast.red{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+.toast.amber{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(245,158,11,.25)}
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(5px);z-index:100;align-items:center;justify-content:center;padding:20px}
 .modal-overlay.open{display:flex}
-.modal-box{background:var(–surface);width:100%;max-width:700px;border-radius:var(–radius);border:1.5px solid var(–border);display:flex;flex-direction:column;max-height:90vh}
-.modal-header{padding:16px;border-bottom:1px solid var(–border);display:flex;justify-content:space-between;align-items:center}
+.modal-box{background:var(--surface);width:100%;max-width:700px;border-radius:var(--radius);border:1.5px solid var(--border);display:flex;flex-direction:column;max-height:90vh}
+.modal-header{padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
 .modal-header h3{font-size:14px;font-weight:800}
-.modal-close{background:none;color:var(–text-3);font-size:16px;font-weight:900;border:none;cursor:pointer}
+.modal-close{background:none;color:var(--text-3);font-size:16px;font-weight:900;border:none;cursor:pointer}
 .modal-body{padding:16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1}
-.modal-footer{padding:16px;border-top:1px solid var(–border);display:flex;gap:8px}
+.modal-footer{padding:16px;border-top:1px solid var(--border);display:flex;gap:8px}
 .modal-footer button{flex:1;padding:12px;border-radius:8px;font-size:11px;font-weight:800;text-transform:uppercase;cursor:pointer;border:none}
-
-/* Training cards */
-.sop-card{background:var(–surface-2);border:1px solid var(–border);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.sop-card{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px}
 .sop-card-header{display:flex;justify-content:space-between;align-items:flex-start}
-.sop-title{font-size:16px;font-weight:800;margin:6px 0 2px;color:var(–accent)}
-.sop-date{font-size:10px;color:var(–text-2)}
-.sop-body{background:var(–surface);padding:14px;border-radius:8px;font-size:12px;color:var(–text);white-space:pre-wrap;border:1px solid var(–border);line-height:1.5}
-
-/* Mermaid container */
-.mermaid-container{background:var(–surface);padding:16px;border-radius:8px;border:1px solid var(–border);overflow-x:auto}
-.mermaid-container svg{max-width:100%;height:auto}
-
-/* Slide deck viewer */
-.slide-deck{background:var(–surface);border:1px solid var(–border);border-radius:12px;overflow:hidden}
-.slide-viewport{position:relative;aspect-ratio:16/9;background:var(–bg);overflow:hidden}
+.sop-title{font-size:16px;font-weight:800;margin:6px 0 2px;color:var(--accent)}
+.sop-date{font-size:10px;color:var(--text-2)}
+.sop-body{background:var(--surface);padding:14px;border-radius:8px;font-size:12px;color:var(--text);white-space:pre-wrap;border:1px solid var(--border);line-height:1.5}
+.mermaid-container{background:var(--surface);padding:16px;border-radius:8px;border:1px solid var(--border);overflow-x:auto}
+.slide-deck{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.slide-viewport{position:relative;aspect-ratio:16/9;background:var(--bg);overflow:hidden}
 .slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;opacity:0;transition:opacity .35s,transform .35s;transform:translateX(30px)}
 .slide.active{opacity:1;transform:translateX(0)}
 .slide.exit{opacity:0;transform:translateX(-30px)}
-.slide h2{font-size:28px;font-weight:900;margin-bottom:12px;background:linear-gradient(135deg,#fff 30%,var(–accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.slide p{font-size:15px;color:var(–text-2);line-height:1.6;max-width:80%}
-.slide-number{position:absolute;top:12px;right:16px;font-size:10px;font-weight:700;color:var(–text-3);font-family:‘JetBrains Mono’,monospace}
-.slide-controls{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-top:1px solid var(–border);background:var(–surface-2)}
-.slide-nav-btn{padding:8px 20px;border-radius:8px;background:var(–surface-3);color:var(–text-2);font-size:11px;font-weight:800;border:none;cursor:pointer}
-.slide-nav-btn:hover{background:var(–accent);color:#fff}
+.slide h2{font-size:28px;font-weight:900;margin-bottom:12px;background:linear-gradient(135deg,var(--text) 30%,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.slide p{font-size:15px;color:var(--text-2);line-height:1.6;max-width:80%}
+.slide-number{position:absolute;top:12px;right:16px;font-size:10px;font-weight:700;color:var(--text-3);font-family:'JetBrains Mono',monospace}
+.slide-controls{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-top:1px solid var(--border);background:var(--surface-2)}
+.slide-nav-btn{padding:8px 20px;border-radius:8px;background:var(--surface-3);color:var(--text-2);font-size:11px;font-weight:800;border:none;cursor:pointer}
+.slide-nav-btn:hover{background:var(--accent);color:#fff}
 .slide-nav-btn:disabled{opacity:.3;cursor:default}
-.slide-nav-btn:disabled:hover{background:var(–surface-3);color:var(–text-2)}
+.slide-nav-btn:disabled:hover{background:var(--surface-3);color:var(--text-2)}
 .slide-progress{display:flex;gap:4px}
-.slide-pip{width:8px;height:8px;border-radius:50%;background:var(–surface-3)}
-.slide-pip.active{background:var(–accent)}
-
-/* Slide editor */
+.slide-pip{width:8px;height:8px;border-radius:50%;background:var(--surface-3)}
+.slide-pip.active{background:var(--accent)}
 .slide-editor-list{display:flex;flex-direction:column;gap:8px}
-.slide-editor-item{background:var(–surface-2);border:1px solid var(–border);border-radius:8px;padding:10px;display:flex;gap:8px;align-items:flex-start}
-.slide-editor-item .slide-num{font-family:‘JetBrains Mono’,monospace;font-size:18px;font-weight:800;color:var(–accent);min-width:28px;text-align:center;padding-top:4px}
+.slide-editor-item{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px;display:flex;gap:8px;align-items:flex-start}
+.slide-editor-item .slide-num{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:800;color:var(--accent);min-width:28px;text-align:center;padding-top:4px}
 .slide-editor-item .slide-fields{flex:1;display:flex;flex-direction:column;gap:4px}
-.slide-editor-item input,.slide-editor-item textarea{width:100%;padding:6px 8px;background:var(–surface);border:1px solid var(–border);border-radius:6px;color:var(–text);font-size:11px;font-family:inherit;outline:none}
-.slide-editor-item input:focus,.slide-editor-item textarea:focus{border-color:var(–accent)}
+.slide-editor-item input,.slide-editor-item textarea{width:100%;padding:6px 8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;font-family:inherit;outline:none}
+.slide-editor-item input:focus,.slide-editor-item textarea:focus{border-color:var(--accent)}
 .slide-editor-item textarea{resize:vertical;min-height:40px}
-.slide-remove-btn{background:none;color:var(–red);font-size:14px;font-weight:900;border:none;cursor:pointer;padding:4px}
+.slide-remove-btn{background:none;color:var(--red);font-size:14px;font-weight:900;border:none;cursor:pointer;padding:4px}
 </style>
-
 </head>
 <body>
 
 <div id="toast" class="toast"><span id="toast-text"></span></div>
 
-<!-- ═══ TRAINING EDITOR MODAL ═══ -->
-
+<!-- Training Editor Modal -->
 <div class="modal-overlay" id="training-modal">
   <div class="modal-box" style="max-width:750px">
     <div class="modal-header">
       <h3 id="modal-title">Edit Training Module</h3>
       <button class="modal-close" onclick="closeTrainingEditor()">✕</button>
     </div>
-
-```
-<div class="modal-body">
-  <input type="hidden" id="sop-id">
-  
-  <div>
-    <label class="m-label">Title</label>
-    <input type="text" id="sop-title" class="assign-input" placeholder="e.g. Near Miss Reporting Procedure">
-  </div>
-  
-  <div style="display:flex; gap:12px;">
-    <div style="flex:1;">
-      <label class="m-label">Category</label>
-      <select id="sop-category" class="assign-input">
-        <option value="Safety">Safety</option>
-        <option value="Cycle Count">Cycle Count</option>
-        <option value="SAP Navigation">SAP Navigation</option>
-        <option value="Warehouse">Warehouse</option>
-        <option value="Quality">Quality</option>
-      </select>
+    <div class="modal-body">
+      <input type="hidden" id="sop-id">
+      <div>
+        <label class="m-label">Title</label>
+        <input type="text" id="sop-title" class="assign-input" placeholder="e.g. Near Miss Reporting Procedure">
+      </div>
+      <div style="display:flex; gap:12px;">
+        <div style="flex:1;">
+          <label class="m-label">Category</label>
+          <select id="sop-category" class="assign-input">
+            <option value="Safety">Safety</option>
+            <option value="Cycle Count">Cycle Count</option>
+            <option value="SAP Navigation">SAP Navigation</option>
+            <option value="Warehouse">Warehouse</option>
+            <option value="Quality">Quality</option>
+          </select>
+        </div>
+        <div style="flex:1;">
+          <label class="m-label">Content Type</label>
+          <select id="sop-type" class="assign-input" onchange="toggleEditorSections()">
+            <option value="Text">Standard Text</option>
+            <option value="Link">External Link / Video</option>
+            <option value="Flowchart">Flowchart (Mermaid)</option>
+            <option value="Slides">Slide Deck (PPT Style)</option>
+          </select>
+        </div>
+      </div>
+      <div id="editor-text-section">
+        <label class="m-label">Content Body / URL</label>
+        <textarea id="sop-body" class="assign-input" rows="8" style="resize:vertical;" placeholder="Enter guidelines or paste a link..."></textarea>
+      </div>
+      <div id="editor-mermaid-section" style="display:none">
+        <label class="m-label">Flowchart Definition (Mermaid Syntax)</label>
+        <textarea id="sop-mermaid" class="assign-input mono" rows="10" style="resize:vertical;font-size:11px;line-height:1.4" placeholder="flowchart TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Action]
+    B -->|No| D[Other]"></textarea>
+        <div style="margin-top:8px">
+          <button class="assign-btn" style="background:var(--cyan-bg);color:var(--cyan);border:1px solid rgba(6,182,212,.3);padding:8px 16px" onclick="previewMermaid()">▶ Preview</button>
+        </div>
+        <div id="mermaid-preview" style="margin-top:12px"></div>
+      </div>
+      <div id="editor-slides-section" style="display:none">
+        <label class="m-label">Slides</label>
+        <div class="slide-editor-list" id="slide-editor-list"></div>
+        <button class="assign-btn" style="width:100%;margin-top:8px;padding:10px;background:var(--surface-3);color:var(--text);border:1px solid var(--border)" onclick="addSlideEditor()">+ Add Slide</button>
+      </div>
     </div>
-    <div style="flex:1;">
-      <label class="m-label">Content Type</label>
-      <select id="sop-type" class="assign-input" onchange="toggleEditorSections()">
-        <option value="Text">Standard Text</option>
-        <option value="Link">External Link / Video</option>
-        <option value="Flowchart">Flowchart (Mermaid)</option>
-        <option value="Slides">Slide Deck (PPT Style)</option>
-      </select>
+    <div class="modal-footer">
+      <button style="background:var(--surface-3);color:var(--text-3)" onclick="closeTrainingEditor()">Cancel</button>
+      <button id="btn-delete-sop" style="background:var(--red-bg);color:var(--red)" onclick="deleteTrainingModule()">Delete</button>
+      <button style="background:var(--accent);color:#fff;flex:2" onclick="saveTrainingModule()">Save & Publish</button>
     </div>
-  </div>
-
-  <!-- Text / Link body -->
-  <div id="editor-text-section">
-    <label class="m-label">Content Body / URL</label>
-    <textarea id="sop-body" class="assign-input" rows="8" style="resize:vertical;" placeholder="Enter guidelines or paste a link..."></textarea>
-  </div>
-
-  <!-- Mermaid flowchart editor -->
-  <div id="editor-mermaid-section" style="display:none">
-    <label class="m-label">Flowchart Definition (Mermaid Syntax)</label>
-    <textarea id="sop-mermaid" class="assign-input mono" rows="10" style="resize:vertical;font-size:11px;line-height:1.4" placeholder="flowchart TD
-A[Start: Item Found] --> B{Is HU labeled?}
-B -->|Yes| C[Scan HU barcode]
-B -->|No| D[Enter Product # manually]
-C --> E[Confirm quantity]
-D --> E
-E --> F[Finalize bin]"></textarea>
-    <div style="margin-top:8px">
-      <button class="assign-btn" style="background:var(--cyan-bg);color:var(--cyan);border:1px solid rgba(6,182,212,.3);padding:8px 16px" onclick="previewMermaid()">▶ Preview Flowchart</button>
-    </div>
-    <div id="mermaid-preview" style="margin-top:12px"></div>
-  </div>
-
-  <!-- Slide deck editor -->
-  <div id="editor-slides-section" style="display:none">
-    <label class="m-label">Slides</label>
-    <div class="slide-editor-list" id="slide-editor-list"></div>
-    <button class="assign-btn" style="width:100%;margin-top:8px;padding:10px;background:var(--surface-3);color:var(--text);border:1px solid var(--border)" onclick="addSlideEditor()">+ Add Slide</button>
   </div>
 </div>
 
-<div class="modal-footer">
-  <button style="background:var(--surface-3);color:var(--text-3)" onclick="closeTrainingEditor()">Cancel</button>
-  <button id="btn-delete-sop" style="background:var(--red-bg);color:var(--red)" onclick="deleteTrainingModule()">Delete</button>
-  <button style="background:var(--accent);color:#fff;flex:2" onclick="saveTrainingModule()">Save & Publish</button>
-</div>
-```
-
-  </div>
-</div>
-
-<!-- ═══ SLIDE PRESENTATION MODAL (Full-screen viewer) ═══ -->
-
+<!-- Slide Viewer Modal -->
 <div class="modal-overlay" id="slide-viewer-modal">
   <div style="width:100%;max-width:900px">
     <div class="slide-deck">
@@ -261,13 +206,12 @@ E --> F[Finalize bin]"></textarea>
       </div>
     </div>
     <div style="text-align:center;margin-top:12px">
-      <button class="slide-nav-btn" onclick="closeSlideViewer()" style="background:var(--red-bg);color:var(--red)">✕ Close Presentation</button>
+      <button class="slide-nav-btn" onclick="closeSlideViewer()" style="background:var(--red-bg);color:var(--red)">✕ Close</button>
     </div>
   </div>
 </div>
 
-<!-- ═══ DASHBOARD ═══ -->
-
+<!-- Dashboard -->
 <div class="dashboard">
   <header class="topbar">
     <div class="topbar-left">
@@ -277,6 +221,7 @@ E --> F[Finalize bin]"></textarea>
     <div class="topbar-right">
       <div class="freshness none" id="freshness-badge">📋 Loading...</div>
       <div class="live-pill"><div class="live-dot"></div> Live</div>
+      <button class="gear-btn" onclick="NovusSettings.openModal()" title="Settings">⚙</button>
       <a href="index.html" class="home-link">← Home</a>
     </div>
   </header>
@@ -302,68 +247,54 @@ E --> F[Finalize bin]"></textarea>
         </label>
         <div class="upload-meta" id="upload-meta"></div>
       </div>
-
-```
-  <div class="rail-section">
-    <h3>Aisle Assignments</h3>
-    <div class="assign-row" id="aisle-picker"></div>
-    <input type="text" class="assign-input" id="prod-assign" placeholder="Product # (for product count)">
-    <div class="assign-actions">
-      <button class="assign-btn push" onclick="pushAssignments()">Push to Team</button>
-      <button class="assign-btn clear" onclick="clearAssignments()">Clear</button>
-    </div>
-  </div>
-
-  <div class="rail-section">
-    <h3>Training & SOPs</h3>
-    <button class="assign-btn" onclick="toggleTrainingView()" style="width:100%;padding:10px;font-size:11px;background:var(--surface-3);color:var(--text);border:1px solid var(--border)">
-      📚 View & Manage Training
-    </button>
-  </div>
-
-  <div class="rail-section">
-    <h3>Reconciliation</h3>
-    <button class="assign-btn" onclick="finalizeReconciliation()" style="width:100%;padding:10px;font-size:11px;background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.25)">
-      🔒 Finalize Missing Items
-    </button>
-    <div style="font-size:9px;color:var(--text-3);margin-top:6px;line-height:1.4">
-      Converts all <strong style="color:var(--amber)">missing_temp</strong> placeholders to confirmed <strong style="color:var(--red)">missing</strong>. Only run after the full cycle count is complete.
-    </div>
-  </div>
-  
-  <div class="rail-section">
-    <h3>Export</h3>
-    <button class="assign-btn push" onclick="exportAudit()" style="width:100%;padding:10px;font-size:11px">📥 Export Audit Data</button>
-  </div>
-</aside>
-
-<main class="main-pane">
-  <!-- Audit View -->
-  <div id="view-audit" style="display:flex; flex-direction:column; height:100%;">
-    <div class="status-pills" id="status-pills"></div>
-    <div class="table-wrap" id="table-wrap">
-      <div class="empty-main" id="empty-main">
-        <span>📡</span>
-        <h2>Upload SAP data & start counting</h2>
+      <div class="rail-section">
+        <h3>Aisle Assignments</h3>
+        <div class="assign-row" id="aisle-picker"></div>
+        <input type="text" class="assign-input" id="prod-assign" placeholder="Product # (for product count)">
+        <div class="assign-actions">
+          <button class="assign-btn push" onclick="pushAssignments()">Push to Team</button>
+          <button class="assign-btn clear" onclick="clearAssignments()">Clear</button>
+        </div>
       </div>
-    </div>
-  </div>
+      <div class="rail-section">
+        <h3>Training & SOPs</h3>
+        <button class="assign-btn" onclick="toggleTrainingView()" style="width:100%;padding:10px;font-size:11px;background:var(--surface-3);color:var(--text);border:1px solid var(--border)">📚 View & Manage Training</button>
+      </div>
+      <div class="rail-section">
+        <h3>Reconciliation</h3>
+        <button class="assign-btn" onclick="finalizeReconciliation()" style="width:100%;padding:10px;font-size:11px;background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.25)">🔒 Finalize Missing Items</button>
+        <div style="font-size:9px;color:var(--text-3);margin-top:6px;line-height:1.4">
+          Converts <strong style="color:var(--amber)">missing_temp</strong> → confirmed <strong style="color:var(--red)">missing</strong>. Run after full cycle count.
+        </div>
+      </div>
+      <div class="rail-section">
+        <h3>Export</h3>
+        <button class="assign-btn push" onclick="exportAudit()" style="width:100%;padding:10px;font-size:11px">📥 Export Audit Data</button>
+      </div>
+    </aside>
 
-  <!-- Training View -->
-  <div id="view-training" style="display:none; flex-direction:column; height:100%; background:var(--bg);">
-    <div class="status-pills" style="justify-content:space-between;">
-      <h2 style="font-size:14px;font-weight:800;display:flex;align-items:center;">Training & SOP Library</h2>
-      <button class="assign-btn push" onclick="openTrainingEditor()">+ New SOP</button>
-    </div>
-    <div class="table-wrap" style="padding:16px;">
-      <div id="training-list-container" style="display:flex;flex-direction:column;gap:12px;"></div>
-    </div>
-  </div>
-</main>
-```
-
+    <main class="main-pane">
+      <div id="view-audit" style="display:flex; flex-direction:column; height:100%;">
+        <div class="status-pills" id="status-pills"></div>
+        <div class="table-wrap" id="table-wrap">
+          <div class="empty-main"><span>📡</span><h2>Upload SAP data & start counting</h2></div>
+        </div>
+      </div>
+      <div id="view-training" style="display:none; flex-direction:column; height:100%; background:var(--bg);">
+        <div class="status-pills" style="justify-content:space-between;">
+          <h2 style="font-size:14px;font-weight:800;display:flex;align-items:center;">Training & SOP Library</h2>
+          <button class="assign-btn push" onclick="openTrainingEditor()">+ New SOP</button>
+        </div>
+        <div class="table-wrap" style="padding:16px;">
+          <div id="training-list-container" style="display:flex;flex-direction:column;gap:12px;"></div>
+        </div>
+      </div>
+    </main>
   </div>
 </div>
+
+<!-- Settings engine (shared across all pages) -->
+<script src="novus-settings.js"></script>
 
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbwZ1Dhmf6cK_hWV2xLKYmwEImUvifIRCPqVm0Fz4E7gjvfcpyzoqhAFIgvgwrjBretc/exec';
@@ -372,32 +303,31 @@ let sapMeta = null, report = [], assignments = [];
 let assignAisles = new Set();
 let currentStatusFilter = 'all';
 
-// ── Init Mermaid ──
+// Expose toast globally so NovusSettings can use it
+window.toast = toast;
+
+// Init Mermaid
 mermaid.initialize({
-  startOnLoad: false,
-  theme: 'dark',
+  startOnLoad: false, theme: 'dark',
   themeVariables: {
-    darkMode: true,
-    primaryColor: '#4f8cff',
-    primaryTextColor: '#e8e8ee',
-    primaryBorderColor: '#2e3040',
-    lineColor: '#5c5e70',
-    secondaryColor: '#1e2028',
-    tertiaryColor: '#282a34',
-    fontFamily: 'DM Sans, sans-serif',
-    fontSize: '13px',
+    darkMode: true, primaryColor: '#4f8cff', primaryTextColor: '#e8e8ee',
+    primaryBorderColor: '#2e3040', lineColor: '#5c5e70', secondaryColor: '#1e2028',
+    tertiaryColor: '#282a34', fontFamily: 'DM Sans, sans-serif', fontSize: '13px',
   },
   flowchart: { curve: 'basis', padding: 16 },
 });
 
 // ══════════════════════════════════════════
-// INIT
+// INIT — Split fetch strategy
 // ══════════════════════════════════════════
-fetchData();
+// 1. Initial load: fetch FULL dashboard (heavy, includes sapData)
+// 2. Polling: fetch ONLY ?type=poll (lightweight: report + assignments + sapMeta)
+fetchFullDashboard();
 initAislePicker();
-setInterval(fetchData, 10000);
+setInterval(pollLightweight, 10000);
 
-async function fetchData() {
+/** ONE-TIME heavy fetch — includes SAP master data */
+async function fetchFullDashboard() {
   try {
     const res = await fetch(API_URL);
     const data = await res.json();
@@ -408,11 +338,36 @@ async function fetchData() {
     updateMetrics();
     renderPills();
     renderTable();
-  } catch {}
+  } catch { /* silent on init */ }
+}
+
+/** LIGHTWEIGHT poll — no SAP master rows, just dynamic data */
+async function pollLightweight() {
+  try {
+    const res = await fetch(API_URL + '?type=poll');
+    const data = await res.json();
+    sapMeta = data.sapMeta;
+    report = data.report || [];
+    assignments = data.assignments || [];
+    updateFreshness();
+    updateMetrics();
+    renderPills();
+    renderTable();
+  } catch { /* silent on poll failure */ }
 }
 
 // ══════════════════════════════════════════
-// SAP UPLOAD
+// SAP UPLOAD — FIXED & HARDENED
+//
+// Bug root causes fixed:
+// 1. findCol was doing case-sensitive first pass, missing "Stge Bin",
+//    "Materialdescription", "HandlingUnit" style SAP headers.
+// 2. No error surface: if parsing produced 0 rows, user saw nothing.
+// 3. The POST body could have rows of varying lengths, causing GAS
+//    setValues() to throw a dimension mismatch error.
+//
+// Fix: Expanded alias list, case-insensitive+whitespace-normalized
+// matching, debug toast on 0-row parse, strict 10-col normalization.
 // ══════════════════════════════════════════
 document.getElementById('file-input').addEventListener('change', async (e) => {
   const file = e.target.files?.[0];
@@ -425,25 +380,58 @@ document.getElementById('file-input').addEventListener('change', async (e) => {
   try {
     const data = await file.arrayBuffer();
     const wb = XLSX.read(new Uint8Array(data), { type: 'array' });
-    const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const json = XLSX.utils.sheet_to_json(sheet);
 
-    const rows = json.map(r => [
-      String(findCol(r, ['Storage Bin','Bin','storage_bin']) || '').trim().toUpperCase(),
-      String(findCol(r, ['Handling Unit','HU','handling_unit']) || '').trim(),
-      String(findCol(r, ['Product','Material','SKU','product']) || '').trim(),
-      String(findCol(r, ['Batch','batch']) || '').trim(),
-      String(findCol(r, ['Product Short Description','Description','desc']) || '').trim(),
-      parseFloat(findCol(r, ['Quantity','Qty','quantity'])) || 0,
-      String(findCol(r, ['Unit','UOM']) || 'LB').trim(),
-      String(findCol(r, ['Stock Type','stock_type','Stock Typ']) || 'F2').trim(),
-      String(findCol(r, ['Goods Receipt Date','GR Date','gr_date']) || ''),
-      String(findCol(r, ['Shelf Life Expiration Date','SLED','Expiration']) || ''),
-    ]).filter(r => r[0] && r[1]);
+    if (json.length === 0) {
+      throw new Error('Sheet is empty or has no data rows');
+    }
+
+    // Debug: show detected columns
+    const detectedCols = Object.keys(json[0]);
+    console.log('SAP Import — detected columns:', detectedCols);
+
+    const rows = json.map(r => {
+      const bin  = findCol(r, ['Storage Bin','Bin','storage_bin','Stge Bin','StorageBin','Stor. Bin','SBin']);
+      const hu   = findCol(r, ['Handling Unit','HU','handling_unit','HandlingUnit','Hndlg Unit','HndlgUnit']);
+      const prod = findCol(r, ['Product','Material','SKU','product','Matl','Material Number','MaterialNumber']);
+      const batch= findCol(r, ['Batch','batch','Btch']);
+      const desc = findCol(r, ['Product Short Description','Description','desc','Material Description','MaterialDescription','Matl Desc','Short Text']);
+      const qty  = findCol(r, ['Quantity','Qty','quantity','Available stock','Avail. Stock','Total Stock','TotalStock','Unrestricted']);
+      const unit = findCol(r, ['Unit','UOM','Base Unit','BaseUnit','Unit of Measure','BUn']);
+      const stype= findCol(r, ['Stock Type','stock_type','Stock Typ','StockType','StkType']);
+      const grdt = findCol(r, ['Goods Receipt Date','GR Date','gr_date','GRDate','Goods Rcpt Date']);
+      const sled = findCol(r, ['Shelf Life Expiration Date','SLED','Expiration','ShelfLifeExpDate','SLED/BBD']);
+
+      return [
+        String(bin  ?? '').trim().toUpperCase(),
+        String(hu   ?? '').trim(),
+        String(prod ?? '').trim(),
+        String(batch?? '').trim(),
+        String(desc ?? '').trim(),
+        parseFloat(qty) || 0,
+        String(unit ?? 'LB').trim(),
+        String(stype?? 'F2').trim(),
+        String(grdt ?? ''),
+        String(sled ?? ''),
+      ];
+    }).filter(r => r[0] && r[1]); // Must have Bin AND HU
+
+    if (rows.length === 0) {
+      zone.classList.remove('uploading');
+      zone.classList.add('error');
+      document.getElementById('uz-icon').textContent = '⚠️';
+      document.getElementById('uz-label').textContent = '0 valid rows (need Bin + HU)';
+      toast(`Parse found ${json.length} rows but 0 had both Bin & HU. Columns: ${detectedCols.slice(0,5).join(', ')}...`, 'red');
+      setTimeout(() => { resetUploadZone(); }, 5000);
+      e.target.value = '';
+      return;
+    }
 
     document.getElementById('uz-label').textContent = `Uploading ${rows.length} rows...`;
     const res = await fetch(API_URL, {
       method: 'POST',
-      body: JSON.stringify({ action: 'uploadSAPData', rows, uploader: 'Control Center', filename: file.name }),
+      body: JSON.stringify({ action: 'uploadSAPData', rows, uploader: NovusSettings.getUser() || 'Control Center', filename: file.name }),
     });
     const result = await res.json();
 
@@ -452,29 +440,62 @@ document.getElementById('file-input').addEventListener('change', async (e) => {
       zone.classList.add('success');
       document.getElementById('uz-icon').textContent = '✅';
       document.getElementById('uz-label').textContent = `${result.rowCount} items loaded`;
-      setTimeout(() => {
-        zone.classList.remove('success');
-        document.getElementById('uz-icon').textContent = '📂';
-        document.getElementById('uz-label').textContent = 'Drop SAP Export (.xlsx)';
-      }, 4000);
-      fetchData();
+      toast(`SAP import: ${result.rowCount} items loaded from ${file.name}`, 'green');
+      setTimeout(resetUploadZone, 4000);
+      fetchFullDashboard(); // Re-fetch full dashboard after upload
+    } else {
+      throw new Error(result.error || 'Upload returned failure');
     }
   } catch (err) {
     toast('Upload failed: ' + err.message, 'red');
     zone.classList.remove('uploading');
-    document.getElementById('uz-icon').textContent = '📂';
-    document.getElementById('uz-label').textContent = 'Drop SAP Export (.xlsx)';
+    zone.classList.add('error');
+    document.getElementById('uz-icon').textContent = '❌';
+    document.getElementById('uz-label').textContent = err.message.substring(0, 40);
+    setTimeout(resetUploadZone, 4000);
   }
   e.target.value = '';
 });
 
-function findCol(row, names) {
-  for (const n of names) { if (row[n] !== undefined) return row[n]; }
-  const keys = Object.keys(row);
-  for (const n of names) {
-    const match = keys.find(k => k.toLowerCase().trim() === n.toLowerCase().trim());
-    if (match) return row[match];
+function resetUploadZone() {
+  const zone = document.getElementById('upload-zone');
+  zone.classList.remove('success', 'uploading', 'error');
+  document.getElementById('uz-icon').textContent = '📂';
+  document.getElementById('uz-label').textContent = 'Drop SAP Export (.xlsx)';
+}
+
+/**
+ * HARDENED column finder.
+ * Strategy: 
+ *  1. Exact key match (fast path)
+ *  2. Normalized match: lowercase, strip spaces/underscores/dots
+ *  3. Substring containment: if a key CONTAINS the alias (handles "Available stock" matching "stock")
+ * This handles SAP's wildly inconsistent header naming across EWM, MM, WM, etc.
+ */
+function findCol(row, aliases) {
+  // Pass 1: exact match
+  for (const name of aliases) {
+    if (row[name] !== undefined) return row[name];
   }
+
+  const keys = Object.keys(row);
+  const normalize = s => s.toLowerCase().replace(/[\s_.\-\/]/g, '');
+  const normalizedAliases = aliases.map(normalize);
+
+  // Pass 2: normalized match
+  for (const key of keys) {
+    const nk = normalize(key);
+    if (normalizedAliases.includes(nk)) return row[key];
+  }
+
+  // Pass 3: substring containment (last resort)
+  for (const key of keys) {
+    const nk = normalize(key);
+    for (const na of normalizedAliases) {
+      if (na.length >= 3 && nk.includes(na)) return row[key];
+    }
+  }
+
   return null;
 }
 
@@ -493,7 +514,6 @@ function updateFreshness() {
   const hrs = Math.round(mins / 60);
   const count = (sapMeta.rowCount || 0).toLocaleString();
   document.getElementById('m-items').textContent = count;
-
   if (mins < 120) { badge.className = 'freshness fresh'; badge.textContent = `📋 Fresh (${mins}m) · ${count}`; }
   else if (hrs < 8) { badge.className = 'freshness stale'; badge.textContent = `📋 ${hrs}h ago · ${count}`; }
   else { badge.className = 'freshness old'; badge.textContent = `⚠ ${hrs}h old · ${count}`; }
@@ -507,7 +527,6 @@ function updateMetrics() {
   const disc = total - ok;
   const bins = new Set(report.map(r => r.scanBin).filter(Boolean)).size;
   const acc = total > 0 ? Math.round((ok / total) * 10000) / 100 : 0;
-
   document.getElementById('m-bins').textContent = bins;
   document.getElementById('m-total').textContent = total;
   document.getElementById('m-ok').textContent = ok;
@@ -517,7 +536,7 @@ function updateMetrics() {
 }
 
 // ══════════════════════════════════════════
-// STATUS PILLS
+// STATUS PILLS & TABLE
 // ══════════════════════════════════════════
 function renderPills() {
   const categories = [
@@ -531,10 +550,8 @@ function renderPills() {
     { key: 'found_moved', label: 'FOUND (RESOLVED)', color: 'green' },
     { key: 'unexpected', label: 'SYS TRIGGER', color: 'cyan' }
   ];
-
   const counts = { all: report.length };
   report.forEach(r => { counts[r.type] = (counts[r.type] || 0) + 1; });
-
   document.getElementById('status-pills').innerHTML = categories.map(cat => {
     const count = counts[cat.key] || 0;
     if (count === 0 && cat.key !== 'all') return '';
@@ -548,9 +565,6 @@ function renderPills() {
 
 function filterTable(status) { currentStatusFilter = status; renderPills(); renderTable(); }
 
-// ══════════════════════════════════════════
-// RESULTS TABLE
-// ══════════════════════════════════════════
 function renderTable() {
   const filtered = currentStatusFilter === 'all' ? report : report.filter(r => r.type === currentStatusFilter);
   if (filtered.length === 0) {
@@ -559,13 +573,11 @@ function renderTable() {
       : `<div class="empty-main"><span>🔍</span><h2>No ${currentStatusFilter.toUpperCase()} items</h2></div>`;
     return;
   }
-  
   const tagLabels = {
     ok:'OK', adj:'ADJUSTED', move:'MOVED', move_adj:'MOVE+ADJ',
     missing_temp:'PENDING', missing:'MISSING', found_moved:'FOUND',
     unexpected:'SYS TRIGGER', resolved_recount:'RE-COUNTED'
   };
-  
   document.getElementById('table-wrap').innerHTML = `<table>
     <thead><tr>
       <th>Time</th><th>User</th><th>Bin</th><th>HU</th><th>Product</th>
@@ -596,20 +608,16 @@ function renderTable() {
 async function finalizeReconciliation() {
   const pendingCount = report.filter(r => r.type === 'missing_temp').length;
   if (pendingCount === 0) { toast('No pending items to finalize', 'blue'); return; }
-  if (!confirm(`This will permanently mark ${pendingCount} item(s) as MISSING.\n\nThis cannot be undone. Only proceed if the full cycle count is complete.`)) return;
-  
+  if (!confirm(`This will permanently mark ${pendingCount} item(s) as MISSING.\n\nOnly proceed if the full cycle count is complete.`)) return;
   toast('Finalizing...', 'blue');
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
-      body: JSON.stringify({ action: 'finalizeReconciliation', user: 'Control Center' }),
+      body: JSON.stringify({ action: 'finalizeReconciliation', user: NovusSettings.getUser() || 'Control Center' }),
     });
     const result = await res.json();
-    if (result.success) {
-      toast(`${result.finalized} items finalized as missing`, 'green');
-      fetchData();
-    }
-  } catch (err) { toast('Finalization failed', 'red'); }
+    if (result.success) { toast(`${result.finalized} items finalized`, 'green'); pollLightweight(); }
+  } catch { toast('Finalization failed', 'red'); }
 }
 
 // ══════════════════════════════════════════
@@ -619,8 +627,7 @@ function initAislePicker() {
   const c = document.getElementById('aisle-picker');
   AISLE_ROWS.forEach(r => {
     const btn = document.createElement('button');
-    btn.className = 'aisle-pick';
-    btn.textContent = r;
+    btn.className = 'aisle-pick'; btn.textContent = r;
     btn.onclick = () => { assignAisles.has(r) ? assignAisles.delete(r) : assignAisles.add(r); btn.classList.toggle('on'); };
     c.appendChild(btn);
   });
@@ -633,7 +640,7 @@ async function pushAssignments() {
   if (prod) list.push({ type: 'product', value: prod, description: `Product: ${prod}` });
   if (!list.length) return;
   try {
-    await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'setAssignments', assignments: list, assignedBy: 'Control Center' }) });
+    await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'setAssignments', assignments: list, assignedBy: NovusSettings.getUser() || 'Control Center' }) });
     toast('Assignments pushed', 'green');
     assignAisles.clear();
     document.querySelectorAll('.aisle-pick').forEach(b => b.classList.remove('on'));
@@ -643,7 +650,7 @@ async function pushAssignments() {
 
 async function clearAssignments() {
   try {
-    await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'setAssignments', assignments: [], assignedBy: 'Control Center' }) });
+    await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'setAssignments', assignments: [], assignedBy: NovusSettings.getUser() || 'Control Center' }) });
     toast('Assignments cleared', 'blue');
   } catch {}
 }
@@ -665,9 +672,9 @@ function exportAudit() {
     ['Year','Month','Week#','CT#','Date','SKU Type','Storage Bin','Handling Unit','Product','Product Short Description','Quantity','Batch','Unit','Stock Type','Goods Receipt Date','Shelf Life Expiration Date','Status'],
     ...rows,
   ]);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Audit Data');
-  XLSX.writeFile(wb, `Cycle_Count_${now.toISOString().split('T')[0]}.xlsx`);
+  const wbOut = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wbOut, ws, 'Audit Data');
+  XLSX.writeFile(wbOut, `Cycle_Count_${now.toISOString().split('T')[0]}.xlsx`);
   toast('Exported!', 'green');
 }
 
@@ -679,7 +686,7 @@ function toast(msg, color) {
 }
 
 // ══════════════════════════════════════════
-// TRAINING MODULE — ENHANCED CMS
+// TRAINING MODULE
 // ══════════════════════════════════════════
 let trainingData = [];
 let slideEditorData = [];
@@ -688,12 +695,9 @@ function toggleTrainingView() {
   const auditView = document.getElementById('view-audit');
   const trainingView = document.getElementById('view-training');
   if (auditView.style.display !== 'none') {
-    auditView.style.display = 'none';
-    trainingView.style.display = 'flex';
-    loadTrainingData();
+    auditView.style.display = 'none'; trainingView.style.display = 'flex'; loadTrainingData();
   } else {
-    auditView.style.display = 'flex';
-    trainingView.style.display = 'none';
+    auditView.style.display = 'flex'; trainingView.style.display = 'none';
   }
 }
 
@@ -709,47 +713,39 @@ async function loadTrainingData() {
 function renderTrainingList() {
   const container = document.getElementById('training-list-container');
   if (trainingData.length === 0) {
-    container.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text-3)"><span style="font-size:42px;display:block;margin-bottom:10px">📚</span><p>No training modules yet. Click "+ New SOP" to create one.</p></div>';
+    container.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text-3)"><span style="font-size:42px;display:block;margin-bottom:10px">📚</span><p>No training modules yet.</p></div>';
     return;
   }
-  
   container.innerHTML = trainingData.map((sop, idx) => {
     const catClass = sop.category === 'Safety' ? 'ok' : sop.category === 'Cycle Count' ? 'move' : 'adj';
     let contentHTML = '';
-
     if (sop.type === 'Link') {
       contentHTML = `<div class="sop-body"><a href="${sop.body}" target="_blank" style="color:var(--accent);font-weight:700">🔗 Open External Link / Video</a></div>`;
     } else if (sop.type === 'Flowchart' && sop.mermaid) {
       contentHTML = `<div class="mermaid-container" id="mermaid-view-${idx}"></div>`;
     } else if (sop.type === 'Slides' && sop.slides && sop.slides.length > 0) {
-      contentHTML = `
-        <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface);border-radius:8px;border:1px solid var(--border);cursor:pointer" onclick="openSlideViewer(${idx})">
+      contentHTML = `<div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface);border-radius:8px;border:1px solid var(--border);cursor:pointer" onclick="openSlideViewer(${idx})">
           <span style="font-size:28px">🎞️</span>
-          <div>
-            <div style="font-size:13px;font-weight:800;color:var(--accent)">Slide Deck — ${sop.slides.length} slides</div>
-            <div style="font-size:10px;color:var(--text-3);margin-top:2px">Click to view presentation</div>
-          </div>
+          <div><div style="font-size:13px;font-weight:800;color:var(--accent)">Slide Deck — ${sop.slides.length} slides</div>
+          <div style="font-size:10px;color:var(--text-3);margin-top:2px">Click to view</div></div>
           <span style="margin-left:auto;font-size:18px;color:var(--accent)">▶</span>
         </div>`;
     } else {
       contentHTML = `<div class="sop-body">${sop.body}</div>`;
     }
-
     return `<div class="sop-card">
       <div class="sop-card-header">
         <div>
           <span class="status-tag ${catClass}">${sop.category}</span>
           <span class="status-tag" style="background:var(--surface-3);color:var(--text-3);margin-left:4px">${sop.type}</span>
           <h3 class="sop-title">${sop.title}</h3>
-          <p class="sop-date">Last updated: ${new Date(sop.updatedAt).toLocaleDateString()}</p>
+          <p class="sop-date">Updated: ${new Date(sop.updatedAt).toLocaleDateString()}</p>
         </div>
         <button class="assign-btn" style="background:var(--surface-3);color:var(--text);border:1px solid var(--border);padding:8px 14px" onclick="openTrainingEditor(${idx})">Edit</button>
       </div>
       ${contentHTML}
     </div>`;
   }).join('');
-
-  // Render Mermaid charts after DOM is ready
   requestAnimationFrame(() => {
     trainingData.forEach((sop, idx) => {
       if (sop.type === 'Flowchart' && sop.mermaid) {
@@ -765,182 +761,144 @@ async function renderMermaidInto(el, code, id) {
     const { svg } = await mermaid.render(id + '-svg', code);
     el.innerHTML = svg;
   } catch (err) {
-    el.innerHTML = `<div style="color:var(--red);font-size:11px;font-weight:700">⚠ Mermaid parse error: ${err.message}</div><pre style="font-size:10px;color:var(--text-3);margin-top:8px;white-space:pre-wrap">${code}</pre>`;
-
+    el.innerHTML = `<div style="color:var(--red);font-size:11px;font-weight:700">⚠ Parse error: ${err.message}</div><pre style="font-size:10px;color:var(--text-3);margin-top:8px;white-space:pre-wrap">${code}</pre>`;
+  }
 }
-}
 
-// ── Editor Sections Toggle ──
 function toggleEditorSections() {
-const type = document.getElementById(‘sop-type’).value;
-document.getElementById(‘editor-text-section’).style.display = (type === ‘Text’ || type === ‘Link’) ? ‘block’ : ‘none’;
-document.getElementById(‘editor-mermaid-section’).style.display = type === ‘Flowchart’ ? ‘block’ : ‘none’;
-document.getElementById(‘editor-slides-section’).style.display = type === ‘Slides’ ? ‘block’ : ‘none’;
+  const type = document.getElementById('sop-type').value;
+  document.getElementById('editor-text-section').style.display = (type === 'Text' || type === 'Link') ? 'block' : 'none';
+  document.getElementById('editor-mermaid-section').style.display = type === 'Flowchart' ? 'block' : 'none';
+  document.getElementById('editor-slides-section').style.display = type === 'Slides' ? 'block' : 'none';
 }
 
-// ── Mermaid Preview ──
 async function previewMermaid() {
-const code = document.getElementById(‘sop-mermaid’).value.trim();
-const preview = document.getElementById(‘mermaid-preview’);
-if (!code) { preview.innerHTML = ‘’; return; }
-await renderMermaidInto(preview, code, ‘mermaid-preview’);
+  const code = document.getElementById('sop-mermaid').value.trim();
+  const preview = document.getElementById('mermaid-preview');
+  if (!code) { preview.innerHTML = ''; return; }
+  await renderMermaidInto(preview, code, 'mermaid-preview');
 }
 
-// ── Slide Editor ──
 function renderSlideEditor() {
-const list = document.getElementById(‘slide-editor-list’);
-list.innerHTML = slideEditorData.map((s, i) => `<div class="slide-editor-item"> <span class="slide-num">${i + 1}</span> <div class="slide-fields"> <input type="text" placeholder="Slide title" value="${escHtml(s.title)}" oninput="slideEditorData[${i}].title=this.value"> <textarea rows="3" placeholder="Slide content / body text" oninput="slideEditorData[${i}].body=this.value">${escHtml(s.body)}</textarea> </div> <button class="slide-remove-btn" onclick="removeSlideEditor(${i})">✕</button> </div>`).join(’’);
+  document.getElementById('slide-editor-list').innerHTML = slideEditorData.map((s, i) => `
+    <div class="slide-editor-item">
+      <span class="slide-num">${i + 1}</span>
+      <div class="slide-fields">
+        <input type="text" placeholder="Slide title" value="${escHtml(s.title)}" oninput="slideEditorData[${i}].title=this.value">
+        <textarea rows="3" placeholder="Slide body" oninput="slideEditorData[${i}].body=this.value">${escHtml(s.body)}</textarea>
+      </div>
+      <button class="slide-remove-btn" onclick="removeSlideEditor(${i})">✕</button>
+    </div>`).join('');
 }
 
-function addSlideEditor() {
-slideEditorData.push({ title: ‘’, body: ‘’ });
-renderSlideEditor();
-}
+function addSlideEditor() { slideEditorData.push({ title: '', body: '' }); renderSlideEditor(); }
+function removeSlideEditor(idx) { slideEditorData.splice(idx, 1); renderSlideEditor(); }
 
-function removeSlideEditor(idx) {
-slideEditorData.splice(idx, 1);
-renderSlideEditor();
-}
-
-// ── Open / Close Editor ──
 function openTrainingEditor(idx = null) {
-document.getElementById(‘training-modal’).classList.add(‘open’);
-
-if (idx !== null) {
-const sop = trainingData[idx];
-document.getElementById(‘sop-id’).value = sop.id;
-document.getElementById(‘sop-title’).value = sop.title;
-document.getElementById(‘sop-category’).value = sop.category;
-document.getElementById(‘sop-type’).value = sop.type;
-document.getElementById(‘sop-body’).value = sop.body || ‘’;
-document.getElementById(‘sop-mermaid’).value = sop.mermaid || ‘’;
-slideEditorData = (sop.slides || []).map(s => ({ …s }));
-document.getElementById(‘btn-delete-sop’).style.display = ‘block’;
-document.getElementById(‘modal-title’).textContent = ‘Edit Training Module’;
-} else {
-document.getElementById(‘sop-id’).value = Date.now().toString();
-document.getElementById(‘sop-title’).value = ‘’;
-document.getElementById(‘sop-body’).value = ‘’;
-document.getElementById(‘sop-mermaid’).value = ‘’;
-slideEditorData = [{ title: ‘’, body: ‘’ }];
-document.getElementById(‘btn-delete-sop’).style.display = ‘none’;
-document.getElementById(‘modal-title’).textContent = ‘New Training Module’;
+  document.getElementById('training-modal').classList.add('open');
+  if (idx !== null) {
+    const sop = trainingData[idx];
+    document.getElementById('sop-id').value = sop.id;
+    document.getElementById('sop-title').value = sop.title;
+    document.getElementById('sop-category').value = sop.category;
+    document.getElementById('sop-type').value = sop.type;
+    document.getElementById('sop-body').value = sop.body || '';
+    document.getElementById('sop-mermaid').value = sop.mermaid || '';
+    slideEditorData = (sop.slides || []).map(s => ({ ...s }));
+    document.getElementById('btn-delete-sop').style.display = 'block';
+    document.getElementById('modal-title').textContent = 'Edit Training Module';
+  } else {
+    document.getElementById('sop-id').value = Date.now().toString();
+    document.getElementById('sop-title').value = '';
+    document.getElementById('sop-body').value = '';
+    document.getElementById('sop-mermaid').value = '';
+    slideEditorData = [{ title: '', body: '' }];
+    document.getElementById('btn-delete-sop').style.display = 'none';
+    document.getElementById('modal-title').textContent = 'New Training Module';
+  }
+  toggleEditorSections(); renderSlideEditor();
+  document.getElementById('mermaid-preview').innerHTML = '';
 }
 
-toggleEditorSections();
-renderSlideEditor();
-document.getElementById(‘mermaid-preview’).innerHTML = ‘’;
-}
-
-function closeTrainingEditor() {
-document.getElementById(‘training-modal’).classList.remove(‘open’);
-}
+function closeTrainingEditor() { document.getElementById('training-modal').classList.remove('open'); }
 
 function deleteTrainingModule() {
-const id = document.getElementById(‘sop-id’).value;
-if (!id) return;
-if (!confirm(‘Delete this training module?’)) return;
-trainingData = trainingData.filter(s => s.id !== id);
-closeTrainingEditor();
-renderTrainingList();
-fetch(API_URL, { method: ‘POST’, body: JSON.stringify({ action: ‘saveTraining’, categories: trainingData }) });
-toast(‘Module deleted’, ‘amber’);
+  const id = document.getElementById('sop-id').value;
+  if (!id || !confirm('Delete this module?')) return;
+  trainingData = trainingData.filter(s => s.id !== id);
+  closeTrainingEditor(); renderTrainingList();
+  fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveTraining', categories: trainingData }) });
+  toast('Module deleted', 'amber');
 }
 
 async function saveTrainingModule() {
-const id = document.getElementById(‘sop-id’).value;
-const type = document.getElementById(‘sop-type’).value;
-
-const newSop = {
-id,
-title: document.getElementById(‘sop-title’).value.trim(),
-category: document.getElementById(‘sop-category’).value,
-type,
-body: document.getElementById(‘sop-body’).value.trim(),
-mermaid: document.getElementById(‘sop-mermaid’).value.trim(),
-slides: slideEditorData.filter(s => s.title || s.body),
-updatedAt: new Date().toISOString()
-};
-
-if (!newSop.title) { toast(‘Title is required’, ‘amber’); return; }
-if (type === ‘Flowchart’ && !newSop.mermaid) { toast(‘Flowchart definition is required’, ‘amber’); return; }
-if (type === ‘Slides’ && newSop.slides.length === 0) { toast(‘At least one slide is required’, ‘amber’); return; }
-if ((type === ‘Text’ || type === ‘Link’) && !newSop.body) { toast(‘Content body is required’, ‘amber’); return; }
-
-const existingIdx = trainingData.findIndex(s => s.id === id);
-if (existingIdx > -1) { trainingData[existingIdx] = newSop; }
-else { trainingData.push(newSop); }
-
-closeTrainingEditor();
-renderTrainingList();
-toast(‘Saving…’, ‘blue’);
-
-try {
-await fetch(API_URL, { method: ‘POST’, body: JSON.stringify({ action: ‘saveTraining’, categories: trainingData }) });
-toast(‘Training module published’, ‘green’);
-} catch { toast(‘Failed to sync’, ‘red’); }
+  const id = document.getElementById('sop-id').value;
+  const type = document.getElementById('sop-type').value;
+  const newSop = {
+    id, title: document.getElementById('sop-title').value.trim(),
+    category: document.getElementById('sop-category').value, type,
+    body: document.getElementById('sop-body').value.trim(),
+    mermaid: document.getElementById('sop-mermaid').value.trim(),
+    slides: slideEditorData.filter(s => s.title || s.body),
+    updatedAt: new Date().toISOString()
+  };
+  if (!newSop.title) { toast('Title required', 'amber'); return; }
+  if (type === 'Flowchart' && !newSop.mermaid) { toast('Flowchart required', 'amber'); return; }
+  if (type === 'Slides' && newSop.slides.length === 0) { toast('Add at least one slide', 'amber'); return; }
+  if ((type === 'Text' || type === 'Link') && !newSop.body) { toast('Content required', 'amber'); return; }
+  const existingIdx = trainingData.findIndex(s => s.id === id);
+  if (existingIdx > -1) trainingData[existingIdx] = newSop; else trainingData.push(newSop);
+  closeTrainingEditor(); renderTrainingList(); toast('Saving...', 'blue');
+  try {
+    await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveTraining', categories: trainingData }) });
+    toast('Published', 'green');
+  } catch { toast('Sync failed', 'red'); }
 }
 
 // ══════════════════════════════════════════
-// SLIDE VIEWER (PPT-style presentation)
+// SLIDE VIEWER
 // ══════════════════════════════════════════
-let viewerSlides = [];
-let viewerIdx = 0;
+let viewerSlides = [], viewerIdx = 0;
 
 function openSlideViewer(sopIdx) {
-const sop = trainingData[sopIdx];
-if (!sop || !sop.slides || sop.slides.length === 0) return;
-
-viewerSlides = sop.slides;
-viewerIdx = 0;
-
-document.getElementById(‘slide-viewer-modal’).classList.add(‘open’);
-renderSlideViewer();
+  const sop = trainingData[sopIdx];
+  if (!sop?.slides?.length) return;
+  viewerSlides = sop.slides; viewerIdx = 0;
+  document.getElementById('slide-viewer-modal').classList.add('open');
+  renderSlideViewer();
 }
-
-function closeSlideViewer() {
-document.getElementById(‘slide-viewer-modal’).classList.remove(‘open’);
-}
+function closeSlideViewer() { document.getElementById('slide-viewer-modal').classList.remove('open'); }
 
 function renderSlideViewer() {
-const viewport = document.getElementById(‘slide-viewport’);
-const progress = document.getElementById(‘slide-progress’);
-
-viewport.innerHTML = viewerSlides.map((s, i) => `<div class="slide ${i === viewerIdx ? 'active' : ''}"> <span class="slide-number">${i + 1} / ${viewerSlides.length}</span> <h2>${escHtml(s.title || 'Untitled Slide')}</h2> <p>${escHtml(s.body || '')}</p> </div>`).join(’’);
-
-progress.innerHTML = viewerSlides.map((_, i) => `<div class="slide-pip ${i === viewerIdx ? 'active' : ''}"></div>`).join(’’);
-
-document.getElementById(‘slide-prev’).disabled = viewerIdx === 0;
-document.getElementById(‘slide-next’).disabled = viewerIdx === viewerSlides.length - 1;
+  document.getElementById('slide-viewport').innerHTML = viewerSlides.map((s, i) =>
+    `<div class="slide ${i === viewerIdx ? 'active' : ''}">
+      <span class="slide-number">${i + 1} / ${viewerSlides.length}</span>
+      <h2>${escHtml(s.title || 'Untitled')}</h2>
+      <p>${escHtml(s.body || '')}</p>
+    </div>`).join('');
+  document.getElementById('slide-progress').innerHTML = viewerSlides.map((_, i) =>
+    `<div class="slide-pip ${i === viewerIdx ? 'active' : ''}"></div>`).join('');
+  document.getElementById('slide-prev').disabled = viewerIdx === 0;
+  document.getElementById('slide-next').disabled = viewerIdx === viewerSlides.length - 1;
 }
 
 function slideNav(dir) {
-const next = viewerIdx + dir;
-if (next < 0 || next >= viewerSlides.length) return;
-
-// Animate exit
-const current = document.querySelector(’.slide.active’);
-if (current) { current.classList.remove(‘active’); current.classList.add(‘exit’); }
-
-viewerIdx = next;
-
-setTimeout(() => renderSlideViewer(), 50);
+  const next = viewerIdx + dir;
+  if (next < 0 || next >= viewerSlides.length) return;
+  const cur = document.querySelector('.slide.active');
+  if (cur) { cur.classList.remove('active'); cur.classList.add('exit'); }
+  viewerIdx = next;
+  setTimeout(renderSlideViewer, 50);
 }
 
-// Keyboard navigation for slides
-document.addEventListener(‘keydown’, (e) => {
-if (!document.getElementById(‘slide-viewer-modal’).classList.contains(‘open’)) return;
-if (e.key === ‘ArrowRight’ || e.key === ’ ’) { e.preventDefault(); slideNav(1); }
-if (e.key === ‘ArrowLeft’) { e.preventDefault(); slideNav(-1); }
-if (e.key === ‘Escape’) closeSlideViewer();
+document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('slide-viewer-modal').classList.contains('open')) return;
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); slideNav(1); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); slideNav(-1); }
+  if (e.key === 'Escape') closeSlideViewer();
 });
 
-function escHtml(s) {
-const d = document.createElement(‘div’);
-d.textContent = s;
-return d.innerHTML;
-}
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 </script>
-
 </body>
 </html>
