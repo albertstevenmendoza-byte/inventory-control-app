@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Cycle Counter — Novus Ops</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#0b0c10;--surface:#16171d;--surface-2:#1e2028;--surface-3:#282a34;--border:#2e3040;--text:#e8e8ee;--text-2:#8e90a0;--text-3:#5c5e70;--accent:#4f8cff;--accent-dim:rgba(79,140,255,.08);--green:#22c55e;--green-bg:rgba(34,197,94,.1);--green-border:rgba(34,197,94,.25);--red:#ef4444;--red-bg:rgba(239,68,68,.1);--red-border:rgba(239,68,68,.25);--amber:#f59e0b;--amber-bg:rgba(245,158,11,.1);--amber-border:rgba(245,158,11,.25);--purple:#a78bfa;--purple-bg:rgba(167,139,250,.1);--cyan:#06b6d4;--cyan-bg:rgba(6,182,212,.1);--radius:14px;--radius-sm:10px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100dvh}
+button{font-family:inherit;border:none;cursor:pointer;-webkit-appearance:none}
+button:active{transform:scale(.96)}
+input,textarea{font-family:inherit}
+.mono{font-family:'JetBrains Mono',monospace}
+.screen{display:none;flex-direction:column;height:100dvh;overflow:hidden}
+.screen.active{display:flex}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:12px;font-size:12px;font-weight:700;z-index:999;pointer-events:none;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+.toast.green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.toast.red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.toast.blue{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(79,140,255,.2)}
+.toast.amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+
+/* ── Header ── */
+.header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.header h1{font-size:15px;font-weight:800}
+.header-sub{font-size:10px;color:var(--text-2);font-weight:600}
+.header-right{display:flex;align-items:center;gap:8px}
+.hdr-btn{background:var(--surface-2);color:var(--text-2);padding:8px 12px;border-radius:var(--radius-sm);font-size:10px;font-weight:700}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+
+/* ── Setup screen ── */
+.setup-content{flex:1;overflow-y:auto;padding:16px;padding-bottom:90px;-webkit-overflow-scrolling:touch}
+.setup-content::-webkit-scrollbar{display:none}
+.stat-row{display:flex;gap:8px;margin-bottom:16px}
+.stat-box{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--accent)}
+.stat-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);margin-top:4px}
+.section-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);margin:18px 0 10px}
+.aisle-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.aisle-btn{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:20px 0;text-align:center;font-size:24px;font-weight:900;color:var(--text);position:relative;overflow:hidden}
+.aisle-btn.done{border-color:var(--green-border);background:var(--green-bg)}
+.aisle-btn .a-count{position:absolute;top:5px;right:7px;font-size:8px;font-weight:700;color:var(--text-3)}
+
+/* ── Counting screen ── */
+.phase-bar{display:flex;gap:2px;padding:10px 16px 0;background:var(--surface)}
+.phase-step{flex:1;height:4px;border-radius:2px;background:var(--surface-3)}
+.phase-step.active{background:var(--accent)}
+.phase-step.done{background:var(--green)}
+.phase-labels{display:flex;justify-content:space-between;padding:4px 16px 10px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);background:var(--surface);border-bottom:1px solid var(--border)}
+.phase-labels span.active{color:var(--accent)}
+.phase-labels span.done{color:var(--green)}
+
+/* Bin nav */
+.bin-nav{display:flex;gap:6px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;align-items:center}
+.nav-btn{width:52px;height:52px;border-radius:12px;background:var(--surface-2);color:var(--text-3);font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.bin-input{flex:1;padding:14px;background:var(--surface-2);border:2px solid var(--border);border-radius:12px;font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--accent);text-transform:uppercase;text-align:center;outline:none}
+.bin-input:focus{border-color:var(--accent)}
+
+/* Bin strip */
+.bin-strip{display:flex;gap:3px;padding:8px 16px;overflow-x:auto;background:var(--surface);scrollbar-width:none;flex-shrink:0}
+.bin-strip::-webkit-scrollbar{display:none}
+.strip-dot{min-width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;background:var(--surface-2);color:var(--text-3);flex-shrink:0}
+.strip-dot.current{min-width:38px;font-size:10px;background:var(--accent);color:#fff}
+.strip-dot.done{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+
+/* HU list */
+.hu-list{flex:1;overflow-y:auto;padding:12px 16px 260px;-webkit-overflow-scrolling:touch}
+.hu-list::-webkit-scrollbar{display:none}
+.hu-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:8px}
+.hu-card.confirmed{border-color:var(--green-border);background:var(--green-bg)}
+.hu-card.missing{border-color:var(--red-border);background:var(--red-bg);opacity:.7}
+.hu-card.adjusted{border-color:var(--amber-border);background:var(--amber-bg)}
+.hu-card.extra{border-color:rgba(6,182,212,.25);background:var(--cyan-bg)}
+.hu-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.hu-id{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-dim);padding:3px 10px;border-radius:6px}
+.hu-badge{font-size:8px;font-weight:800;text-transform:uppercase;padding:3px 10px;border-radius:6px;letter-spacing:.5px}
+.hu-badge.ok{background:var(--green-bg);color:var(--green)}.hu-badge.miss{background:var(--red-bg);color:var(--red)}
+.hu-badge.adj{background:var(--amber-bg);color:var(--amber)}.hu-badge.ext{background:var(--cyan-bg);color:var(--cyan)}
+.hu-meta{display:flex;gap:16px;margin-bottom:6px}
+.meta-label{display:block;font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-3)}
+.meta-val{font-size:13px;font-weight:700;margin-top:1px}
+.hu-desc{font-size:10px;color:var(--text-2);margin-bottom:10px}
+
+/* Qty stepper — 64px targets */
+.qty-row{display:flex;align-items:center;gap:6px;background:var(--surface-2);border-radius:12px;padding:6px;margin-bottom:8px}
+.qty-btn{width:64px;height:64px;border-radius:12px;background:var(--surface-3);font-size:28px;font-weight:900;color:var(--text-3);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.qty-btn.plus{color:var(--accent)}
+.qty-input{flex:1;background:transparent;border:none;text-align:center;font-family:'JetBrains Mono',monospace;font-size:38px;font-weight:700;color:var(--accent);outline:none;min-width:0}
+.qty-input::placeholder{color:var(--surface-3)}
+.sap-hint{text-align:center;font-size:9px;font-weight:700;color:var(--text-3);margin-bottom:8px}
+.hu-actions{display:flex;gap:6px}
+.act-btn{flex:1;padding:18px 0;border-radius:12px;font-size:12px;font-weight:800;text-transform:uppercase;min-height:56px;display:flex;align-items:center;justify-content:center}
+.act-btn.confirm{background:var(--green);color:#fff}
+.act-btn.miss{background:var(--surface-3);color:var(--red);border:1.5px solid var(--red-border)}
+.act-btn.miss.active{background:var(--red);color:#fff}
+.resolved-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface-2);border-radius:var(--radius-sm);margin-bottom:6px}
+.resolved-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text-3)}
+.resolved-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700}
+.resolved-val.match{color:var(--green)}.resolved-val.mismatch{color:var(--amber)}
+.undo-btn{width:100%;padding:8px;background:none;color:var(--text-3);font-size:9px;font-weight:700}
+.note-btn{width:100%;margin-top:6px;padding:10px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:10px;font-weight:700;color:var(--text-3);text-align:left}
+.note-btn.has{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber)}
+.empty-bin{text-align:center;padding:48px 24px;color:var(--text-3)}
+.empty-bin .icon{font-size:40px;margin-bottom:10px;display:block}
+.counted-banner{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--radius);margin-bottom:8px;background:var(--green-bg);border:1px solid var(--green-border)}
+.counted-banner strong{font-size:11px;color:var(--green);font-weight:800}
+.counted-banner small{font-size:9px;color:var(--text-2)}
+
+/* Bottom bar */
+.bottom-bar{position:fixed;bottom:0;left:0;right:0;padding:10px 16px calc(env(safe-area-inset-bottom,14px) + 10px);background:rgba(11,12,16,.92);backdrop-filter:blur(20px);border-top:1px solid var(--border);z-index:50}
+.bottom-row{display:flex;gap:6px;margin-bottom:8px}
+.btn-sec{flex:1;padding:14px 0;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;background:var(--surface-2);color:var(--text-2);border:1.5px solid var(--border);text-align:center;min-height:48px}
+.btn-pri{width:100%;padding:18px 0;border-radius:var(--radius);font-size:14px;font-weight:800;text-transform:uppercase;background:var(--green);color:#fff;min-height:60px;display:flex;align-items:center;justify-content:center}
+.btn-pri.disabled{background:var(--surface-3);color:var(--text-3);pointer-events:none}
+
+/* Setup nav */
+.setup-nav{position:fixed;bottom:0;left:0;right:0;display:flex;gap:6px;padding:10px 16px calc(env(safe-area-inset-bottom,14px) + 10px);background:rgba(11,12,16,.92);backdrop-filter:blur(20px);border-top:1px solid var(--border)}
+.setup-nav .nav-tab{flex:1;padding:14px 0;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;background:var(--surface-2);color:var(--text-2);border:1.5px solid var(--border);text-align:center;min-height:48px}
+.setup-nav .nav-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* Extra form */
+.extra-form{background:var(--surface);border:1.5px dashed var(--border);border-radius:var(--radius);padding:16px;margin-bottom:8px}
+.extra-form h3{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--cyan);margin-bottom:10px}
+.field{width:100%;padding:14px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:12px;font-size:15px;font-weight:600;color:var(--text);outline:none;margin-bottom:6px}
+.field:focus{border-color:var(--accent)}
+.field::placeholder{color:var(--text-3)}
+.field-row{display:flex;gap:6px}
+
+/* Hidden */
+.hidden{display:none !important}
+</style>
+</head>
+<body>
+
+<div id="toast" class="toast"><span id="toast-text"></span></div>
+
+<!-- ═══ SETUP SCREEN ═══ -->
+<div id="screen-setup" class="screen active">
+  <div class="header">
+    <div>
+      <h1>Cycle Counter</h1>
+      <div class="header-sub"><span id="stat-progress">0 / 0</span> bins counted</div>
+    </div>
+    <div class="header-right">
+      <button class="hdr-btn" id="refresh-btn" onclick="refreshAll()">↻ Refresh</button>
+      <div class="sync-dot" id="sync-dot"></div>
+      <button class="hdr-btn" onclick="setName()">👤 <span id="name-display">Set Name</span></button>
+    </div>
+  </div>
+  <div class="setup-content">
+    <div class="stat-row">
+      <div class="stat-box"><div class="stat-val" id="stat-loaded">0</div><div class="stat-label">SAP Items</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat-bins">0</div><div class="stat-label">Bins</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat-done">0</div><div class="stat-label">Done</div></div>
+    </div>
+    <div class="section-title">Select Aisle</div>
+    <div class="aisle-grid" id="aisle-grid"></div>
+  </div>
+  <div class="setup-nav">
+    <button class="nav-tab active">Count</button>
+    <a href="index.html" class="nav-tab" style="text-decoration:none;display:flex;align-items:center;justify-content:center">Home</a>
+  </div>
+</div>
+
+<!-- ═══ COUNTING SCREEN ═══ -->
+<div id="screen-counting" class="screen">
+  <div class="header">
+    <button class="hdr-btn" onclick="backToSetup()">← Back</button>
+    <h1 id="count-bin-title">—</h1>
+    <div class="sync-dot"></div>
+  </div>
+  <div class="phase-bar"><div class="phase-step" id="ph1"></div><div class="phase-step" id="ph2"></div><div class="phase-step" id="ph3"></div></div>
+  <div class="phase-labels"><span id="phl1">Check HUs</span><span id="phl2">Extras</span><span id="phl3">Finalize</span></div>
+  <div class="bin-nav">
+    <button class="nav-btn" onclick="stepBin(-1)">◀</button>
+    <input type="text" class="bin-input" id="bin-input" placeholder="SCAN BIN...">
+    <button class="nav-btn" onclick="stepBin(1)">▶</button>
+  </div>
+  <div class="bin-strip" id="bin-strip"></div>
+  <div class="hu-list" id="hu-list"></div>
+  <div class="bottom-bar" id="bottom-bar">
+    <div class="bottom-row">
+      <button class="btn-sec" onclick="toggleExtra()">+ Found Extra</button>
+      <button class="btn-sec" id="btn-confirm-all" onclick="confirmAll()">✓ Confirm All</button>
+    </div>
+    <button class="btn-pri" id="btn-finalize" onclick="finalizeBin()">Finalize & Next Bin →</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════
+const API_URL = 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+const AISLE_ROWS = 'ABCDEFGHJKLMNP'.split('');
+const FRESH_SKUS = ['3305704','3307506','3307509','3307515','3307518','3307525','3307710','3308356','3309009','3309016','3309017','3309019','3309138','3309139'];
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let sapMaster = JSON.parse(localStorage.getItem('novus_sap') || '[]');
+let binIndex = {};
+let huIndex = new Map();
+let completedBins = new Set(JSON.parse(localStorage.getItem('novus_done') || '[]'));
+let auditorName = localStorage.getItem('novus_name') || '';
+let currentBin = '';
+let currentItems = [];
+let phase = 1;
+let aisleBins = [];
+let binIdx = 0;
+let showingExtra = false;
+let offlineQueue = JSON.parse(localStorage.getItem('novus_queue') || '[]');
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+document.getElementById('name-display').textContent = auditorName || 'Set Name';
+if (sapMaster.length > 0) { buildIndexes(); showSetup(); }
+else { pullCloud(); }
+
+function buildIndexes() {
+  binIndex = {}; huIndex = new Map();
+  sapMaster.forEach(i => {
+    i.sapBin = String(i.sapBin || i.expectedBin || '').trim().toUpperCase();
+    i.hu = String(i.hu || '').trim();
+    i.product = String(i.product || '').trim();
+    i.batch = String(i.batch || '').trim();
+    i.desc = String(i.desc || '');
+    i.sapQty = Number(i.sapQty || i.expectedQty) || 0;
+    if (i.sapBin) { if (!binIndex[i.sapBin]) binIndex[i.sapBin] = []; binIndex[i.sapBin].push(i); }
+    if (i.hu) huIndex.set(i.hu, i);
+  });
+  document.getElementById('stat-loaded').textContent = sapMaster.length;
+  document.getElementById('stat-bins').textContent = Object.keys(binIndex).length;
+  updateDoneCount();
+}
+
+function showSetup() {
+  switchScreen('setup');
+  buildAisleGrid();
+}
+
+async function pullCloud() {
+  try {
+    const res = await fetch(API_URL + '?type=sapdata');
+    const data = await res.json();
+    if (data.sapData && data.sapData.length > 0) {
+      sapMaster = data.sapData;
+      localStorage.setItem('novus_sap', JSON.stringify(sapMaster));
+      buildIndexes();
+      showSetup();
+      toast(`${sapMaster.length} items loaded`, 'blue');
+    }
+  } catch (e) {
+    if (sapMaster.length > 0) { buildIndexes(); showSetup(); }
+    else { toast('No data — upload from Control Center', 'amber'); showSetup(); }
+  }
+}
+
+async function refreshAll() {
+  const btn = document.getElementById('refresh-btn');
+  btn.style.opacity = '.5'; btn.style.pointerEvents = 'none';
+  try {
+    const res = await fetch(API_URL + '?type=sapdata');
+    const data = await res.json();
+    if (data.sapData && data.sapData.length > 0) {
+      sapMaster = data.sapData;
+      localStorage.setItem('novus_sap', JSON.stringify(sapMaster));
+      buildIndexes();
+      buildAisleGrid();
+      toast(`Refreshed · ${sapMaster.length} items`, 'blue');
+    }
+  } catch { toast('Refresh failed', 'red'); }
+  btn.style.opacity = ''; btn.style.pointerEvents = '';
+}
+
+function updateDoneCount() {
+  document.getElementById('stat-done').textContent = completedBins.size;
+  document.getElementById('stat-progress').textContent = `${completedBins.size} / ${Object.keys(binIndex).length}`;
+}
+
+// ══════════════════════════════════════════
+// AISLE GRID
+// ══════════════════════════════════════════
+function buildAisleGrid() {
+  const grid = document.getElementById('aisle-grid');
+  grid.innerHTML = '';
+  AISLE_ROWS.forEach(letter => {
+    const bins = Object.keys(binIndex).filter(b => b.charAt(1) === letter);
+    const done = bins.filter(b => completedBins.has(b)).length;
+    const allDone = bins.length > 0 && done >= bins.length;
+    const btn = document.createElement('button');
+    btn.className = `aisle-btn${allDone ? ' done' : ''}`;
+    btn.innerHTML = `${letter}<span class="a-count">${done}/${bins.length}</span>`;
+    btn.onclick = () => selectAisle(letter);
+    grid.appendChild(btn);
+  });
+}
+
+function selectAisle(letter) {
+  // Build ALL physical bins for the aisle
+  const limit = 'BC'.includes(letter) ? 25 : 38;
+  aisleBins = [];
+  for (let n = 0; n <= limit; n++) {
+    ['A','B','C'].forEach(s => aisleBins.push(`W${letter}${String(n).padStart(2,'0')}${s}`));
+  }
+  binIdx = 0;
+  navigateToBin(aisleBins[0]);
+}
+
+// ══════════════════════════════════════════
+// BIN NAVIGATION
+// ══════════════════════════════════════════
+function navigateToBin(bin) {
+  if (!bin) return;
+  currentBin = bin.toUpperCase();
+  binIdx = aisleBins.indexOf(currentBin);
+  if (binIdx < 0) binIdx = 0;
+  const expected = binIndex[currentBin] || [];
+  currentItems = expected.map(i => ({
+    hu: i.hu, product: i.product, desc: i.desc, batch: i.batch,
+    sapBin: i.sapBin, sapQty: i.sapQty,
+    scannedQty: 0, status: 'pending', isExtra: false, note: '',
+  }));
+  phase = 1; showingExtra = false;
+  switchScreen('counting');
+  document.getElementById('count-bin-title').textContent = currentBin;
+  document.getElementById('bin-input').value = currentBin;
+  renderPhase();
+  renderStrip();
+  renderHUList();
+  updateFinalizeBtn();
+}
+
+function stepBin(dir) {
+  const next = binIdx + dir;
+  if (next >= 0 && next < aisleBins.length) navigateToBin(aisleBins[next]);
+}
+
+function renderStrip() {
+  const strip = document.getElementById('bin-strip');
+  strip.innerHTML = '';
+  // Group by position number
+  const seen = {};
+  aisleBins.forEach(b => {
+    const num = b.substring(2, 4);
+    if (!seen[num]) {
+      seen[num] = true;
+      const isCurrent = currentBin.substring(2, 4) === num;
+      const isDone = aisleBins.filter(x => x.substring(2, 4) === num).some(x => completedBins.has(x));
+      const dot = document.createElement('button');
+      dot.className = `strip-dot${isCurrent ? ' current' : ''}${isDone && !isCurrent ? ' done' : ''}`;
+      dot.textContent = isCurrent ? num : (isDone ? '✓' : num);
+      dot.onclick = () => navigateToBin(`W${currentBin.charAt(1)}${num}A`);
+      strip.appendChild(dot);
+    }
+  });
+  // Scroll current into view
+  setTimeout(() => {
+    const cur = strip.querySelector('.current');
+    if (cur) cur.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }, 50);
+}
+
+function renderPhase() {
+  ['ph1','ph2','ph3'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.className = 'phase-step' + (phase === i + 1 ? ' active' : '') + (phase > i + 1 ? ' done' : '');
+  });
+  ['phl1','phl2','phl3'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.className = (phase === i + 1 ? 'active' : '') + (phase > i + 1 ? 'done' : '');
+  });
+}
+
+// ══════════════════════════════════════════
+// HU LIST RENDERING
+// ══════════════════════════════════════════
+function renderHUList() {
+  const list = document.getElementById('hu-list');
+  list.innerHTML = '';
+
+  if (completedBins.has(currentBin)) {
+    list.innerHTML += `<div class="counted-banner"><span>✅</span><div><strong>Already Counted</strong><small>Counting again replaces results</small></div></div>`;
+  }
+
+  if (currentItems.length === 0 && !showingExtra) {
+    list.innerHTML += `<div class="empty-bin"><span class="icon">📭</span><p>SAP shows this bin as empty</p><p style="color:var(--accent);font-weight:700;font-size:11px;margin-top:6px">Tap "+ Found Extra" if you find anything</p></div>`;
+  }
+
+  // Expected items
+  currentItems.filter(i => !i.isExtra).forEach((item, idx) => {
+    list.innerHTML += renderCard(item, idx);
+  });
+
+  // Extras
+  const extras = currentItems.filter(i => i.isExtra);
+  if (extras.length) {
+    list.innerHTML += `<div class="section-title" style="color:var(--cyan)">🔍 Extra Items Found</div>`;
+    extras.forEach((item) => {
+      const realIdx = currentItems.indexOf(item);
+      list.innerHTML += renderCard(item, realIdx);
+    });
+  }
+
+  // Extra form
+  if (showingExtra) {
+    list.innerHTML += `
+    <div class="extra-form">
+      <h3>🔍 Found Extra Item</h3>
+      <input type="text" class="field mono" id="extra-hu" placeholder="HU number (0 if no label)" oninput="extraLookup()">
+      <div id="extra-autofill"></div>
+      <div class="field-row">
+        <input type="text" class="field" id="extra-product" placeholder="Product #" style="flex:1">
+        <input type="number" inputmode="numeric" class="field mono" id="extra-qty" placeholder="Qty" style="width:90px;text-align:center">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn-sec" onclick="toggleExtra()" style="flex:1">Cancel</button>
+        <button class="act-btn confirm" onclick="addExtra()" style="flex:2">Add Item</button>
+      </div>
+    </div>`;
+  }
+
+  updateFinalizeBtn();
+}
+
+function renderCard(item, idx) {
+  const isOk = item.status === 'confirmed';
+  const isMiss = item.status === 'missing';
+  const isAdj = item.status === 'adjusted';
+  const isPending = item.status === 'pending';
+  const cls = isMiss ? 'missing' : isOk ? 'confirmed' : isAdj ? 'adjusted' : item.isExtra ? 'extra' : '';
+  const badgeHTML = isOk ? '<span class="hu-badge ok">✓ Confirmed</span>' :
+    isMiss ? '<span class="hu-badge miss">✗ Missing</span>' :
+    isAdj ? '<span class="hu-badge adj">± Adjusted</span>' :
+    item.isExtra ? '<span class="hu-badge ext">+ Extra</span>' : '';
+  const qtyMatch = item.scannedQty === item.sapQty;
+
+  let body = '';
+  if (isPending || isAdj) {
+    body = `
+      <div class="qty-row">
+        <button class="qty-btn" onclick="adjustQty(${idx},-1)">−</button>
+        <input type="number" inputmode="numeric" class="qty-input" value="${item.scannedQty || ''}" placeholder="${item.sapQty}" onfocus="this.select()" oninput="setQty(${idx},this.value)">
+        <button class="qty-btn plus" onclick="adjustQty(${idx},1)">+</button>
+      </div>
+      <div class="sap-hint">SAP expects <strong>${item.sapQty}</strong></div>
+      <div class="hu-actions">
+        <button class="act-btn confirm" onclick="confirmHU(${idx})">Confirm ${item.sapQty}</button>
+        <button class="act-btn miss${isMiss?' active':''}" onclick="markMissing(${idx})">Missing</button>
+      </div>`;
+  } else {
+    body = `
+      <div class="resolved-row">
+        <span class="resolved-label">Count</span>
+        <span class="resolved-val ${qtyMatch?'match':'mismatch'}">${item.scannedQty}</span>
+      </div>
+      <button class="undo-btn" onclick="resetHU(${idx})">↺ Undo</button>`;
+  }
+
+  return `<div class="hu-card ${cls}">
+    <div class="hu-top">
+      <span class="hu-id">HU ${item.hu || '—'}</span>
+      ${badgeHTML}
+    </div>
+    <div class="hu-meta">
+      <div><span class="meta-label">Product</span><span class="meta-val">${item.product}</span></div>
+      <div><span class="meta-label">SAP Qty</span><span class="meta-val mono">${item.sapQty}</span></div>
+    </div>
+    ${item.desc ? `<div class="hu-desc">${item.desc}</div>` : ''}
+    ${body}
+    <button class="note-btn${item.note?' has':''}" onclick="addNote(${idx})">📝 ${item.note?item.note.substring(0,30):'Add Note'}</button>
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+// HU ACTIONS
+// ══════════════════════════════════════════
+function confirmHU(idx) {
+  haptic();
+  currentItems[idx].scannedQty = currentItems[idx].scannedQty || currentItems[idx].sapQty;
+  currentItems[idx].status = currentItems[idx].scannedQty === currentItems[idx].sapQty ? 'confirmed' : 'adjusted';
+  checkPhaseAdvance();
+  renderHUList();
+}
+
+function markMissing(idx) {
+  haptic();
+  currentItems[idx].status = currentItems[idx].status === 'missing' ? 'pending' : 'missing';
+  if (currentItems[idx].status === 'missing') currentItems[idx].scannedQty = 0;
+  checkPhaseAdvance();
+  renderHUList();
+}
+
+function adjustQty(idx, delta) {
+  haptic();
+  currentItems[idx].scannedQty = Math.max(0, (currentItems[idx].scannedQty || 0) + delta);
+  currentItems[idx].status = 'adjusted';
+  renderHUList();
+}
+
+function setQty(idx, val) {
+  currentItems[idx].scannedQty = parseFloat(val) || 0;
+  if (currentItems[idx].scannedQty > 0) {
+    currentItems[idx].status = currentItems[idx].scannedQty === currentItems[idx].sapQty ? 'confirmed' : 'adjusted';
+  }
+  updateFinalizeBtn();
+}
+
+function resetHU(idx) {
+  haptic();
+  currentItems[idx].status = 'pending';
+  currentItems[idx].scannedQty = 0;
+  phase = 1; renderPhase();
+  renderHUList();
+}
+
+function confirmAll() {
+  haptic();
+  currentItems.forEach((item, i) => {
+    if (!item.isExtra && item.status === 'pending') {
+      currentItems[i].scannedQty = item.sapQty;
+      currentItems[i].status = 'confirmed';
+    }
+  });
+  checkPhaseAdvance();
+  renderHUList();
+}
+
+function addNote(idx) {
+  const note = prompt('Note:', currentItems[idx].note || '');
+  if (note !== null) { currentItems[idx].note = note; renderHUList(); }
+}
+
+function checkPhaseAdvance() {
+  const expected = currentItems.filter(i => !i.isExtra);
+  if (expected.every(i => i.status !== 'pending') && phase === 1) {
+    phase = 2; renderPhase();
+  }
+}
+
+// ── Extras ──
+function toggleExtra() { showingExtra = !showingExtra; renderHUList(); }
+
+function extraLookup() {
+  const hu = document.getElementById('extra-hu').value.trim();
+  if (hu.length < 6) return;
+  const match = huIndex.get(hu);
+  const fill = document.getElementById('extra-autofill');
+  if (match) {
+    document.getElementById('extra-product').value = match.product;
+    fill.innerHTML = '<span style="font-size:9px;font-weight:700;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:6px;margin-bottom:6px;display:inline-block">Auto-filled from SAP</span>';
+  } else { fill.innerHTML = ''; }
+}
+
+function addExtra() {
+  const hu = document.getElementById('extra-hu').value.trim() || '0';
+  const product = document.getElementById('extra-product').value.trim();
+  const qty = parseFloat(document.getElementById('extra-qty').value) || 0;
+  if (!product || !qty) { toast('Enter product # and qty', 'amber'); return; }
+  currentItems.push({
+    hu, product, desc: 'FOUND (Extra)', batch: '',
+    sapBin: '', sapQty: 0, scannedQty: qty,
+    status: 'confirmed', isExtra: true, note: '',
+  });
+  showingExtra = false;
+  renderHUList();
+  toast('Extra item added', 'blue');
+}
+
+// ══════════════════════════════════════════
+// FINALIZE & SYNC
+// ══════════════════════════════════════════
+function updateFinalizeBtn() {
+  const pending = currentItems.filter(i => i.status === 'pending').length;
+  const btn = document.getElementById('btn-finalize');
+  if (pending > 0) {
+    btn.className = 'btn-pri disabled';
+    btn.textContent = `${pending} item${pending > 1 ? 's' : ''} unchecked`;
+  } else {
+    btn.className = 'btn-pri';
+    btn.textContent = currentItems.length === 0 ? 'Skip Empty Bin →' : 'Finalize & Next Bin →';
+  }
+  // Hide confirm all if all done
+  const allDone = currentItems.filter(i => !i.isExtra).every(i => i.status !== 'pending');
+  document.getElementById('btn-confirm-all').style.display = allDone || currentItems.filter(i=>!i.isExtra).length <= 1 ? 'none' : '';
+}
+
+async function finalizeBin() {
+  if (currentItems.some(i => i.status === 'pending')) return;
+  haptic();
+
+  // Build reconciliation results
+  const items = currentItems.map(i => {
+    let type = 'ok';
+    if (i.status === 'missing') type = 'miss';
+    else if (i.isExtra) type = 'unexpected';
+    else if (i.scannedQty !== i.sapQty) type = 'adj';
+    return {
+      hu: i.hu, product: i.product, desc: i.desc, batch: i.batch,
+      sapBin: i.sapBin, sapQty: i.sapQty,
+      countQty: i.scannedQty, type, note: i.note,
+    };
+  });
+
+  // Enqueue for sync
+  const payload = {
+    action: 'logAudit', user: auditorName || 'Counter',
+    bin: currentBin, items, sessionId: 'S-' + new Date().toISOString().split('T')[0],
+  };
+
+  try {
+    await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+  } catch {
+    offlineQueue.push(payload);
+    localStorage.setItem('novus_queue', JSON.stringify(offlineQueue));
+  }
+
+  completedBins.add(currentBin);
+  localStorage.setItem('novus_done', JSON.stringify([...completedBins]));
+  updateDoneCount();
+
+  // Auto-advance
+  stepBin(1);
+}
+
+// ══════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════
+function switchScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+
+function backToSetup() {
+  switchScreen('setup');
+  buildAisleGrid();
+}
+
+function setName() {
+  const name = prompt('Your name:', auditorName);
+  if (name !== null) {
+    auditorName = name.trim();
+    localStorage.setItem('novus_name', auditorName);
+    document.getElementById('name-display').textContent = auditorName || 'Set Name';
+  }
+}
+
+function toast(msg, color) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-text').textContent = msg;
+  t.className = `toast ${color || 'blue'} show`;
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function haptic() {
+  if (navigator.vibrate) navigator.vibrate(15);
+}
+
+// Flush offline queue periodically
+setInterval(async () => {
+  if (!offlineQueue.length) return;
+  const batch = [...offlineQueue];
+  offlineQueue = [];
+  for (const payload of batch) {
+    try { await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }); }
+    catch { offlineQueue.push(payload); }
+  }
+  localStorage.setItem('novus_queue', JSON.stringify(offlineQueue));
+}, 15000);
+
+// Bin input enter key
+document.getElementById('bin-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') navigateToBin(e.target.value);
+});
+</script>
+</body>
+</html>
