@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Safety Reporter — Novus Ops</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0c10;--surface:#16171d;--surface-2:#1e2028;--surface-3:#282a34;--border:#2e3040;--text:#e8e8ee;--text-2:#8e90a0;--text-3:#5c5e70;--accent:#4f8cff;--accent-dim:rgba(79,140,255,.08);--green:#22c55e;--green-bg:rgba(34,197,94,.1);--red:#ef4444;--red-bg:rgba(239,68,68,.1);--amber:#f59e0b;--amber-bg:rgba(245,158,11,.1);--radius:14px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh}
+button{font-family:inherit;border:none;cursor:pointer}
+button:active{transform:scale(.96)}
+.screen{display:none;flex-direction:column;min-height:100dvh}
+.screen.active{display:flex}
+.header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.header h1{font-size:16px;font-weight:800}
+.hdr-btn{background:var(--surface-2);color:var(--text-2);padding:8px 14px;border-radius:10px;font-size:11px;font-weight:700;text-decoration:none}
+.report-btn{background:var(--red);color:#fff;padding:10px 18px;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase}
+.content{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch}
+.content::-webkit-scrollbar{display:none}
+.field-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);display:block;margin:18px 0 6px}
+.field-label:first-child{margin-top:0}
+.field{width:100%;padding:14px 16px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;font-size:15px;font-weight:600;color:var(--text);outline:none;font-family:inherit}
+.field:focus{border-color:var(--accent)}
+.field::placeholder{color:var(--text-3)}
+textarea.field{resize:none;line-height:1.5}
+
+/* Severity pills */
+.sev-row{display:flex;gap:6px}
+.sev-pill{flex:1;padding:16px 0;border-radius:12px;text-align:center;font-size:10px;font-weight:800;text-transform:uppercase;background:var(--surface-2);color:var(--text-3);border:2px solid transparent;min-height:52px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.sev-pill.active{border-color:var(--sc);color:var(--sc);background:var(--sb)}
+
+/* Photo */
+.photo-row{display:flex;gap:8px;margin-bottom:8px}
+.photo-btn{flex:1;padding:20px 0;border-radius:12px;text-align:center;font-size:11px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;min-height:60px;justify-content:center}
+.photo-btn.cam{background:var(--accent-dim);border:1.5px dashed rgba(79,140,255,.25);color:var(--accent)}
+.photo-btn.gal{background:var(--surface-2);border:1.5px dashed var(--border);color:var(--text-3)}
+.preview-wrap{position:relative;margin-bottom:8px}
+.preview-img{width:100%;border-radius:12px;border:1px solid var(--border);max-height:200px;object-fit:contain;background:var(--surface-2)}
+.preview-remove{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.7);color:#fff;width:30px;height:30px;border-radius:50%;font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center}
+.photo-count{font-size:9px;font-weight:700;color:var(--green);margin-top:4px}
+
+/* Submit */
+.submit-btn{width:100%;margin-top:24px;padding:20px;border-radius:var(--radius);background:var(--red);color:#fff;font-size:14px;font-weight:800;text-transform:uppercase;min-height:60px}
+.submit-btn:disabled{opacity:.5;pointer-events:none}
+
+/* Incident card */
+.inc-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px}
+.inc-top{display:flex;justify-content:space-between;margin-bottom:6px}
+.inc-sev,.inc-status{font-size:8px;font-weight:800;text-transform:uppercase;padding:3px 10px;border-radius:6px}
+.inc-sev.low{background:var(--green-bg);color:var(--green)}.inc-sev.medium{background:var(--amber-bg);color:var(--amber)}
+.inc-sev.high{background:var(--red-bg);color:var(--red)}.inc-sev.critical{background:var(--red-bg);color:#7c2d12;font-weight:900}
+.inc-status.open{background:var(--red-bg);color:var(--red)}.inc-status.resolved{background:var(--green-bg);color:var(--green)}
+.inc-loc{font-size:12px;font-weight:700;margin-bottom:3px}
+.inc-desc{font-size:11px;color:var(--text-2);line-height:1.4}
+.inc-footer{display:flex;justify-content:space-between;margin-top:8px;font-size:9px;color:var(--text-3);font-weight:600}
+.empty{text-align:center;padding:60px 24px;color:var(--text-3)}
+.empty-icon{font-size:42px;display:block;margin-bottom:10px}
+
+/* Success */
+.success{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px}
+.success-icon{font-size:60px;margin-bottom:16px}
+.success h2{font-size:22px;font-weight:900;margin-bottom:6px}
+.success p{color:var(--text-2);font-size:13px}
+
+/* Toast */
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:12px;font-size:12px;font-weight:700;z-index:999;pointer-events:none;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+.toast.green{background:var(--green-bg);color:var(--green);border:1px solid rgba(34,197,94,.25)}
+.toast.red{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+</style>
+</head>
+<body>
+
+<div id="toast" class="toast"><span id="toast-text"></span></div>
+
+<!-- ═══ LIST ═══ -->
+<div id="screen-list" class="screen active">
+  <div class="header">
+    <a href="index.html" class="hdr-btn">← Home</a>
+    <h1>Safety Reports</h1>
+    <button class="report-btn" onclick="showForm()">+ Report</button>
+  </div>
+  <div class="content" id="incident-list"></div>
+</div>
+
+<!-- ═══ FORM ═══ -->
+<div id="screen-form" class="screen">
+  <div class="header">
+    <button class="hdr-btn" onclick="showList()">← Back</button>
+    <h1>Report Incident</h1>
+    <div></div>
+  </div>
+  <div class="content">
+    <label class="field-label">Your Name</label>
+    <input type="text" class="field" id="f-name" placeholder="Your name">
+
+    <label class="field-label">Location *</label>
+    <input type="text" class="field" id="f-location" placeholder="e.g. Aisle F, near bin WF12A">
+
+    <label class="field-label">Photo Evidence</label>
+    <div id="photo-area">
+      <div class="photo-row">
+        <input type="file" accept="image/*" capture="environment" id="cam-input" hidden onchange="handlePhoto(event)">
+        <label for="cam-input" class="photo-btn cam">📷 Camera</label>
+        <input type="file" accept="image/*" id="gal-input" hidden onchange="handlePhoto(event)">
+        <label for="gal-input" class="photo-btn gal">🖼️ Gallery</label>
+      </div>
+    </div>
+    <div id="photo-preview"></div>
+
+    <label class="field-label">Description *</label>
+    <textarea class="field" id="f-desc" rows="4" placeholder="Describe the hazard or incident..."></textarea>
+
+    <label class="field-label">Severity</label>
+    <div class="sev-row" id="sev-row">
+      <button class="sev-pill" data-sev="low" style="--sc:#22c55e;--sb:rgba(34,197,94,.1)" onclick="setSev('low',this)">Low</button>
+      <button class="sev-pill active" data-sev="medium" style="--sc:#f59e0b;--sb:rgba(245,158,11,.1)" onclick="setSev('medium',this)">Medium</button>
+      <button class="sev-pill" data-sev="high" style="--sc:#ef4444;--sb:rgba(239,68,68,.1)" onclick="setSev('high',this)">High</button>
+      <button class="sev-pill" data-sev="critical" style="--sc:#7c2d12;--sb:rgba(239,68,68,.1)" onclick="setSev('critical',this)">Critical</button>
+    </div>
+
+    <label class="field-label">Resolution (what you did to fix it)</label>
+    <textarea class="field" id="f-resolution" rows="3" placeholder="Describe what action was taken..."></textarea>
+
+    <button class="submit-btn" id="submit-btn" onclick="submitIncident()">Submit Report</button>
+  </div>
+</div>
+
+<!-- ═══ SUCCESS ═══ -->
+<div id="screen-success" class="screen">
+  <div class="success">
+    <span class="success-icon">✅</span>
+    <h2>Report Submitted</h2>
+    <p>Your safety report has been logged</p>
+  </div>
+</div>
+
+<script>
+const API_URL = 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+let incidents = [];
+let severity = 'medium';
+let photoBase64 = null;
+
+// ── Init ──
+loadIncidents();
+
+async function loadIncidents() {
+  const list = document.getElementById('incident-list');
+  try {
+    const res = await fetch(API_URL + '?type=safety');
+    const data = await res.json();
+    incidents = data.incidents || [];
+  } catch { incidents = []; }
+  renderList();
+}
+
+function renderList() {
+  const list = document.getElementById('incident-list');
+  if (incidents.length === 0) {
+    list.innerHTML = '<div class="empty"><span class="empty-icon">🦺</span><p>No incidents reported</p></div>';
+    return;
+  }
+  list.innerHTML = incidents.map(i => `
+    <div class="inc-card">
+      <div class="inc-top">
+        <span class="inc-sev ${i.severity}">${i.severity}</span>
+        <span class="inc-status ${i.status}">${i.status}</span>
+      </div>
+      <div class="inc-loc">📍 ${i.location}</div>
+      <div class="inc-desc">${i.description}</div>
+      <div class="inc-footer">
+        <span>👤 ${i.reportedBy}</span>
+        <span>${new Date(i.timestamp).toLocaleDateString()}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showForm() {
+  switchScreen('form');
+  document.getElementById('f-name').value = localStorage.getItem('novus_name') || '';
+}
+
+function showList() { switchScreen('list'); loadIncidents(); }
+
+function setSev(val, el) {
+  severity = val;
+  document.querySelectorAll('.sev-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function handlePhoto(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    photoBase64 = ev.target.result;
+    document.getElementById('photo-preview').innerHTML = `
+      <div class="preview-wrap">
+        <img src="${photoBase64}" class="preview-img">
+        <button class="preview-remove" onclick="removePhoto()">✕</button>
+      </div>`;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+function removePhoto() {
+  photoBase64 = null;
+  document.getElementById('photo-preview').innerHTML = '';
+}
+
+async function submitIncident() {
+  const location = document.getElementById('f-location').value.trim();
+  const description = document.getElementById('f-desc').value.trim();
+  if (!location || !description) { toast('Location and description required', 'red'); return; }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'logSafety',
+        reportedBy: document.getElementById('f-name').value.trim() || 'Anonymous',
+        location, description, severity,
+        resolution: document.getElementById('f-resolution').value.trim(),
+        photoUrl: '', // Photo would need Drive upload — storing base64 in note for now
+      }),
+    });
+    switchScreen('success');
+    setTimeout(() => { showList(); }, 2000);
+  } catch (err) {
+    toast('Failed to submit: ' + err.message, 'red');
+  }
+  btn.disabled = false; btn.textContent = 'Submit Report';
+}
+
+function switchScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+
+function toast(msg, color) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-text').textContent = msg;
+  t.className = `toast ${color} show`;
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
