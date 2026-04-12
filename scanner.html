@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-:root{--bg:#0b0c10;--surface:#16171d;--surface-2:#1e2028;--surface-3:#282a34;--border:#2e3040;--text:#e8e8ee;--text-2:#8e90a0;--text-3:#5c5e70;--accent:#4f8cff;--accent-dim:rgba(79,140,255,.08);--green:#22c55e;--green-bg:rgba(34,197,94,.1);--green-border:rgba(34,197,94,.25);--red:#ef4444;--red-bg:rgba(239,68,68,.1);--red-border:rgba(239,68,68,.25);--amber:#f59e0b;--amber-bg:rgba(245,158,11,.1);--amber-border:rgba(245,158,11,.25);--purple:#a78bfa;--purple-bg:rgba(167,139,250,.1);--cyan:#06b6d4;--cyan-bg:rgba(6,182,212,.1);--radius:14px;--radius-sm:10px}
+:root{--bg:#0f1117;--surface:#181a23;--surface-2:#1f2230;--surface-3:#2a2d3a;--border:#313546;--text:#eceef4;--text-2:#9ba1b5;--text-3:#6c7189;--accent:#5b9aff;--accent-dim:rgba(91,154,255,.1);--green:#34d399;--green-bg:rgba(52,211,153,.1);--green-border:rgba(52,211,153,.25);--red:#f87171;--red-bg:rgba(248,113,113,.1);--red-border:rgba(248,113,113,.25);--amber:#fbbf24;--amber-bg:rgba(251,191,36,.1);--amber-border:rgba(251,191,36,.25);--purple:#a78bfa;--purple-bg:rgba(167,139,250,.1);--cyan:#22d3ee;--cyan-bg:rgba(34,211,238,.1);--radius:14px;--radius-sm:10px}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100dvh}
 button{font-family:inherit;border:none;cursor:pointer;-webkit-appearance:none}
@@ -359,10 +359,15 @@ function updateDoneCount() {
 
 // ══════════════════════════════════════════
 // IDEMPOTENCY KEY GENERATOR
-// Prevents duplicate writes when offline queue replays
+// Must be DETERMINISTIC for the same bin+session so offline replays
+// are caught as duplicates, but unique across different counts.
+// Uses item count + first HU as a fingerprint.
 // ══════════════════════════════════════════
-function makeIdempotencyKey(bin, sessionId) {
-  return `${sessionId}|${bin}|${auditorName}|${Date.now()}`;
+function makeIdempotencyKey(bin, sessionId, items) {
+  const fingerprint = items 
+    ? `${items.length}|${(items[0]?.hu || 'empty')}`
+    : 'nofp';
+  return `${sessionId}|${bin}|${auditorName}|${fingerprint}`;
 }
 
 // ══════════════════════════════════════════
@@ -726,8 +731,6 @@ async function finalizeBin() {
   const items = currentItems.map(i => {
     let type = 'ok';
     if (i.status === 'missing') {
-      // KEY: missing items are sent as 'miss' — the server writes them as 'missing_temp'
-      // They remain placeholders until finalizeReconciliation() is called
       type = 'miss';
     } else if (i.isExtra) {
       if (i.sapBin && i.sapBin !== currentBin) {
@@ -749,36 +752,68 @@ async function finalizeBin() {
   const payload = {
     action: 'logAudit', user: auditorName || 'Counter',
     bin: currentBin, items, sessionId,
-    idempotencyKey: makeIdempotencyKey(currentBin, sessionId),
+    idempotencyKey: makeIdempotencyKey(currentBin, sessionId, items),
   };
 
-  await sendPayload(payload);
+  const success = await sendPayload(payload, 'Bin finalized');
 
-  completedBins.add(currentBin);
-  localStorage.setItem('novus_done', JSON.stringify([...completedBins]));
-  updateDoneCount();
-  stepBin(1);
+  // Only advance if the payload was sent or queued successfully
+  if (success) {
+    completedBins.add(currentBin);
+    localStorage.setItem('novus_done', JSON.stringify([...completedBins]));
+    updateDoneCount();
+    stepBin(1);
+  }
 }
 
 // ══════════════════════════════════════════
 // NETWORK LAYER — Offline-safe with queue
+// Returns true if sent or queued, false on unrecoverable error
 // ══════════════════════════════════════════
 async function sendPayload(payload, successMsg) {
   try {
-    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
-    const result = await res.json();
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },  // GAS requires text/plain to avoid CORS preflight
+      redirect: 'follow',
+      body: JSON.stringify(payload),
+    });
+
+    // GAS can return HTML error pages — guard the JSON parse
+    const text = await res.text();
+    let result;
+    try {
+      result = JSON.parse(text);
+    } catch {
+      console.error('GAS returned non-JSON:', text.substring(0, 200));
+      toast('Server returned invalid response', 'red');
+      // Queue it for retry
+      offlineQueue.push(payload);
+      localStorage.setItem('novus_queue', JSON.stringify(offlineQueue));
+      updateQueueBadge();
+      return true; // queued, so caller can advance
+    }
+
+    if (result.success === false) {
+      toast('Server error: ' + (result.error || 'unknown'), 'red');
+      return false;
+    }
+
     if (result.skipped) {
-      toast('Duplicate — already synced', 'amber');
+      toast('Already synced (duplicate)', 'amber');
     } else if (successMsg) {
       toast(successMsg, 'green');
     }
     isOnline = true; updateSyncDot();
-  } catch {
+    return true;
+  } catch (err) {
+    console.warn('Network error, queuing payload:', err);
     offlineQueue.push(payload);
     localStorage.setItem('novus_queue', JSON.stringify(offlineQueue));
     updateQueueBadge();
     isOnline = false; updateSyncDot();
     toast('Saved offline — will sync later', 'amber');
+    return true; // queued successfully
   }
 }
 
@@ -789,7 +824,19 @@ async function flushQueue() {
   let failed = [];
   for (const payload of batch) {
     try {
-      await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        redirect: 'follow',
+        body: JSON.stringify(payload),
+      });
+      const text = await res.text();
+      try {
+        const result = JSON.parse(text);
+        if (result.success === false) failed.push(payload);
+      } catch {
+        failed.push(payload); // non-JSON response, retry later
+      }
     } catch {
       failed.push(payload);
     }
