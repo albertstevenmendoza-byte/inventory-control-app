@@ -86,9 +86,12 @@ th{padding:10px 12px;font-size:8px;font-weight:800;text-transform:uppercase;lett
 td{padding:7px 12px;border-bottom:1px solid var(--border);font-weight:500}
 tr:hover{background:var(--surface-2)}
 .status-tag{font-size:8px;font-weight:800;text-transform:uppercase;padding:3px 8px;border-radius:5px}
-.status-tag.ok{background:var(--green-bg);color:var(--green)}.status-tag.miss{background:var(--red-bg);color:var(--red)}
-.status-tag.adj{background:var(--amber-bg);color:var(--amber)}.status-tag.unexpected{background:rgba(6,182,212,.1);color:var(--cyan)}
+.status-tag.ok{background:var(--green-bg);color:var(--green)}
+.status-tag.miss{background:var(--red-bg);color:var(--red)}
+.status-tag.adj{background:var(--amber-bg);color:var(--amber)}
+.status-tag.unexpected{background:rgba(6,182,212,.1);color:var(--cyan)}
 .status-tag.move{background:rgba(167,139,250,.1);color:var(--purple)}
+.status-tag.move_adj{background:var(--surface-2);color:var(--purple);border:1px dashed var(--purple)}
 
 .empty-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-3)}
 .empty-main span{font-size:48px;margin-bottom:16px;opacity:.4}
@@ -246,7 +249,7 @@ const AISLE_ROWS = 'ABCDEFGHJKLMNP'.split('');
 let sapMeta = null, report = [], assignments = [];
 let assignAisles = new Set(), pendingProdAssigns = [];
 
-// NEW: Added state to track active filter tab
+// Track active filter tab
 let currentStatusFilter = 'all';
 
 // ══════════════════════════════════════════
@@ -265,8 +268,8 @@ async function fetchData() {
     assignments = data.assignments || [];
     updateFreshness();
     updateMetrics();
-    renderPills(); // Generate the tabs
-    renderTable(); // Render table based on current active tab
+    renderPills();
+    renderTable();
   } catch {}
 }
 
@@ -388,43 +391,46 @@ function updateMetrics() {
 }
 
 // ══════════════════════════════════════════
-// STATUS PILLS (Now Interactive Tabs)
+// STATUS PILLS (Pinned & Interactive Tabs)
 // ══════════════════════════════════════════
 function renderPills() {
-  const counts = {};
+  const categories = [
+    { key: 'all', label: 'ALL ITEMS', color: '' },
+    { key: 'ok', label: 'OK', color: 'green' },
+    { key: 'adj', label: 'ADJUSTMENTS', color: 'amber' },
+    { key: 'move', label: 'MOVEMENTS', color: 'purple' },
+    { key: 'move_adj', label: 'MOVE + ADJ', color: 'purple' },
+    { key: 'miss', label: 'MISSING', color: 'red' },
+    { key: 'unexpected', label: 'NEW (SYS TRIGGER)', color: 'cyan' } 
+  ];
+
+  const counts = { all: report.length };
   report.forEach(r => { counts[r.type] = (counts[r.type] || 0) + 1; });
+
   const el = document.getElementById('status-pills');
   
-  // Add the "All" pill
-  let html = `<div class="pill ${currentStatusFilter === 'all' ? 'active' : ''}" onclick="filterTable('all')">
-                <span class="pill-count" style="color:var(--text)">${report.length}</span>
-                <span class="pill-label">ALL</span>
-              </div>`;
-
-  html += Object.entries(counts).map(([status, count]) => {
-    const colors = { ok: 'green', miss: 'red', adj: 'amber', unexpected: 'cyan', move: 'purple' };
-    const isActive = currentStatusFilter === status ? 'active' : '';
-    return `<div class="pill ${isActive}" onclick="filterTable('${status}')">
-              <span class="pill-count ${colors[status] || ''}">${count}</span>
-              <span class="pill-label">${status}</span>
+  el.innerHTML = categories.map(cat => {
+    const count = counts[cat.key] || 0;
+    const isActive = currentStatusFilter === cat.key ? 'active' : '';
+    const countColor = cat.key === 'all' ? '' : cat.color; 
+    
+    return `<div class="pill ${isActive}" onclick="filterTable('${cat.key}')">
+              <span class="pill-count ${countColor}">${count}</span>
+              <span class="pill-label">${cat.label}</span>
             </div>`;
   }).join('');
-  
-  el.innerHTML = html;
 }
 
-// Triggered when a pill is clicked
 function filterTable(status) {
   currentStatusFilter = status;
-  renderPills(); // Re-render pills to show active state
-  renderTable(); // Re-render table with filtered data
+  renderPills(); 
+  renderTable(); 
 }
 
 // ══════════════════════════════════════════
-// RESULTS TABLE (Now Filterable)
+// RESULTS TABLE
 // ══════════════════════════════════════════
 function renderTable() {
-  // Filter the report array based on active tab
   const filteredReport = currentStatusFilter === 'all' 
     ? report 
     : report.filter(r => r.type === currentStatusFilter);
@@ -438,6 +444,10 @@ function renderTable() {
     return;
   }
   
+  const tagLabels = {
+    ok: 'OK', adj: 'ADJUSTED', move: 'MOVED', move_adj: 'MOVE+ADJ', miss: 'MISSING', unexpected: 'SYS TRIGGER'
+  };
+  
   document.getElementById('table-wrap').innerHTML = `<table>
     <thead><tr>
       <th>Time</th><th>User</th><th>Bin</th><th>HU</th><th>Product</th>
@@ -446,16 +456,18 @@ function renderTable() {
     <tbody>${filteredReport.map(r => {
       const variance = (r.scanQty || 0) - (r.sapQty || 0);
       const vClass = variance < 0 ? 'red' : variance > 0 ? 'amber' : '';
+      const displayTag = tagLabels[r.type] || r.type;
+      
       return `<tr>
         <td style="font-size:9px;color:var(--text-3)">${new Date(r.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</td>
         <td>${r.user || '—'}</td>
         <td class="mono" style="color:var(--accent);font-weight:700">${r.scanBin}</td>
-        <td class="mono" style="font-size:10px">${(r.hu||'').slice(-6)}</td>
+        <td class="mono" style="font-size:10px">${String(r.hu || '').slice(-6)}</td>
         <td>${r.prod || '—'}</td>
         <td class="mono">${r.sapQty}</td>
         <td class="mono">${r.scanQty}</td>
         <td class="mono ${vClass}">${variance > 0 ? '+' : ''}${variance}</td>
-        <td><span class="status-tag ${r.type}">${r.type}</span></td>
+        <td><span class="status-tag ${r.type}">${displayTag}</span></td>
         <td style="font-size:9px;color:var(--text-3);max-width:120px;overflow:hidden;text-overflow:ellipsis">${r.note || ''}</td>
       </tr>`;
     }).join('')}</tbody>
