@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -24,121 +25,123 @@ input,textarea{font-family:inherit}
 .toast.amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
 
 /* ── Header ── */
-.header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(–surface);border-bottom:1px solid var(–border);flex-shrink:0}
 .header h1{font-size:15px;font-weight:800}
-.header-sub{font-size:10px;color:var(--text-2);font-weight:600}
+.header-sub{font-size:10px;color:var(–text-2);font-weight:600}
 .header-right{display:flex;align-items:center;gap:8px}
-.hdr-btn{background:var(--surface-2);color:var(--text-2);padding:8px 12px;border-radius:var(--radius-sm);font-size:10px;font-weight:700}
-.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
-.sync-dot.offline{background:var(--amber);animation:pulse 1.5s infinite}
-.queue-badge{background:var(--amber-bg);color:var(--amber);padding:3px 8px;border-radius:6px;font-size:9px;font-weight:800}
+.hdr-btn{background:var(–surface-2);color:var(–text-2);padding:8px 12px;border-radius:var(–radius-sm);font-size:10px;font-weight:700}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(–green)}
+.sync-dot.offline{background:var(–amber);animation:pulse 1.5s infinite}
+.queue-badge{background:var(–amber-bg);color:var(–amber);padding:3px 8px;border-radius:6px;font-size:9px;font-weight:800}
 @keyframes pulse{50%{opacity:.3}}
 
 /* ── Setup screen ── */
 .setup-content{flex:1;overflow-y:auto;padding:16px;padding-bottom:90px;-webkit-overflow-scrolling:touch}
 .setup-content::-webkit-scrollbar{display:none}
 .stat-row{display:flex;gap:8px;margin-bottom:16px}
-.stat-box{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center}
-.stat-val{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--accent)}
-.stat-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);margin-top:4px}
-.section-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);margin:18px 0 10px}
+.stat-box{flex:1;background:var(–surface);border:1px solid var(–border);border-radius:var(–radius);padding:14px;text-align:center}
+.stat-val{font-family:‘JetBrains Mono’,monospace;font-size:22px;font-weight:700;color:var(–accent)}
+.stat-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(–text-3);margin-top:4px}
+.section-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(–text-3);margin:18px 0 10px}
 .aisle-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.aisle-btn{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:20px 0;text-align:center;font-size:24px;font-weight:900;color:var(--text);position:relative;overflow:hidden}
-.aisle-btn.done{border-color:var(--green-border);background:var(--green-bg)}
-.aisle-btn .a-count{position:absolute;top:5px;right:7px;font-size:8px;font-weight:700;color:var(--text-3)}
+.aisle-btn{background:var(–surface);border:1.5px solid var(–border);border-radius:var(–radius);padding:20px 0;text-align:center;font-size:24px;font-weight:900;color:var(–text);position:relative;overflow:hidden}
+.aisle-btn.done{border-color:var(–green-border);background:var(–green-bg)}
+.aisle-btn .a-count{position:absolute;top:5px;right:7px;font-size:8px;font-weight:700;color:var(–text-3)}
 
 /* ── Counting screen ── */
-.phase-bar{display:flex;gap:2px;padding:10px 16px 0;background:var(--surface)}
-.phase-step{flex:1;height:4px;border-radius:2px;background:var(--surface-3)}
-.phase-step.active{background:var(--accent)}
-.phase-step.done{background:var(--green)}
-.phase-labels{display:flex;justify-content:space-between;padding:4px 16px 10px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);background:var(--surface);border-bottom:1px solid var(--border)}
-.phase-labels span.active{color:var(--accent)}
-.phase-labels span.done{color:var(--green)}
+.phase-bar{display:flex;gap:2px;padding:10px 16px 0;background:var(–surface)}
+.phase-step{flex:1;height:4px;border-radius:2px;background:var(–surface-3)}
+.phase-step.active{background:var(–accent)}
+.phase-step.done{background:var(–green)}
+.phase-labels{display:flex;justify-content:space-between;padding:4px 16px 10px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(–text-3);background:var(–surface);border-bottom:1px solid var(–border)}
+.phase-labels span.active{color:var(–accent)}
+.phase-labels span.done{color:var(–green)}
 
 /* Bin nav */
-.bin-nav{display:flex;gap:6px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;align-items:center}
-.nav-btn{width:52px;height:52px;border-radius:12px;background:var(--surface-2);color:var(--text-3);font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.bin-input{flex:1;padding:14px;background:var(--surface-2);border:2px solid var(--border);border-radius:12px;font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--accent);text-transform:uppercase;text-align:center;outline:none}
-.bin-input:focus{border-color:var(--accent)}
+.bin-nav{display:flex;gap:6px;padding:12px 16px;background:var(–surface);border-bottom:1px solid var(–border);flex-shrink:0;align-items:center}
+.nav-btn{width:52px;height:52px;border-radius:12px;background:var(–surface-2);color:var(–text-3);font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.bin-input{flex:1;padding:14px;background:var(–surface-2);border:2px solid var(–border);border-radius:12px;font-family:‘JetBrains Mono’,monospace;font-size:20px;font-weight:700;color:var(–accent);text-transform:uppercase;text-align:center;outline:none}
+.bin-input:focus{border-color:var(–accent)}
 
 /* Bin strip */
-.bin-strip{display:flex;gap:3px;padding:8px 16px;overflow-x:auto;background:var(--surface);scrollbar-width:none;flex-shrink:0}
+.bin-strip{display:flex;gap:3px;padding:8px 16px;overflow-x:auto;background:var(–surface);scrollbar-width:none;flex-shrink:0}
 .bin-strip::-webkit-scrollbar{display:none}
-.strip-dot{min-width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;background:var(--surface-2);color:var(--text-3);flex-shrink:0}
-.strip-dot.current{min-width:38px;font-size:10px;background:var(--accent);color:#fff}
-.strip-dot.done{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.strip-dot{min-width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;background:var(–surface-2);color:var(–text-3);flex-shrink:0}
+.strip-dot.current{min-width:38px;font-size:10px;background:var(–accent);color:#fff}
+.strip-dot.done{background:var(–green-bg);color:var(–green);border:1px solid var(–green-border)}
 
 /* HU list */
 .hu-list{flex:1;overflow-y:auto;padding:12px 16px 260px;-webkit-overflow-scrolling:touch}
 .hu-list::-webkit-scrollbar{display:none}
-.hu-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:8px}
-.hu-card.confirmed{border-color:var(--green-border);background:var(--green-bg)}
-.hu-card.missing{border-color:var(--red-border);background:var(--red-bg);opacity:.7}
-.hu-card.adjusted{border-color:var(--amber-border);background:var(--amber-bg)}
-.hu-card.extra{border-color:rgba(6,182,212,.25);background:var(--cyan-bg)}
+.hu-card{background:var(–surface);border:1.5px solid var(–border);border-radius:var(–radius);padding:16px;margin-bottom:8px}
+.hu-card.confirmed{border-color:var(–green-border);background:var(–green-bg)}
+.hu-card.missing{border-color:var(–red-border);background:var(–red-bg);opacity:.7}
+.hu-card.adjusted{border-color:var(–amber-border);background:var(–amber-bg)}
+.hu-card.extra{border-color:rgba(6,182,212,.25);background:var(–cyan-bg)}
 .hu-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.hu-id{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-dim);padding:3px 10px;border-radius:6px}
+.hu-id{font-family:‘JetBrains Mono’,monospace;font-size:11px;font-weight:700;color:var(–accent);background:var(–accent-dim);padding:3px 10px;border-radius:6px}
 .hu-badge{font-size:8px;font-weight:800;text-transform:uppercase;padding:3px 10px;border-radius:6px;letter-spacing:.5px}
-.hu-badge.ok{background:var(--green-bg);color:var(--green)}.hu-badge.miss{background:var(--red-bg);color:var(--red)}
-.hu-badge.adj{background:var(--amber-bg);color:var(--amber)}.hu-badge.ext{background:var(--cyan-bg);color:var(--cyan)}
+.hu-badge.ok{background:var(–green-bg);color:var(–green)}.hu-badge.miss{background:var(–red-bg);color:var(–red)}
+.hu-badge.adj{background:var(–amber-bg);color:var(–amber)}.hu-badge.ext{background:var(–cyan-bg);color:var(–cyan)}
 .hu-meta{display:flex;gap:16px;margin-bottom:6px}
-.meta-label{display:block;font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-3)}
+.meta-label{display:block;font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(–text-3)}
 .meta-val{font-size:13px;font-weight:700;margin-top:1px}
-.hu-desc{font-size:10px;color:var(--text-2);margin-bottom:10px}
+.hu-desc{font-size:10px;color:var(–text-2);margin-bottom:10px}
 
 /* Qty stepper */
-.qty-row{display:flex;align-items:center;gap:6px;background:var(--surface-2);border-radius:12px;padding:6px;margin-bottom:8px}
-.qty-btn{width:64px;height:64px;border-radius:12px;background:var(--surface-3);font-size:28px;font-weight:900;color:var(--text-3);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.qty-btn.plus{color:var(--accent)}
-.qty-input{flex:1;background:transparent;border:none;text-align:center;font-family:'JetBrains Mono',monospace;font-size:38px;font-weight:700;color:var(--accent);outline:none;min-width:0}
-.qty-input::placeholder{color:var(--surface-3)}
-.sap-hint{text-align:center;font-size:9px;font-weight:700;color:var(--text-3);margin-bottom:8px}
+.qty-row{display:flex;align-items:center;gap:6px;background:var(–surface-2);border-radius:12px;padding:6px;margin-bottom:8px}
+.qty-btn{width:64px;height:64px;border-radius:12px;background:var(–surface-3);font-size:28px;font-weight:900;color:var(–text-3);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.qty-btn.plus{color:var(–accent)}
+.qty-input{flex:1;background:transparent;border:none;text-align:center;font-family:‘JetBrains Mono’,monospace;font-size:38px;font-weight:700;color:var(–accent);outline:none;min-width:0}
+.qty-input::placeholder{color:var(–surface-3)}
+.sap-hint{text-align:center;font-size:9px;font-weight:700;color:var(–text-3);margin-bottom:8px}
 .hu-actions{display:flex;gap:6px}
 .act-btn{flex:1;padding:18px 0;border-radius:12px;font-size:12px;font-weight:800;text-transform:uppercase;min-height:56px;display:flex;align-items:center;justify-content:center}
-.act-btn.confirm{background:var(--green);color:#fff}
-.act-btn.miss{background:var(--surface-3);color:var(--red);border:1.5px solid var(--red-border)}
-.act-btn.miss.active{background:var(--red);color:#fff}
-.resolved-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface-2);border-radius:var(--radius-sm);margin-bottom:6px}
-.resolved-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text-3)}
-.resolved-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700}
-.resolved-val.match{color:var(--green)}.resolved-val.mismatch{color:var(--amber)}
-.undo-btn{width:100%;padding:8px;background:none;color:var(--text-3);font-size:9px;font-weight:700}
-.note-btn{width:100%;margin-top:6px;padding:10px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:10px;font-weight:700;color:var(--text-3);text-align:left}
-.note-btn.has{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber)}
-.empty-bin{text-align:center;padding:48px 24px;color:var(--text-3)}
+.act-btn.confirm{background:var(–green);color:#fff}
+.act-btn.miss{background:var(–surface-3);color:var(–red);border:1.5px solid var(–red-border)}
+.act-btn.miss.active{background:var(–red);color:#fff}
+.resolved-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(–surface-2);border-radius:var(–radius-sm);margin-bottom:6px}
+.resolved-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(–text-3)}
+.resolved-val{font-family:‘JetBrains Mono’,monospace;font-size:20px;font-weight:700}
+.resolved-val.match{color:var(–green)}.resolved-val.mismatch{color:var(–amber)}
+.undo-btn{width:100%;padding:8px;background:none;color:var(–text-3);font-size:9px;font-weight:700}
+.note-btn{width:100%;margin-top:6px;padding:10px 14px;background:var(–surface-2);border:1px solid var(–border);border-radius:var(–radius-sm);font-size:10px;font-weight:700;color:var(–text-3);text-align:left}
+.note-btn.has{background:var(–amber-bg);border-color:var(–amber-border);color:var(–amber)}
+.empty-bin{text-align:center;padding:48px 24px;color:var(–text-3)}
 .empty-bin .icon{font-size:40px;margin-bottom:10px;display:block}
-.counted-banner{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--radius);margin-bottom:8px;background:var(--green-bg);border:1px solid var(--green-border)}
-.counted-banner strong{font-size:11px;color:var(--green);font-weight:800}
-.counted-banner small{font-size:9px;color:var(--text-2)}
+.counted-banner{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(–radius);margin-bottom:8px;background:var(–green-bg);border:1px solid var(–green-border)}
+.counted-banner strong{font-size:11px;color:var(–green);font-weight:800}
+.counted-banner small{font-size:9px;color:var(–text-2)}
 
 /* Bottom bar */
-.bottom-bar{position:fixed;bottom:0;left:0;right:0;padding:10px 16px calc(env(safe-area-inset-bottom,14px) + 10px);background:rgba(11,12,16,.92);backdrop-filter:blur(20px);border-top:1px solid var(--border);z-index:50}
+.bottom-bar{position:fixed;bottom:0;left:0;right:0;padding:10px 16px calc(env(safe-area-inset-bottom,14px) + 10px);background:rgba(11,12,16,.92);backdrop-filter:blur(20px);border-top:1px solid var(–border);z-index:50}
 .bottom-row{display:flex;gap:6px;margin-bottom:8px}
-.btn-sec{flex:1;padding:14px 0;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;background:var(--surface-2);color:var(--text-2);border:1.5px solid var(--border);text-align:center;min-height:48px}
-.btn-pri{width:100%;padding:18px 0;border-radius:var(--radius);font-size:14px;font-weight:800;text-transform:uppercase;background:var(--green);color:#fff;min-height:60px;display:flex;align-items:center;justify-content:center}
-.btn-pri.disabled{background:var(--surface-3);color:var(--text-3);pointer-events:none}
+.btn-sec{flex:1;padding:14px 0;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;background:var(–surface-2);color:var(–text-2);border:1.5px solid var(–border);text-align:center;min-height:48px}
+.btn-pri{width:100%;padding:18px 0;border-radius:var(–radius);font-size:14px;font-weight:800;text-transform:uppercase;background:var(–green);color:#fff;min-height:60px;display:flex;align-items:center;justify-content:center}
+.btn-pri.disabled{background:var(–surface-3);color:var(–text-3);pointer-events:none}
 
 /* Setup nav */
-.setup-nav{position:fixed;bottom:0;left:0;right:0;display:flex;gap:6px;padding:10px 16px calc(env(safe-area-inset-bottom,14px) + 10px);background:rgba(11,12,16,.92);backdrop-filter:blur(20px);border-top:1px solid var(--border)}
-.setup-nav .nav-tab{flex:1;padding:14px 0;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;background:var(--surface-2);color:var(--text-2);border:1.5px solid var(--border);text-align:center;min-height:48px}
-.setup-nav .nav-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.setup-nav{position:fixed;bottom:0;left:0;right:0;display:flex;gap:6px;padding:10px 16px calc(env(safe-area-inset-bottom,14px) + 10px);background:rgba(11,12,16,.92);backdrop-filter:blur(20px);border-top:1px solid var(–border)}
+.setup-nav .nav-tab{flex:1;padding:14px 0;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;background:var(–surface-2);color:var(–text-2);border:1.5px solid var(–border);text-align:center;min-height:48px}
+.setup-nav .nav-tab.active{background:var(–accent);color:#fff;border-color:var(–accent)}
 
 /* Extra form */
-.extra-form{background:var(--surface);border:1.5px dashed var(--border);border-radius:var(--radius);padding:16px;margin-bottom:8px}
-.extra-form h3{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--cyan);margin-bottom:10px}
-.field{width:100%;padding:14px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:12px;font-size:15px;font-weight:600;color:var(--text);outline:none;margin-bottom:6px}
-.field:focus{border-color:var(--accent)}
-.field::placeholder{color:var(--text-3)}
+.extra-form{background:var(–surface);border:1.5px dashed var(–border);border-radius:var(–radius);padding:16px;margin-bottom:8px}
+.extra-form h3{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(–cyan);margin-bottom:10px}
+.field{width:100%;padding:14px;background:var(–surface-2);border:1.5px solid var(–border);border-radius:12px;font-size:15px;font-weight:600;color:var(–text);outline:none;margin-bottom:6px}
+.field:focus{border-color:var(–accent)}
+.field::placeholder{color:var(–text-3)}
 .field-row{display:flex;gap:6px}
 .hidden{display:none !important}
 </style>
+
 </head>
 <body>
 
 <div id="toast" class="toast"><span id="toast-text"></span></div>
 
 <!-- ═══ SETUP ═══ -->
+
 <div id="screen-setup" class="screen active">
   <div class="header">
     <div>
@@ -160,21 +163,19 @@ input,textarea{font-family:inherit}
       <div class="stat-box"><div class="stat-val" id="stat-done">0</div><div class="stat-label">Done</div></div>
     </div>
 
-    <div class="section-title">Count By Product</div>
-    <div style="display:flex; gap:8px; margin-bottom: 24px;">
-      <input type="text" id="product-search" class="field mono" placeholder="Enter Product #..." style="flex:1; padding:12px; border-radius:12px; background:var(--surface); border:1px solid var(--border); color:var(--accent); font-weight:700; outline:none;">
-      <button class="hdr-btn" style="background:var(--accent); color:#fff; font-size:12px; padding:0 16px;" onclick="searchProduct()">Search</button>
-    </div>
-    
-    <div class="section-title">Select Aisle</div>
-    <div class="aisle-grid" id="aisle-grid"></div>
+```
+<div class="section-title">Count By Product</div>
+<div style="display:flex; gap:8px; margin-bottom: 24px;">
+  <input type="text" id="product-search" class="field mono" placeholder="Enter Product #..." style="flex:1; padding:12px; border-radius:12px; background:var(--surface); border:1px solid var(--border); color:var(--accent); font-weight:700; outline:none;">
+  <button class="hdr-btn" style="background:var(--accent); color:#fff; font-size:12px; padding:0 16px;" onclick="searchProduct()">Search</button>
+</div>
 
-    <div class="section-title" style="margin-top:24px;">Ad-Hoc Actions</div>
-    <button class="btn-sec" style="width:100%; padding:16px; border-color:var(--purple); color:var(--purple); margin-bottom:16px;" onclick="showQuickMove()">
-      🔄 Quick Move (Out of Cycle)
-    </button>
+<div class="section-title">Select Aisle</div>
+<div class="aisle-grid" id="aisle-grid"></div>
+```
+
   </div>
-  
+
   <div class="setup-nav">
     <button class="nav-tab active">Count</button>
     <a href="index.html" class="nav-tab" style="text-decoration:none;display:flex;align-items:center;justify-content:center">Home</a>
@@ -182,6 +183,7 @@ input,textarea{font-family:inherit}
 </div>
 
 <!-- ═══ COUNTING ═══ -->
+
 <div id="screen-counting" class="screen">
   <div class="header">
     <button class="hdr-btn" onclick="backToSetup()">← Back</button>
@@ -207,11 +209,12 @@ input,textarea{font-family:inherit}
 </div>
 
 <!-- ═══ QUICK MOVE MODAL ═══ -->
+
 <div id="modal-move" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.8); backdrop-filter:blur(5px); z-index:100; align-items:center; justify-content:center; padding:20px;">
   <div style="background:var(--surface); width:100%; max-width:400px; padding:20px; border-radius:var(--radius); border:1px solid var(--purple);">
-    <h3 style="color:var(--purple); font-size:16px; font-weight:800; margin-bottom:16px;">🔄 Quick Move Item</h3>
+    <h3 style="color:var(--purple); font-size:16px; font-weight:800; margin-bottom:16px;">🔄 Move Item to Another Bin</h3>
     <label style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);display:block;margin-bottom:6px">Scan / Enter HU</label>
-    <input type="text" id="qm-hu" class="field mono" placeholder="HU Number" oninput="lookupQuickMove()" style="margin-bottom:0;">
+    <input type="text" id="qm-hu" class="field mono" placeholder="HU Number" style="margin-bottom:0;" readonly>
     <div id="qm-info" style="margin:8px 0 16px; font-size:11px; color:var(--text-2); min-height:40px; background:var(--surface-2); padding:8px; border-radius:8px;">
       Enter HU to load SAP info...
     </div>
@@ -233,6 +236,7 @@ input,textarea{font-family:inherit}
 </div>
 
 <script src="novus-settings.js"></script>
+
 <script>
 // ══════════════════════════════════════════
 // CONFIG
@@ -623,39 +627,15 @@ function checkPhaseAdvance() {
   }
 }
 
-// ── Move Modal ──
-function showQuickMove() {
-  activeMoveIdx = -1;
-  document.getElementById('qm-hu').value = '';
-  document.getElementById('qm-bin').value = '';
-  document.getElementById('qm-qty').value = '';
-  document.getElementById('qm-info').innerHTML = 'Enter HU to load SAP info...';
-  document.getElementById('modal-move').style.display = 'flex';
-}
-
+// ── Move Modal (in-cycle only) ──
 function openMoveModal(idx) {
   activeMoveIdx = idx;
   const item = currentItems[idx];
   document.getElementById('qm-hu').value = item.hu;
   document.getElementById('qm-qty').value = item.scannedQty || item.sapQty || 0;
   document.getElementById('qm-bin').value = '';
-  document.getElementById('qm-info').innerHTML = `<span style="color:var(--accent); font-weight:800;">Moving from ${currentBin}</span><br>Product: ${item.product}`;
+  document.getElementById('qm-info').innerHTML = `<span style="color:var(--accent); font-weight:800;">Moving from ${currentBin}</span><br>Product: ${item.product} · SAP Qty: ${item.sapQty}`;
   document.getElementById('modal-move').style.display = 'flex';
-}
-
-function lookupQuickMove() {
-  if (activeMoveIdx > -1) return;
-  const hu = document.getElementById('qm-hu').value.trim();
-  const info = document.getElementById('qm-info');
-  if (hu.length < 6) { info.innerHTML = 'Enter HU to load SAP info...'; return; }
-  const match = huIndex.get(hu);
-  if (match) {
-    info.innerHTML = `<span style="color:var(--green); font-weight:800;">✓ Found in SAP</span><br>Product: ${match.product}<br>Expected Bin: <strong class="mono" style="color:var(--accent)">${match.sapBin}</strong> | Qty: <strong class="mono">${match.sapQty}</strong>`;
-    document.getElementById('qm-qty').value = match.sapQty;
-  } else {
-    info.innerHTML = `<span style="color:var(--amber); font-weight:800;">⚠ Not found in SAP</span><br>Will be logged as unexpected.`;
-    document.getElementById('qm-qty').value = '';
-  }
 }
 
 async function submitQuickMove() {
@@ -664,31 +644,23 @@ async function submitQuickMove() {
   const scanQty = parseFloat(document.getElementById('qm-qty').value);
 
   if (!hu || !scanBin || isNaN(scanQty)) { toast('Fill all fields', 'amber'); return; }
+  if (activeMoveIdx < 0) { toast('No item selected for move', 'red'); return; }
 
-  let type = 'unexpected', sapBin = '', sapQty = 0, product = 'UNKNOWN', desc = 'Ad-Hoc Move', batch = '';
+  const item = currentItems[activeMoveIdx];
+  const sapBin = item.sapBin, sapQty = item.sapQty, product = item.product, desc = item.desc, batch = item.batch;
+  const type = scanQty === sapQty ? 'move' : 'move_adj';
 
-  if (activeMoveIdx > -1) {
-    const item = currentItems[activeMoveIdx];
-    sapBin = item.sapBin; sapQty = item.sapQty; product = item.product; desc = item.desc; batch = item.batch;
-    type = scanQty === sapQty ? 'move' : 'move_adj';
-    
-    if (item.isExtra) { currentItems.splice(activeMoveIdx, 1); }
-    else { item.scannedQty = 0; item.status = 'missing'; item.note = `Moved to ${scanBin}`; }
-    renderHUList(); checkPhaseAdvance();
-  } else {
-    const match = huIndex.get(hu);
-    if (match) {
-      sapBin = match.sapBin; sapQty = match.sapQty; product = match.product; desc = match.desc; batch = match.batch;
-      type = scanBin !== sapBin ? (scanQty === sapQty ? 'move' : 'move_adj') : (scanQty === sapQty ? 'ok' : 'adj');
-    }
-  }
+  // Update the current count screen state
+  if (item.isExtra) { currentItems.splice(activeMoveIdx, 1); }
+  else { item.scannedQty = 0; item.status = 'missing'; item.note = `Moved to ${scanBin}`; }
+  renderHUList(); checkPhaseAdvance();
 
-  const sessionId = (activeMoveIdx > -1 ? 'MOVE-' : 'QM-') + new Date().toISOString().split('T')[0];
+  const sessionId = 'MOVE-' + new Date().toISOString().split('T')[0];
   const payload = {
     action: 'logAudit', user: auditorName || 'Counter',
     bin: scanBin, sessionId,
     idempotencyKey: makeIdempotencyKey(scanBin, sessionId),
-    items: [{ hu, product, desc, batch, sapBin, sapQty, countQty: scanQty, type, note: 'Logged via Quick Move' }]
+    items: [{ hu, product, desc, batch, sapBin, sapQty, countQty: scanQty, type, note: `Moved from ${currentBin}` }]
   };
 
   document.getElementById('modal-move').style.display = 'none';
@@ -878,5 +850,6 @@ document.getElementById('bin-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') navigateToBin(e.target.value);
 });
 </script>
+
 </body>
 </html>
