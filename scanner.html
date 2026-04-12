@@ -202,8 +202,112 @@ input,textarea{font-family:inherit}
     <button class="btn-pri" id="btn-finalize" onclick="finalizeBin()">Finalize & Next Bin →</button>
   </div>
 </div>
-
+<div id="modal-move" class="toast" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.8); backdrop-filter:blur(5px); z-index:100; align-items:center; justify-content:center; opacity:1; pointer-events:auto; transform:none; left:0; padding:20px; border-radius:0;">
+  <div style="background:var(--surface); width:100%; max-width:400px; padding:20px; border-radius:var(--radius); border:1px solid var(--purple);">
+    <h3 style="color:var(--purple); font-size:16px; font-weight:800; margin-bottom:16px;">🔄 Quick Move Item</h3>
+    
+    <label class="field-label">Scan / Enter HU</label>
+    <input type="text" id="qm-hu" class="field mono" placeholder="HU Number" oninput="lookupQuickMove()" style="margin-bottom:0;">
+    
+    <div id="qm-info" style="margin:8px 0 16px; font-size:11px; color:var(--text-2); min-height:40px; background:var(--surface-2); padding:8px; border-radius:8px;">
+      Enter HU to load SAP info...
+    </div>
+    
+    <div style="display:flex; gap:8px;">
+      <div style="flex:2;">
+        <label class="field-label">Found In Bin</label>
+        <input type="text" id="qm-bin" class="field mono" placeholder="e.g. WA12A" style="text-transform:uppercase;">
+      </div>
+      <div style="flex:1;">
+        <label class="field-label">Actual Qty</label>
+        <input type="number" inputmode="numeric" id="qm-qty" class="field mono" placeholder="Qty">
+      </div>
+    </div>
+    
+    <div style="display:flex; gap:8px; margin-top:24px;">
+      <button class="btn-sec" onclick="document.getElementById('modal-move').style.display='none'" style="flex:1;">Cancel</button>
+      <button class="act-btn" style="flex:2; background:var(--purple); color:#fff; border:none;" onclick="submitQuickMove()">Log Movement</button>
+    </div>
+  </div>
+</div>
 <script>
+  // ══════════════════════════════════════════
+// QUICK MOVE (AD-HOC)
+// ══════════════════════════════════════════
+function showQuickMove() {
+  document.getElementById('qm-hu').value = '';
+  document.getElementById('qm-bin').value = '';
+  document.getElementById('qm-qty').value = '';
+  document.getElementById('qm-info').innerHTML = 'Enter HU to load SAP info...';
+  document.getElementById('modal-move').style.display = 'flex';
+}
+
+function lookupQuickMove() {
+  const hu = document.getElementById('qm-hu').value.trim();
+  const info = document.getElementById('qm-info');
+  if (hu.length < 6) { info.innerHTML = 'Enter HU to load SAP info...'; return; }
+  
+  const match = huIndex.get(hu);
+  if (match) {
+    info.innerHTML = `<span style="color:var(--green); font-weight:800;">✓ Found in SAP</span><br>Product: ${match.product}<br>Expected Bin: <strong class="mono" style="color:var(--accent)">${match.sapBin}</strong> | Expected Qty: <strong class="mono">${match.sapQty}</strong>`;
+    document.getElementById('qm-qty').value = match.sapQty; // Default to expected qty
+  } else {
+    info.innerHTML = `<span style="color:var(--amber); font-weight:800;">⚠ Not found in SAP</span><br>This will be logged as an unexpected item.`;
+    document.getElementById('qm-qty').value = '';
+  }
+}
+
+async function submitQuickMove() {
+  const hu = document.getElementById('qm-hu').value.trim();
+  const scanBin = document.getElementById('qm-bin').value.trim().toUpperCase();
+  const scanQty = parseFloat(document.getElementById('qm-qty').value);
+
+  if (!hu || !scanBin || isNaN(scanQty)) {
+    toast('Please fill all fields', 'amber');
+    return;
+  }
+
+  const match = huIndex.get(hu);
+  let type = 'unexpected';
+  let sapBin = '';
+  let sapQty = 0;
+  let product = match ? match.product : 'UNKNOWN';
+
+  // Apply Business Logic
+  if (match) {
+    sapBin = match.sapBin;
+    sapQty = match.sapQty;
+    
+    if (scanBin !== sapBin) {
+      type = scanQty === sapQty ? 'move' : 'move_adj';
+    } else {
+      type = scanQty === sapQty ? 'ok' : 'adj';
+    }
+  }
+
+  const payload = {
+    action: 'logAudit', 
+    user: auditorName || 'Counter',
+    bin: scanBin, 
+    sessionId: 'QM-' + new Date().toISOString().split('T')[0],
+    items: [{
+      hu, product, desc: match ? match.desc : 'Ad-Hoc Move', batch: match ? match.batch : '',
+      sapBin, sapQty, countQty: scanQty, type, note: 'Logged via Quick Move'
+    }]
+  };
+
+  document.getElementById('modal-move').style.display = 'none';
+  toast('Logging movement...', 'blue');
+
+  try {
+    await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+    toast('Movement logged successfully', 'green');
+  } catch {
+    offlineQueue.push(payload);
+    localStorage.setItem('novus_queue', JSON.stringify(offlineQueue));
+    toast('Saved offline. Will sync later.', 'amber');
+  }
+}
 // ══════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════
