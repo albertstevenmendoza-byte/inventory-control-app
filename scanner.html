@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Scanner — Novus Ops</title>
+<title>Cycle Counter — Novus Ops</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -18,28 +18,30 @@
   --green:#34d399;--green-bg:rgba(52,211,153,.1);
   --red:#f87171;--red-bg:rgba(248,113,113,.1);
   --amber:#fbbf24;--amber-bg:rgba(251,191,36,.1);
+  --purple:#a78bfa;--purple-bg:rgba(167,139,250,.1);
   --radius:14px;
 }
 * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
 body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100dvh; }
 
-/* Global Toast matching your other pages */
-.toast { position:fixed; top:16px; left:50%; transform:translateX(-50%); padding:10px 20px; border-radius:12px; font-size:12px; font-weight:700; z-index:9999; pointer-events:none; opacity:0; transition:opacity .3s; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+/* Global Toast */
+.toast { position:fixed; top:16px; left:50%; transform:translateX(-50%); padding:10px 20px; border-radius:12px; font-size:12px; font-weight:700; z-index:99999; pointer-events:none; opacity:0; transition:opacity .3s; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
 .toast.show { opacity:1; }
 .toast.green { background:var(--green-bg); color:var(--green); border:1px solid rgba(52,211,153,.25); }
 .toast.red { background:var(--red-bg); color:var(--red); border:1px solid rgba(248,113,113,.25); }
 .toast.amber { background:var(--amber-bg); color:var(--amber); border:1px solid rgba(251,191,36,.25); }
 .toast.blue { background:var(--accent-dim); color:var(--accent); border:1px solid rgba(91,154,255,.25); }
 
-/* Utility classes for React to use */
-.hdr-btn { background:var(--surface-2); color:var(--text-2); padding:8px 14px; border-radius:10px; font-size:11px; font-weight:700; text-decoration:none; border:none; cursor:pointer; font-family:inherit; }
+.hdr-btn { background:var(--surface-2); color:var(--text-2); padding:8px 14px; border-radius:10px; font-size:11px; font-weight:700; text-decoration:none; border:none; cursor:pointer; font-family:inherit; transition:background .2s; }
 .hdr-btn:hover { background:var(--surface-3); color:var(--text); }
 </style>
 </head>
 <body>
 
 <div id="toast" class="toast"><span id="toast-text"></span></div>
-<div id="root"></div> <script>
+<div id="root"></div>
+
+<script>
 const NovusSettings = (() => {
   const STORAGE_KEY = 'novus_settings';
   const DEFAULTS = { userName: '', theme: 'dark', pollInterval: 10, hapticFeedback: true, compactMode: false };
@@ -51,6 +53,7 @@ const NovusSettings = (() => {
     '--green': '#059669', '--green-bg': 'rgba(5,150,105,.08)',
     '--red': '#dc2626', '--red-bg': 'rgba(220,38,38,.07)',
     '--amber': '#b45309', '--amber-bg': 'rgba(180,83,9,.07)',
+    '--purple': '#7c3aed', '--purple-bg': 'rgba(124,58,237,.07)',
   };
 
   const DARK_VARS = {
@@ -60,6 +63,7 @@ const NovusSettings = (() => {
     '--green': '#34d399', '--green-bg': 'rgba(52,211,153,.1)',
     '--red': '#f87171', '--red-bg': 'rgba(248,113,113,.1)',
     '--amber': '#fbbf24', '--amber-bg': 'rgba(251,191,36,.1)',
+    '--purple': '#a78bfa', '--purple-bg': 'rgba(167,139,250,.1)',
   };
 
   function loadAll() {
@@ -69,10 +73,13 @@ const NovusSettings = (() => {
   function saveAll(s) { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
 
   let _cache = loadAll();
+  const legacyName = localStorage.getItem('novus_name');
+  if (legacyName && !_cache.userName) { _cache.userName = legacyName; saveAll(_cache); }
 
   function get(key) { return _cache[key] !== undefined ? _cache[key] : DEFAULTS[key]; }
   function set(key, val) {
     _cache[key] = val; saveAll(_cache);
+    if (key === 'userName') localStorage.setItem('novus_name', val);
     if (key === 'theme') applyTheme();
   }
   function getUser() { return get('userName') || ''; }
@@ -107,7 +114,6 @@ const NovusSettings = (() => {
       </div>`;
     document.body.appendChild(overlay);
     
-    // Injecting standard modal styles
     const style = document.createElement('style');
     style.textContent = `
       #novus-settings-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:99999;align-items:center;justify-content:center;padding:20px}
@@ -157,7 +163,6 @@ const NovusSettings = (() => {
   return { get, set, getUser, applyTheme, openModal, closeModal, _toggleTheme, _save };
 })();
 
-// Global Toast function
 window.toast = function(msg, color = 'blue') {
   const t = document.getElementById('toast');
   document.getElementById('toast-text').textContent = msg;
@@ -187,7 +192,6 @@ const generateBins = (aisle) => {
   return bins;
 };
 
-// ─── ICONS ───────────────────────────────────────────────────────────
 const Icon = ({name, size=20}) => {
   const icons = {
     search: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>,
@@ -205,7 +209,6 @@ const Icon = ({name, size=20}) => {
   return icons[name] || null;
 };
 
-// ─── MAIN APP ────────────────────────────────────────────────────────
 function CycleCounter() {
   const [sapData, setSapData] = useState({});
   const [mode, setMode] = useState("idle"); 
@@ -224,16 +227,15 @@ function CycleCounter() {
   const [ghostPrompt, setGhostPrompt] = useState(null);
   const scanRef = useRef(null);
 
-  // Use the global toast bridging to React
   const notify = useCallback((msg, type="info") => {
     let color = 'blue';
     if(type === 'success') color = 'green';
     if(type === 'error') color = 'red';
     if(type === 'warning') color = 'amber';
-    window.toast(msg, color);
+    if (window.toast) window.toast(msg, color);
   }, []);
 
-  // ─── FETCH LIVE SAP DATA ──────────────────────────────────────────
+  // ─── LIVE FETCH ───────────────────────────────────────────────────
   useEffect(() => {
     const fetchSAP = async () => {
       try {
@@ -263,7 +265,7 @@ function CycleCounter() {
     fetchSAP();
   }, [notify]);
 
-  // ─── DERIVED DATA ────────────────────────────────────────────────
+  // ─── DERIVED DATA ─────────────────────────────────────────────────
   const currentBins = useMemo(() => {
     if (mode === "aisle" && selectedAisle) return generateBins(selectedAisle);
     return [];
@@ -290,6 +292,7 @@ function CycleCounter() {
     return grouped;
   }, [sapData]);
 
+  // ─── CONFLICT RESOLUTION ENGINE ───────────────────────────────────
   const resolveState = useCallback((hu, foundBin) => {
     const sapRecord = sapData[hu];
     if (!sapRecord) return "GHOST";
@@ -301,7 +304,7 @@ function CycleCounter() {
     return records[hu]?.state === "MOVEMENT";
   }, [records]);
 
-  // ─── SCAN HANDLER ─────────────────────────────────────────────────
+  // ─── SCAN HANDLERS ────────────────────────────────────────────────
   const handleScan = useCallback((inputHU, contextBin) => {
     const hu = inputHU.trim();
     if (!hu) return;
@@ -335,7 +338,6 @@ function CycleCounter() {
     scanRef.current?.focus();
   }, [resolveState, sapData, notify]);
 
-  // ─── FINALIZE BIN & PUSH TO SCRIPT ──────────────────────────────
   const finalizeBin = useCallback(async (bin) => {
     const expected = Object.values(sapData).filter(h => h.expectedBin === bin);
     const newRecords = { ...records };
@@ -400,9 +402,9 @@ function CycleCounter() {
     } else {
       notify(`Bin ${bin} empty/skipped.`, "info");
     }
-
   }, [sapData, records, checkMovementConflict, notify]);
 
+  // ─── GHOST LOGIC ──────────────────────────────────────────────────
   const acceptGhostAudit = useCallback(() => {
     if (!ghostPrompt) return;
     setGhostItems(prev => [...prev, ghostPrompt]);
@@ -419,6 +421,7 @@ function CycleCounter() {
     notify("Ghost item logged", "info");
   }, [ghostPrompt, notify]);
 
+  // ─── FRESH LOGIC ──────────────────────────────────────────────────
   const updateFreshCount = useCallback((material, bin, delta) => {
     setFreshCounts(prev => {
       const existing = prev[material] || { locations: [], totalQty: 0 };
@@ -436,9 +439,9 @@ function CycleCounter() {
     });
   }, []);
 
-  const addFreshScan = useCallback((material, bin) => {
+  const addFreshScan = useCallback((material, bin, amount = 1) => {
     if (!bin.trim()) return;
-    updateFreshCount(material, bin.trim().toUpperCase(), 1);
+    updateFreshCount(material, bin.trim().toUpperCase(), amount);
   }, [updateFreshCount]);
 
   const launchMode = useCallback((newMode, payload) => {
@@ -451,6 +454,12 @@ function CycleCounter() {
     else { setMode("idle"); }
   }, []);
 
+  const handleModeSearch = useCallback((val) => {
+    if (val.toUpperCase() === "FRESH") { launchMode("fresh"); setProductSearch(""); return; }
+    setProductSearch(val);
+  }, [launchMode]);
+
+  // ─── REPORTS ──────────────────────────────────────────────────────
   const reportData = useMemo(() => {
     const all = Object.values(records);
     return {
@@ -473,13 +482,12 @@ function CycleCounter() {
     });
   }, [freshSAPData, freshCounts]);
 
-  const handleModeSearch = useCallback((val) => {
-    if (val.toUpperCase() === "FRESH") { launchMode("fresh"); setProductSearch(""); return; }
-    setProductSearch(val);
-  }, [launchMode]);
 
-  // ─── MODALS & UI COMPONENTS ───────────────────────────────────────
-  const GhostModal = () => {
+  // ═════════════════════════════════════════════════════════════════════
+  // UI SCREENS
+  // ═════════════════════════════════════════════════════════════════════
+
+  const GhostModalUI = () => {
     if (!ghostPrompt) return null;
     return (
       <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9998, padding: 20 }}>
@@ -491,7 +499,7 @@ function CycleCounter() {
           </p>
           <p style={{ color: "var(--amber)", fontSize: 13, margin: "0 0 24px", fontWeight: 500 }}>This item does not exist in the SAP system upload.</p>
           <div style={{ display: "flex", gap: 12 }}>
-            <button onClick={acceptGhostAudit} style={{ flex: 1, padding: "14px", borderRadius: 10, border: "none", background: "var(--accent)", color: "#fff", fontWeight: 700, cursor: "pointer" }}>Start Product Audit</button>
+            <button onClick={acceptGhostAudit} style={{ flex: 1, padding: "14px", borderRadius: 10, border: "none", background: "var(--accent)", color: "#fff", fontWeight: 700, cursor: "pointer" }}>Product Audit</button>
             <button onClick={dismissGhost} style={{ flex: 1, padding: "14px", borderRadius: 10, border: "2px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", fontWeight: 600, cursor: "pointer" }}>Log & Skip</button>
           </div>
         </div>
@@ -517,7 +525,7 @@ function CycleCounter() {
       <div style={{ position: "relative", marginBottom: 24, background: "var(--surface)", borderRadius: 14, border: "2px solid var(--border)", padding: "4px" }}>
         <div style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "var(--text-3)" }}><Icon name="search" size={18} /></div>
         <input value={productSearch} onChange={e => handleModeSearch(e.target.value)} placeholder='Search product # or type "FRESH"'
-          style={{ width: "100%", padding: "14px 14px 14px 44px", border: "none", background: "transparent", fontSize: 16, color: "var(--text)", outline: "none", boxSizing: "border-box" }}
+          style={{ width: "100%", padding: "14px 14px 14px 44px", border: "none", background: "transparent", fontSize: 16, color: "var(--text)", outline: "none", boxSizing: "border-box", fontFamily: "var(--font-mono)" }}
           onKeyDown={e => {
             if (e.key === "Enter" && productSearch.trim()) {
               const mat = productSearch.trim();
@@ -530,12 +538,12 @@ function CycleCounter() {
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <button onClick={() => document.getElementById("aisle-select").classList.toggle("open")} style={{ display: "flex", alignItems: "center", gap: 16, padding: "18px 20px", background: "var(--surface)", border: "2px solid var(--border)", borderRadius: 14, cursor: "pointer", width: "100%", textAlign: "left" }}>
+        <button onClick={() => document.getElementById("aisle-select").classList.toggle("hidden")} style={{ display: "flex", alignItems: "center", gap: 16, padding: "18px 20px", background: "var(--surface)", border: "2px solid var(--border)", borderRadius: 14, cursor: "pointer", width: "100%", textAlign: "left" }}>
           <div style={{ width: 48, height: 48, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--accent-dim)", color: "var(--accent)", flexShrink: 0 }}><Icon name="grid" size={24}/></div>
           <div><div style={{ fontWeight: 700, color: "var(--text)", fontSize: 16 }}>Aisle Audit</div><div style={{ color: "var(--text-2)", fontSize: 13, marginTop: 2 }}>Sequential bin-by-bin audit</div></div>
         </button>
 
-        <div id="aisle-select" style={{ display: "none" }}>
+        <div id="aisle-select" className="hidden" style={{ transition: "all 0.2s" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, padding: "8px 0" }}>
             {AISLES.map(a => (
               <button key={a} onClick={() => launchMode("aisle", a)} style={{ padding: "14px 8px", borderRadius: 10, border: "2px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontWeight: 700, fontSize: 16, cursor: "pointer" }}>{a}</button>
@@ -558,7 +566,7 @@ function CycleCounter() {
         <p style={{ color: "var(--text-3)", fontSize: 12, margin: 0 }}>SAP Data: <strong style={{color:"var(--text-2)"}}>{Object.keys(sapData).length} HUs</strong></p>
       </div>
       
-      <style>{`#aisle-select.open { display: block !important; }`}</style>
+      <style>{`.hidden { display: none !important; }`}</style>
     </div>
   );
 
@@ -589,7 +597,7 @@ function CycleCounter() {
         {currentBin && (
           <div style={{ background: "var(--surface)", border: "2px solid var(--border)", borderRadius: 16, padding: 20, marginBottom: 16 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <h3 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: "var(--accent)" }}>{currentBin}</h3>
+              <h3 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: "var(--accent)", fontFamily: "var(--font-mono)" }}>{currentBin}</h3>
               <span style={{ background: "var(--surface-2)", padding: "4px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700 }}>
                 {expectedHUsForBin.filter(h=>records[h.hu]).length}/{expectedHUsForBin.length} scanned
               </span>
@@ -597,7 +605,7 @@ function CycleCounter() {
 
             <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
               <input ref={scanRef} value={scanInput} onChange={e => setScanInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") handleScan(scanInput, currentBin); }} placeholder="Scan or type HU #" autoFocus
-                style={{ flex: 1, padding: "14px 16px", borderRadius: 10, border: "2px solid var(--border)", background: "var(--bg)", fontSize: 16, fontWeight: 700, color: "var(--text)", outline: "none", boxSizing: "border-box" }} />
+                style={{ flex: 1, padding: "14px 16px", borderRadius: 10, border: "2px solid var(--border)", background: "var(--bg)", fontSize: 16, fontWeight: 700, color: "var(--text)", outline: "none", boxSizing: "border-box", fontFamily: "var(--font-mono)" }} />
               <button onClick={() => handleScan(scanInput, currentBin)} style={{ padding: "14px 20px", borderRadius: 10, border: "none", background: "var(--accent)", color: "#fff", cursor: "pointer" }}><Icon name="check" size={20}/></button>
             </div>
 
@@ -613,7 +621,7 @@ function CycleCounter() {
                     return (
                       <div key={h.hu} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, background: "var(--surface-2)", border: `1px solid ${rec ? stateColor : 'var(--border)'}` }}>
                         <span style={{ width: 8, height: 8, borderRadius: "50%", background: stateColor, flexShrink: 0 }}/>
-                        <span style={{ fontSize: 13, fontWeight: 600 }}>{h.hu}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, fontFamily: "var(--font-mono)" }}>{h.hu}</span>
                         <span style={{ fontSize: 11, color: "var(--text-2)" }}>{h.material}</span>
                         <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 800, color: stateColor }}>{rec ? rec.state : "—"}</span>
                       </div>
@@ -632,7 +640,7 @@ function CycleCounter() {
 
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
           {binProgress.slice(Math.max(0, currentBinIndex-10), currentBinIndex+20).map((bp, i) => (
-            <button key={bp.bin} onClick={() => setCurrentBinIndex(currentBins.indexOf(bp.bin))} style={{ width: 36, height: 36, borderRadius: 6, border: "none", cursor: "pointer", fontSize: 9, fontWeight: 700, background: bp.bin === currentBin ? "var(--accent)" : bp.done ? "var(--green-bg)" : bp.expected > 0 ? "var(--surface)" : "var(--bg)", color: bp.bin === currentBin ? "#fff" : bp.done ? "var(--green)" : "var(--text-3)" }}>
+            <button key={bp.bin} onClick={() => setCurrentBinIndex(currentBins.indexOf(bp.bin))} style={{ width: 36, height: 36, borderRadius: 6, border: "none", cursor: "pointer", fontSize: 9, fontWeight: 700, background: bp.bin === currentBin ? "var(--accent)" : bp.done ? "var(--green-bg)" : bp.expected > 0 ? "var(--surface)" : "var(--bg)", color: bp.bin === currentBin ? "#fff" : bp.done ? "var(--green)" : "var(--text-3)", fontFamily: "var(--font-mono)" }}>
               {bp.bin.slice(-3)}
             </button>
           ))}
@@ -661,7 +669,7 @@ function CycleCounter() {
                 else notify("Format: HU# BIN (e.g., 100000015 WA05B)", "warning");
               }
             }} placeholder="HU# BIN (e.g., 100000015 WA05B)" autoFocus
-            style={{ flex: 1, padding: "14px 16px", borderRadius: 10, border: "2px solid var(--border)", background: "var(--bg)", fontSize: 16, fontWeight: 600, color: "var(--text)", outline: "none", boxSizing: "border-box" }} />
+            style={{ flex: 1, padding: "14px 16px", borderRadius: 10, border: "2px solid var(--border)", background: "var(--bg)", fontSize: 16, fontWeight: 600, color: "var(--text)", outline: "none", boxSizing: "border-box", fontFamily: "var(--font-mono)" }} />
         </div>
 
         <p style={{ fontSize: 9, color: "var(--text-3)", margin: "0 0 8px", textTransform: "uppercase", fontWeight: 800 }}>SAP Locations</p>
@@ -674,7 +682,7 @@ function CycleCounter() {
             return (
               <div key={h.hu} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, background: "var(--surface-2)", border: `1px solid ${rec ? stateColor : 'var(--border)'}` }}>
                 <span style={{ width: 8, height: 8, borderRadius: "50%", background: stateColor, flexShrink: 0 }}/>
-                <span style={{ fontSize: 13, fontWeight: 600 }}>{h.hu}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, fontFamily: "var(--font-mono)" }}>{h.hu}</span>
                 <span style={{ fontSize: 11, color: "var(--text-2)" }}>{h.expectedBin}</span>
                 <span style={{ fontSize: 11, color: "var(--text-3)" }}>×{h.qty}</span>
                 <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 800, color: stateColor }}>{rec ? rec.state : "—"}</span>
@@ -686,9 +694,11 @@ function CycleCounter() {
     </div>
   );
 
+  // ─── FRESH SCREEN (HYPER-OPTIMIZED) ────────────────────────────────
   const FreshAuditScreen = () => {
     const [activeFreshItem, setActiveFreshItem] = useState(null);
     const [freshBinInput, setFreshBinInput] = useState("");
+    const [bulkAmount, setBulkAmount] = useState(1);
     const freshBinRef = useRef(null);
 
     const activeData = activeFreshItem ? freshSAPData[activeFreshItem] : null;
@@ -700,71 +710,92 @@ function CycleCounter() {
           <button onClick={() => activeFreshItem ? setActiveFreshItem(null) : launchMode("idle")} className="hdr-btn"><Icon name="back" size={16}/></button>
           <div style={{ flex: 1 }}>
             <h2 style={{ margin: 0, fontSize: 20, color: "var(--amber)" }}>FRESH Audit</h2>
-            <p style={{ margin: 0, fontSize: 11, color: "var(--text-3)" }}>{activeFreshItem ? `Item: ${activeFreshItem}` : "14 items · Rapid tally mode"}</p>
+            <p style={{ margin: 0, fontSize: 11, color: "var(--text-3)" }}>{activeFreshItem ? `Rapid Tally: ${activeFreshItem}` : "14 Items · Touch & Go"}</p>
           </div>
           <button onClick={() => setShowReport(true)} className="hdr-btn" style={{ background: "var(--amber)", color: "#000" }}>Report</button>
         </div>
 
         {!activeFreshItem ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {FRESH_ITEMS.map(mat => {
               const sap = freshSAPData[mat] || { totalExpected: 0, binCount: 0 };
               const counted = freshCounts[mat] || { totalQty: 0, locations: [] };
-              const done = counted.locations.length > 0;
               const variance = counted.totalQty - sap.totalExpected;
+              // Exception-based Progress styling: Highlight cards that have been touched but not matched
+              const touched = counted.totalQty > 0;
+              const matched = touched && variance === 0;
+              const warning = touched && variance !== 0;
+
+              let bgColor = "var(--surface)";
+              let borderColor = "var(--border)";
+              if (matched) { bgColor = "var(--green-bg)"; borderColor = "var(--green)"; }
+              else if (warning) { borderColor = "var(--amber)"; }
+
               return (
                 <button key={mat} onClick={() => { setActiveFreshItem(mat); setTimeout(()=>freshBinRef.current?.focus(), 100); }}
-                  style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 12, background: done ? "var(--green-bg)" : "var(--surface)", border: `2px solid ${done ? "rgba(52,211,153,.3)" : "var(--border)"}`, cursor: "pointer", width: "100%", textAlign: "left" }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: done ? "var(--green-bg)" : "var(--bg)", color: done ? "var(--green)" : "var(--text-3)" }}>
-                    {done ? <Icon name="check" size={20}/> : <Icon name="box" size={20}/>}
+                  style={{ display: "flex", flexDirection: "column", padding: "14px", borderRadius: 12, background: bgColor, border: `1.5px solid ${borderColor}`, cursor: "pointer", textAlign: "left", position: "relative" }}>
+                  
+                  <div style={{ fontWeight: 800, fontSize: 16, color: "var(--text)", fontFamily: "var(--font-mono)", marginBottom: 8 }}>{mat}</div>
+                  
+                  <div style={{ display: "flex", justifyContent: "space-between", width: "100%", fontSize: 11 }}>
+                    <span style={{ color: "var(--text-3)" }}>SAP: {sap.totalExpected}</span>
+                    <span style={{ fontWeight: 800, color: matched ? "var(--green)" : "var(--text)" }}>Count: {counted.totalQty}</span>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: 16, color: "var(--text)" }}>{mat}</div>
-                    <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>SAP: {sap.totalExpected} units · {sap.binCount} bins</div>
-                  </div>
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontWeight: 800, fontSize: 18, color: done ? "var(--green)" : "var(--text-3)" }}>{counted.totalQty}</div>
-                    {done && variance !== 0 && <div style={{ fontSize: 10, fontWeight: 700, color: variance > 0 ? "var(--amber)" : "var(--red)" }}>{variance > 0 ? "+" : ""}{variance}</div>}
-                  </div>
+                  
+                  {touched && (
+                    <div style={{ position: "absolute", top: 12, right: 12, fontSize: 10, fontWeight: 800, padding: "2px 6px", borderRadius: 4, background: matched ? "var(--green)" : "var(--amber)", color: matched ? "#fff" : "#000" }}>
+                       {variance > 0 ? "+" : ""}{variance}
+                    </div>
+                  )}
                 </button>
               );
             })}
           </div>
         ) : (
           <div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 16 }}>
-              {[
-                { label: "SAP Expected", value: activeData.totalExpected, color: "var(--text)" },
-                { label: "Counted", value: activeCounts.totalQty, color: "var(--green)" },
-                { label: "Variance", value: activeCounts.totalQty - activeData.totalExpected, color: (activeCounts.totalQty - activeData.totalExpected) === 0 ? "var(--green)" : "var(--red)" }
-              ].map(s => (
-                <div key={s.label} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "12px 10px", textAlign: "center" }}>
-                  <div style={{ fontSize: 9, color: "var(--text-3)", marginBottom: 4, textTransform: "uppercase", fontWeight: 800 }}>{s.label}</div>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: s.color }}>{s.value}</div>
+            <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+              <div style={{ flex: 1, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "16px", textAlign: "center" }}>
+                <div style={{ fontSize: 10, color: "var(--text-3)", textTransform: "uppercase", fontWeight: 800, marginBottom: 4 }}>Expected</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: "var(--text)" }}>{activeData.totalExpected}</div>
+              </div>
+              <div style={{ flex: 1, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "16px", textAlign: "center" }}>
+                <div style={{ fontSize: 10, color: "var(--text-3)", textTransform: "uppercase", fontWeight: 800, marginBottom: 4 }}>Counted</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: "var(--green)" }}>{activeCounts.totalQty}</div>
+              </div>
+              <div style={{ flex: 1, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "16px", textAlign: "center" }}>
+                <div style={{ fontSize: 10, color: "var(--text-3)", textTransform: "uppercase", fontWeight: 800, marginBottom: 4 }}>Variance</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: (activeCounts.totalQty - activeData.totalExpected) === 0 ? "var(--green)" : "var(--amber)" }}>
+                  {activeCounts.totalQty - activeData.totalExpected}
                 </div>
-              ))}
+              </div>
             </div>
 
-            <div style={{ background: "var(--surface)", border: "2px solid var(--amber-bg)", borderRadius: 14, padding: 16, marginBottom: 16 }}>
-              <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ background: "var(--surface)", border: "2px solid var(--amber)", borderRadius: 16, padding: 20, marginBottom: 16 }}>
+              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
                 <input ref={freshBinRef} value={freshBinInput} onChange={e => setFreshBinInput(e.target.value.toUpperCase())}
-                  onKeyDown={e => { if (e.key === "Enter" && freshBinInput.trim()) { addFreshScan(activeFreshItem, freshBinInput); setFreshBinInput(""); } }}
-                  placeholder="Scan bin (e.g., WA05B)" style={{ flex: 1, padding: "14px", borderRadius: 10, border: "2px solid var(--border)", background: "var(--bg)", fontSize: 16, fontWeight: 700, color: "var(--text)", outline: "none" }} />
-                <button onClick={() => { if(freshBinInput.trim()) { addFreshScan(activeFreshItem, freshBinInput); setFreshBinInput(""); } }}
-                  style={{ padding: "14px 20px", borderRadius: 10, border: "none", background: "var(--amber)", color: "#000", cursor: "pointer", fontWeight: 800 }}>+1</button>
+                  onKeyDown={e => { if (e.key === "Enter" && freshBinInput.trim()) { addFreshScan(activeFreshItem, freshBinInput, bulkAmount); setFreshBinInput(""); } }}
+                  placeholder="Scan Bin (WA05B)" style={{ flex: 2, padding: "16px", borderRadius: 12, border: "2px solid var(--border)", background: "var(--bg)", fontSize: 18, fontWeight: 700, color: "var(--text)", outline: "none", fontFamily: "var(--font-mono)" }} />
+                
+                <input type="number" value={bulkAmount} onChange={e => setBulkAmount(parseInt(e.target.value)||1)} 
+                  style={{ flex: 1, padding: "16px", borderRadius: 12, border: "2px solid var(--border)", background: "var(--bg)", fontSize: 18, fontWeight: 700, color: "var(--text)", outline: "none", textAlign: "center", fontFamily: "var(--font-mono)" }} />
               </div>
+              
+              <button onClick={() => { if(freshBinInput.trim()) { addFreshScan(activeFreshItem, freshBinInput, bulkAmount); setFreshBinInput(""); } }}
+                style={{ width: "100%", padding: "20px", borderRadius: 12, border: "none", background: "var(--amber)", color: "#000", cursor: "pointer", fontWeight: 800, fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                <Icon name="plus" size={24}/> Add {bulkAmount} Pallet{bulkAmount !== 1 ? 's' : ''}
+              </button>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {activeCounts.locations.length === 0 ? (
                 <p style={{ color: "var(--text-3)", fontSize: 12, textAlign: "center", padding: 20 }}>No scans yet</p>
               ) : activeCounts.locations.sort((a,b)=>a.bin.localeCompare(b.bin)).map(loc => (
-                <div key={loc.bin} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, background: "var(--surface)", border: "1px solid var(--border)" }}>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", minWidth: 60 }}>{loc.bin}</span>
+                <div key={loc.bin} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 12, background: "var(--surface)", border: "1px solid var(--border)" }}>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", minWidth: 60, fontFamily: "var(--font-mono)" }}>{loc.bin}</span>
                   <div style={{ flex: 1 }}/>
-                  <button onClick={() => updateFreshCount(activeFreshItem, loc.bin, -1)} style={{ width: 32, height: 32, borderRadius: 8, border: "2px solid var(--border)", background: "transparent", cursor: "pointer", color: "var(--red)", display:"flex", alignItems:"center", justifyContent:"center" }}><Icon name="minus" size={14}/></button>
-                  <span style={{ fontSize: 20, fontWeight: 800, color: "var(--text)", width: 40, textAlign: "center" }}>{loc.qty}</span>
-                  <button onClick={() => updateFreshCount(activeFreshItem, loc.bin, 1)} style={{ width: 32, height: 32, borderRadius: 8, border: "2px solid var(--border)", background: "transparent", cursor: "pointer", color: "var(--green)", display:"flex", alignItems:"center", justifyContent:"center" }}><Icon name="plus" size={14}/></button>
+                  <button onClick={() => updateFreshCount(activeFreshItem, loc.bin, -1)} style={{ width: 36, height: 36, borderRadius: 8, border: "none", background: "var(--red-bg)", cursor: "pointer", color: "var(--red)", display:"flex", alignItems:"center", justifyContent:"center" }}><Icon name="minus" size={16}/></button>
+                  <span style={{ fontSize: 20, fontWeight: 800, color: "var(--text)", width: 40, textAlign: "center", fontFamily: "var(--font-mono)" }}>{loc.qty}</span>
+                  <button onClick={() => updateFreshCount(activeFreshItem, loc.bin, 1)} style={{ width: 36, height: 36, borderRadius: 8, border: "none", background: "var(--green-bg)", cursor: "pointer", color: "var(--green)", display:"flex", alignItems:"center", justifyContent:"center" }}><Icon name="plus" size={16}/></button>
                 </div>
               ))}
             </div>
@@ -806,7 +837,7 @@ function CycleCounter() {
                   <tbody>
                     {freshReportData.map(r => (
                       <tr key={r.material} style={{ borderBottom: "1px solid var(--border)" }}>
-                        <td style={{ padding: "8px 0", fontWeight: 700 }}>{r.material}</td>
+                        <td style={{ padding: "8px 0", fontWeight: 700, fontFamily: "var(--font-mono)" }}>{r.material}</td>
                         <td style={{ color: "var(--text-2)" }}>{r.expected}</td>
                         <td style={{ fontWeight: 700, color: r.counted > 0 ? "var(--green)" : "var(--text-3)" }}>{r.counted}</td>
                         <td style={{ fontWeight: 800, color: r.variance === 0 ? "var(--green)" : r.variance > 0 ? "var(--amber)" : "var(--red)" }}>{r.variance > 0 ? "+" : ""}{r.variance}</td>
@@ -834,7 +865,7 @@ function CycleCounter() {
                     {reportData.records.filter(r => r.state !== "OK").map(r => (
                       <div key={r.hu} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 6, background: "var(--surface-2)", fontSize: 11 }}>
                         <span style={{ padding: "2px 6px", borderRadius: 4, fontSize: 9, fontWeight: 800, textTransform: "uppercase", background: r.state === "MISSING" ? "var(--red-bg)" : "var(--amber-bg)", color: r.state === "MISSING" ? "var(--red)" : "var(--amber)" }}>{r.state}</span>
-                        <span style={{ fontWeight: 700 }}>{r.hu}</span>
+                        <span style={{ fontWeight: 700, fontFamily: "var(--font-mono)" }}>{r.hu}</span>
                         <span style={{ color: "var(--text-3)" }}>{r.material}</span>
                       </div>
                     ))}
@@ -852,7 +883,7 @@ function CycleCounter() {
 
   return (
     <>
-      <GhostModal />
+      <GhostModalUI />
       <ReportModal />
       {mode === "idle" && <IdleScreen />}
       {mode === "aisle" && <AisleAuditScreen />}
