@@ -17,332 +17,440 @@ button:active{transform:scale(.97)}
 .view{display:none;flex-direction:column;height:100dvh}
 .view.active{display:flex}
 
-/* Header & Nav */
+/* Header */
 .header{padding:16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
 .header h1{font-size:18px;font-weight:900;letter-spacing:-0.5px}
 
-/* Hub / Aisle Grid */
-.hub-content{flex:1;overflow-y:auto;padding:20px}
-.search-container{position:relative;margin-bottom:24px}
+/* Search / Command Bar */
+.search-container{position:relative;margin-bottom:20px; padding:0 16px}
 .search-input{width:100%;padding:16px 16px 16px 48px;border-radius:14px;border:2px solid var(--border);background:var(--surface-2);color:#fff;font-size:16px;outline:none}
 .search-input:focus{border-color:var(--accent)}
-.aisle-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+
+/* Aisle Grid */
+.aisle-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:0 16px 20px}
 .aisle-btn{background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:20px 0;text-align:center}
 .aisle-btn .letter{font-size:24px;font-weight:900;color:var(--text);display:block}
-.aisle-btn .label{font-size:9px;color:var(--text-3);font-weight:700;text-transform:uppercase}
 
-/* Audit / Bin Mode */
+/* Audit Cards */
+.audit-scroll{flex:1;overflow-y:auto;padding:16px}
+.hu-card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px;display:flex;flex-direction:column;gap:12px}
+.hu-card.ok{border-color:var(--green);background:var(--green-bg)}
+.hu-card.missing{border-color:var(--red);background:var(--red-bg)}
+.hu-card.movement{border-color:var(--purple);background:var(--purple-bg)}
+
+.card-top{display:flex;justify-content:space-between;align-items:flex-start}
+.hu-info .hu-num{font-family:'JetBrains Mono';font-size:16px;font-weight:800;color:var(--accent)}
+.hu-info .sku-num{font-size:12px;color:var(--text-2);font-weight:700}
+
+.qty-control{display:flex;align-items:center;gap:10px;background:var(--surface-2);padding:8px;border-radius:10px;width:fit-content}
+.qty-btn{width:32px;height:32px;border-radius:6px;background:var(--surface-3);color:#fff;font-size:18px;font-weight:900}
+.qty-val{font-family:'JetBrains Mono';font-size:18px;font-weight:700;min-width:40px;text-align:center}
+
+.card-actions{display:flex;gap:8px}
+.act-btn{flex:1;padding:12px;border-radius:10px;font-size:11px;font-weight:800;text-transform:uppercase}
+.btn-confirm{background:var(--green);color:#000}
+.btn-miss{background:var(--red-bg);color:var(--red);border:1px solid var(--red)}
+.btn-note{background:var(--surface-3);color:var(--text-2)}
+
+/* FRESH Mode (Optimized) */
+.fresh-tally-list{display:flex;flex-direction:column;gap:12px;padding:16px}
+.fresh-sku-card{background:var(--surface);border:2px solid var(--border);border-radius:16px;padding:16px;display:flex;justify-content:space-between;align-items:center}
+.fresh-sku-card.active{border-color:var(--amber)}
+.tally-display{text-align:right}
+.tally-count{font-family:'JetBrains Mono';font-size:32px;font-weight:900;color:var(--amber)}
+
+/* Bin Strip */
 .bin-strip{display:flex;gap:6px;overflow-x:auto;padding:12px 16px;background:var(--surface-2);border-bottom:1px solid var(--border);scrollbar-width:none}
-.bin-strip::-webkit-scrollbar{display:none}
-.strip-dot{min-width:50px;height:32px;border-radius:8px;background:var(--surface-3);color:var(--text-2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;font-family:'JetBrains Mono'}
+.strip-dot{min-width:50px;height:32px;border-radius:8px;background:var(--surface-3);color:var(--text-2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800}
 .strip-dot.active{background:var(--accent);color:#fff}
 
-.audit-main{flex:1;overflow-y:auto;padding:20px}
-.bin-title{font-size:48px;font-weight:900;text-align:center;color:var(--accent);margin-bottom:20px;font-family:'JetBrains Mono'}
-.scan-area{margin-bottom:24px}
-.hu-card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
-.hu-card.scanned{border-color:var(--green);background:var(--green-bg);opacity:0.6}
-.hu-card.moved{border-color:var(--purple);border-style:dashed}
-
-/* FRESH Mode */
-.fresh-list{display:flex;flex-direction:column;gap:10px}
-.fresh-card{background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:16px;display:flex;justify-content:space-between;align-items:center}
-.fresh-card.active{border-color:var(--amber)}
-.tally-controls{display:flex;align-items:center;gap:15px}
-.tally-btn{width:40px;height:40px;border-radius:10px;background:var(--surface-3);color:#fff;font-size:20px;font-weight:900}
-
-/* Footer */
-.footer{padding:16px;background:var(--surface);border-top:1px solid var(--border);display:flex;gap:10px}
-.footer-btn{flex:1;padding:16px;border-radius:12px;font-size:13px;font-weight:800;text-transform:uppercase}
-.btn-primary{background:var(--green);color:#000}
-.btn-sec{background:var(--surface-3);color:#fff}
-
-/* Modal */
+/* Toast & Modals */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:12px;background:var(--accent);color:#000;font-weight:800;z-index:9999;display:none}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
-.modal{background:var(--surface);padding:30px;border-radius:20px;width:100%;max-width:400px;text-align:center;border:2px solid var(--red)}
-
-.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:12px;background:var(--accent);color:#000;font-weight:800;font-size:13px;z-index:2000;display:none;box-shadow:0 10px 30px rgba(0,0,0,0.5)}
+.modal{background:var(--surface);padding:30px;border-radius:20px;width:100%;max-width:400px;text-align:center;border:2px solid var(--accent)}
 </style>
 </head>
 <body>
 
 <div id="toast" class="toast"></div>
 
-<!-- VIEW 1: HUB -->
+<!-- HUB VIEW -->
 <div id="view-hub" class="view active">
     <header class="header">
         <h1>Novus Ops</h1>
         <div style="font-size:10px; color:var(--text-3)">PLANT 1730</div>
     </header>
-    <div class="hub-content">
+    <div class="hub-content" style="flex:1; overflow-y:auto; padding-top:20px">
         <div class="search-container">
-            <input type="text" id="hub-search" class="search-input" placeholder="Scan SKU or type 'FRESH'...">
+            <input type="text" id="hub-search" class="search-input" placeholder="Scan SKU, HU, or type 'FRESH'...">
         </div>
-        <h3 style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px">Select Aisle</h3>
-        <div class="aisle-grid" id="aisle-grid">
-            <!-- JS Generated -->
+        <h3 style="padding:0 16px; font-size:11px; color:var(--text-dim); text-transform:uppercase; margin-bottom:10px">Aisle Audit</h3>
+        <div class="aisle-grid" id="aisle-grid"></div>
+        <div style="padding:0 16px">
+            <button onclick="initFreshMode()" style="width:100%; padding:20px; border-radius:14px; background:linear-gradient(135deg, var(--amber), #d97706); font-weight:900; color:#000">START FRESH AUDIT</button>
         </div>
-        <button onclick="startFreshMode()" style="width:100%; margin-top:15px; padding:20px; border-radius:14px; background:linear-gradient(135deg, var(--amber), #d97706); font-weight:900; color:#000">START FRESH AUDIT</button>
     </div>
 </div>
 
-<!-- VIEW 2: AUDIT (AISLE/BIN) -->
+<!-- AUDIT VIEW (Aisle & Product) -->
 <div id="view-audit" class="view">
     <header class="header">
-        <button onclick="showView('hub')" style="background:none; color:var(--accent); font-weight:800">← BACK</button>
-        <h1 id="audit-title">Aisle Audit</h1>
-        <div id="bin-count-tag" style="font-size:10px; background:var(--accent-dim); color:var(--accent); padding:4px 8px; border-radius:10px">0/0</div>
+        <button onclick="showView('hub')" style="background:none; color:var(--accent); font-weight:800">← EXIT</button>
+        <h1 id="audit-title">Audit</h1>
+        <div id="audit-meta" style="font-size:10px; background:var(--accent-dim); color:var(--accent); padding:4px 8px; border-radius:10px"></div>
     </header>
-    <div class="bin-strip" id="bin-strip">
-        <!-- JS Generated -->
-    </div>
-    <main class="audit-main">
-        <div class="bin-title" id="display-bin">W---</div>
-        <div class="scan-area">
-            <input type="text" id="bin-scan-input" class="search-input" style="padding-left:16px; text-align:center; font-family:monospace; font-size:24px; border-color:var(--accent)" placeholder="SCAN HU">
-        </div>
-        <h3 style="font-size:11px; color:var(--text-dim); text-transform:uppercase; margin-bottom:10px">Expected in Bin</h3>
-        <div id="bin-items-list">
-            <!-- JS Generated -->
-        </div>
-    </main>
-    <footer class="footer">
-        <button class="footer-btn btn-sec" onclick="markMissing()">MISSING</button>
-        <button class="footer-btn btn-primary" onclick="nextBin()">NEXT BIN →</button>
+    <div class="bin-strip" id="bin-strip"></div>
+    <main class="audit-scroll" id="audit-list"></main>
+    <footer class="footer" id="audit-footer">
+        <button class="footer-btn btn-primary" style="width:100%; background:var(--accent); color:#000" onclick="finalizeAuditStep()">FINALIZE & NEXT →</button>
     </footer>
 </div>
 
-<!-- VIEW 3: FRESH TALLY -->
+<!-- FRESH VIEW -->
 <div id="view-fresh" class="view">
     <header class="header">
         <button onclick="showView('hub')" style="background:none; color:var(--amber); font-weight:800">← EXIT</button>
         <h1 style="color:var(--amber)">FRESH Tally</h1>
-        <div></div>
+        <div style="font-size:10px; color:var(--text-3)">SKU-CENTRIC MODE</div>
     </header>
-    <div class="hub-content">
-        <div class="search-container">
-            <input type="text" id="fresh-scan-input" class="search-input" style="border-color:var(--amber)" placeholder="Rapid Scan HU or Bin...">
-        </div>
-        <div class="fresh-list" id="fresh-list">
-            <!-- JS Generated -->
-        </div>
+    <div class="search-container" style="margin-top:15px">
+        <input type="text" id="fresh-scan-input" class="search-input" style="border-color:var(--amber)" placeholder="Scan any FRESH Pallet...">
     </div>
+    <div class="fresh-tally-list" id="fresh-list"></div>
     <footer class="footer">
-        <button class="footer-btn btn-primary" style="background:var(--amber)" onclick="finalizeFresh()">FINALIZE FRESH AUDIT</button>
+        <button class="footer-btn btn-primary" style="width:100%; background:var(--amber); color:#000" onclick="finalizeFresh()">SUBMIT FRESH AUDIT</button>
     </footer>
 </div>
 
 <!-- GHOST MODAL -->
 <div id="modal-ghost" class="modal-overlay">
     <div class="modal">
-        <div style="font-size:40px">⚠️</div>
+        <div style="font-size:40px">👻</div>
         <h2 style="margin:10px 0">Ghost Item</h2>
-        <p style="color:var(--text-2); font-size:14px; margin-bottom:20px">HU <span id="ghost-hu" style="color:var(--red); font-weight:800"></span> is not in SAP. Cycle count recommended.</p>
+        <p style="color:var(--text-2); font-size:14px; margin-bottom:20px">HU <span id="ghost-hu" style="color:var(--accent); font-weight:800"></span> is not in SAP. Cycle count recommended.</p>
         <div style="display:flex; gap:10px">
-            <button class="footer-btn btn-sec" onclick="closeModal()">DISMISS</button>
-            <button class="footer-btn btn-primary" style="background:var(--accent)" onclick="closeModal()">LOG & PIVOT</button>
+            <button class="act-btn btn-note" onclick="closeModal()">DISMISS</button>
+            <button class="act-btn btn-confirm" onclick="pivotToProductAudit()">START PRODUCT AUDIT</button>
         </div>
     </div>
 </div>
 
 <script>
-/**
- * NOVOUS OPS - RECONCILIATION ENGINE
- */
 const FRESH_SKUS = ["3305704","3307506","3307509","3307515","3307518","3307525","3307710","3308356","3309009","3309016","3309017","3309019","3309138","3309139"];
-const AISLE_LETTERS = "ABCDEFGHJKLMNP".split("");
-
 let sapMaster = [];
-let sessionRegistry = new Map(); // Global tracking for the current session (HU -> Status)
+let sessionRegistry = new Map(); // HU -> Record Object
+let currentMode = 'HUB'; // HUB, AISLE, PRODUCT, FRESH
 let currentAisle = "";
 let currentBinIdx = 0;
 let currentBins = [];
+let activeGhostHU = "";
 
-// Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    generateAisleGrid();
+    initAisleGrid();
     pullSAPData();
     
-    // Command Bar Listener
+    // Command Bar
     document.getElementById('hub-search').addEventListener('keypress', (e) => {
         if(e.key === 'Enter') {
-            const val = e.target.value.toUpperCase();
-            if(val === 'FRESH') startFreshMode();
+            const val = e.target.value.trim().toUpperCase();
+            if(val === 'FRESH') initFreshMode();
             else handleGlobalSearch(val);
             e.target.value = '';
         }
     });
 
-    // Bin Scan Listener
-    document.getElementById('bin-scan-input').addEventListener('keypress', (e) => {
+    // Fresh Scanner
+    document.getElementById('fresh-scan-input').addEventListener('keypress', (e) => {
         if(e.key === 'Enter') {
-            handleAuditScan(e.target.value);
+            handleFreshScan(e.target.value.trim());
             e.target.value = '';
         }
     });
 });
 
 /**
- * CORE LOGIC
+ * CORE RECONCILIATION ENGINE
  */
-function handleAuditScan(hu) {
-    const bin = currentBins[currentBinIdx];
-    const sapMatch = sapMaster.find(i => i.hu === hu);
+function handleGlobalSearch(input) {
+    // Check if it's an HU
+    const huMatch = sapMaster.find(i => i.hu === input);
+    if (huMatch) {
+        initProductAudit(huMatch.product);
+        return;
+    }
 
-    if(!sapMatch) {
+    // Check if it's a SKU
+    const skuMatch = sapMaster.filter(i => i.product === input);
+    if (skuMatch.length > 0) {
+        initProductAudit(input);
+        return;
+    }
+
+    // Check if it's a Bin
+    if (input.match(/^W[A-P][0-9]{2}[A-C]$/)) {
+        startAisleAudit(input.charAt(1), input);
+        return;
+    }
+
+    showToast("No SAP Match Found", "red");
+}
+
+function processScan(hu, bin) {
+    const sapMatch = sapMaster.find(i => i.hu === hu);
+    
+    if (!sapMatch) {
+        activeGhostHU = hu;
         showGhostModal(hu);
         return;
     }
 
-    // Reconciliation logic
-    const status = (sapMatch.sapBin === bin) ? 'OK' : 'MOVEMENT';
-    
-    // Update Registry (The Override Rule)
+    const isOk = sapMatch.sapBin === bin;
+    const status = isOk ? 'OK' : 'MOVEMENT';
+
+    // THE OVERRIDE RULE: Save to Registry
     sessionRegistry.set(hu, {
         ...sapMatch,
         status: status,
-        foundIn: bin
+        scanQty: sapMatch.sapQty,
+        foundIn: bin,
+        note: status === 'MOVEMENT' ? `Found in ${bin} (Expected ${sapMatch.sapBin})` : ''
     });
 
-    notify(status === 'OK' ? "Verified" : `Moved from ${sapMatch.sapBin}`, status === 'OK' ? 'green' : 'purple');
-    renderBinItems();
-}
-
-function renderBinItems() {
-    const bin = currentBins[currentBinIdx];
-    const expected = sapMaster.filter(i => i.sapBin === bin);
-    const list = document.getElementById('bin-items-list');
-    list.innerHTML = '';
-
-    expected.forEach(item => {
-        const reg = sessionRegistry.get(item.hu);
-        const isFound = reg && (reg.status === 'OK' || reg.status === 'MOVEMENT');
-        const isMovedElsewhere = !isFound && reg && reg.status === 'MOVEMENT';
-
-        const card = document.createElement('div');
-        card.className = `hu-card ${isFound ? 'scanned' : ''} ${isMovedElsewhere ? 'moved' : ''}`;
-        card.innerHTML = `
-            <div>
-                <div class="mono" style="font-weight:800">${item.hu}</div>
-                <div style="font-size:12px; color:var(--text-2)">${item.product}</div>
-            </div>
-            <div style="font-weight:900; color:${isFound ? 'var(--green)' : isMovedElsewhere ? 'var(--purple)' : 'var(--text-3)'}">
-                ${isFound ? '✓' : isMovedElsewhere ? 'FOUND IN ' + reg.foundIn : 'PENDING'}
-            </div>
-        `;
-        list.appendChild(card);
-    });
+    notify(status === 'OK' ? "Verified" : "Movement Logged", status === 'OK' ? 'green' : 'purple');
+    renderAuditList();
 }
 
 /**
- * NAVIGATION
+ * AISLE AUDIT LOGIC
  */
-function showView(id) {
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.getElementById(`view-${id}`).classList.add('active');
-}
-
-function generateAisleGrid() {
-    const grid = document.getElementById('aisle-grid');
-    AISLE_LETTERS.forEach(l => {
-        const btn = document.createElement('div');
-        btn.className = 'aisle-btn';
-        btn.onclick = () => startAisleAudit(l);
-        btn.innerHTML = `<span class="letter">${l}</span><span class="label">Aisle</span>`;
-        grid.appendChild(btn);
-    });
-}
-
-function startAisleAudit(aisle) {
+function startAisleAudit(aisle, targetBin = null) {
+    currentMode = 'AISLE';
     currentAisle = aisle;
     currentBins = [];
     for(let i=0; i<=38; i++) {
         const num = String(i).padStart(2, '0');
         ["A","B","C"].forEach(s => currentBins.push(`W${aisle}${num}${s}`));
     }
-    currentBinIdx = 0;
-    renderBinStrip();
-    loadBin();
+    currentBinIdx = targetBin ? currentBins.indexOf(targetBin) : 0;
     showView('audit');
-}
-
-function renderBinStrip() {
-    const strip = document.getElementById('bin-strip');
-    strip.innerHTML = '';
-    currentBins.forEach((b, i) => {
-        const dot = document.createElement('div');
-        dot.className = `strip-dot ${i === currentBinIdx ? 'active' : ''}`;
-        dot.innerText = b.slice(-3);
-        dot.onclick = () => { currentBinIdx = i; loadBin(); };
-        strip.appendChild(dot);
-    });
-}
-
-function loadBin() {
-    const bin = currentBins[currentBinIdx];
-    document.getElementById('display-bin').innerText = bin;
-    document.getElementById('bin-count-tag').innerText = `${currentBinIdx + 1} / ${currentBins.length}`;
     renderBinStrip();
-    renderBinItems();
-    document.getElementById('bin-scan-input').focus();
+    renderAuditList();
 }
 
-function nextBin() {
-    if(currentBinIdx < currentBins.length - 1) {
-        currentBinIdx++;
-        loadBin();
+/**
+ * PRODUCT AUDIT LOGIC
+ */
+function initProductAudit(sku) {
+    currentMode = 'PRODUCT';
+    currentAisle = `SKU: ${sku}`;
+    currentBins = ["GLOBAL"]; // Product audit doesn't use bin-by-bin navigation
+    showView('audit');
+    document.getElementById('bin-strip').innerHTML = '';
+    renderAuditList(sku);
+}
+
+/**
+ * FRESH MODE (HYPER-OPTIMIZED)
+ */
+function initFreshMode() {
+    currentMode = 'FRESH';
+    const list = document.getElementById('fresh-list');
+    list.innerHTML = '';
+    
+    FRESH_SKUS.forEach(sku => {
+        const card = document.createElement('div');
+        card.className = 'fresh-sku-card';
+        card.id = `fresh-card-${sku}`;
+        card.innerHTML = `
+            <div>
+                <div style="font-size:10px; color:var(--text-3)">ITEM NUMBER</div>
+                <div style="font-weight:800; font-size:18px; color:var(--accent)">${sku}</div>
+            </div>
+            <div class="tally-display">
+                <div class="tally-count" id="tally-${sku}">0</div>
+                <div style="font-size:9px; font-weight:700; color:var(--text-3)">PALLETS FOUND</div>
+            </div>
+        `;
+        list.appendChild(card);
+    });
+    showView('fresh');
+}
+
+function handleFreshScan(input) {
+    const sapMatch = sapMaster.find(i => i.hu === input || i.product === input);
+    if (sapMatch && FRESH_SKUS.includes(sapMatch.product)) {
+        const sku = sapMatch.product;
+        const reg = sessionRegistry.get(input) || { scanQty: 0 };
+        
+        // Increment
+        const newQty = reg.scanQty + 1;
+        sessionRegistry.set(input, { ...sapMatch, status: 'OK', scanQty: newQty });
+        
+        // Update UI Card
+        const skuTotal = Array.from(sessionRegistry.values())
+            .filter(i => i.product === sku)
+            .reduce((sum, i) => sum + i.scanQty, 0);
+            
+        document.getElementById(`tally-${sku}`).innerText = skuTotal;
+        document.getElementById(`fresh-card-${sku}`).classList.add('active');
+        setTimeout(() => document.getElementById(`fresh-card-${sku}`).classList.remove('active'), 500);
+        notify(`Added ${sku}`, 'amber');
     } else {
-        notify("Aisle Complete", "green");
-        showView('hub');
+        showToast("Not a valid FRESH item", "red");
     }
 }
 
 /**
- * FRESH MODE
+ * AUDIT LIST RENDERING (The "Card" Interface)
  */
-let freshTallies = {};
-function startFreshMode() {
-    freshTallies = {};
-    FRESH_SKUS.forEach(sku => freshTallies[sku] = 0);
-    renderFreshList();
-    showView('fresh');
-}
-
-function renderFreshList() {
-    const list = document.getElementById('fresh-list');
+function renderAuditList(filterSku = null) {
+    const list = document.getElementById('audit-list');
+    const bin = currentBins[currentBinIdx];
     list.innerHTML = '';
-    FRESH_SKUS.forEach(sku => {
+
+    document.getElementById('audit-title').innerText = currentMode === 'AISLE' ? bin : `Product: ${filterSku}`;
+    
+    // 1. Get items expected in this bin (from SAP)
+    let displayItems = [];
+    if (currentMode === 'AISLE') {
+        displayItems = sapMaster.filter(i => i.sapBin === bin);
+    } else {
+        displayItems = sapMaster.filter(i => i.product === filterSku);
+    }
+
+    // 2. Add any "Movements" found here that aren't expected here
+    const movements = Array.from(sessionRegistry.values()).filter(i => i.foundIn === bin && i.sapBin !== bin);
+    
+    // 3. Render Cards
+    const allToRender = [...displayItems];
+    movements.forEach(m => { if(!allToRender.find(i => i.hu === m.hu)) allToRender.push(m); });
+
+    allToRender.forEach(item => {
+        const reg = sessionRegistry.get(item.hu);
+        
+        // CONFLICT RESOLUTION: If item was found elsewhere, mark it "Moved" instead of "Missing"
+        const isMovedElsewhere = !reg && Array.from(sessionRegistry.values()).find(r => r.hu === item.hu && r.status === 'MOVEMENT');
+        
         const card = document.createElement('div');
-        card.className = 'fresh-card';
+        card.className = `hu-card ${reg ? reg.status.toLowerCase() : ''}`;
         card.innerHTML = `
-            <div>
-                <div style="font-size:10px; color:var(--text-3)">SKU</div>
-                <div style="font-weight:800; font-size:16px">${sku}</div>
+            <div class="card-top">
+                <div class="hu-info">
+                    <div class="hu-num">${item.hu}</div>
+                    <div class="sku-num">SKU: ${item.product}</div>
+                    ${isMovedElsewhere ? `<div style="color:var(--purple); font-size:10px; font-weight:800">FOUND IN ${isMovedElsewhere.foundIn}</div>` : ''}
+                </div>
+                <div class="qty-control">
+                    <button class="qty-btn" onclick="adjQty('${item.hu}', -1)">-</button>
+                    <div class="qty-val">${reg ? reg.scanQty : item.sapQty}</div>
+                    <button class="qty-btn" onclick="adjQty('${item.hu}', 1)">+</button>
+                </div>
             </div>
-            <div class="tally-controls">
-                <button class="tally-btn" onclick="updateTally('${sku}', -1)">-</button>
-                <div class="mono" style="font-size:24px; font-weight:900; width:40px; text-align:center">${freshTallies[sku]}</div>
-                <button class="tally-btn" style="background:var(--amber); color:#000" onclick="updateTally('${sku}', 1)">+</button>
+            <div class="card-actions">
+                <button class="act-btn btn-confirm" onclick="confirmItem('${item.hu}')">Confirm</button>
+                <button class="act-btn btn-miss" onclick="missItem('${item.hu}')">Missing</button>
+                <button class="act-btn btn-note" onclick="addNote('${item.hu}')">Note</button>
             </div>
+            ${reg && reg.note ? `<div style="font-size:10px; color:var(--amber)">Note: ${reg.note}</div>` : ''}
         `;
         list.appendChild(card);
     });
 }
 
-function updateTally(sku, delta) {
-    freshTallies[sku] = Math.max(0, freshTallies[sku] + delta);
-    renderFreshList();
+/**
+ * CARD ACTIONS
+ */
+function confirmItem(hu) {
+    const item = sapMaster.find(i => i.hu === hu);
+    const bin = currentBins[currentBinIdx];
+    const status = item.sapBin === bin ? 'OK' : 'MOVEMENT';
+    
+    sessionRegistry.set(hu, {
+        ...item,
+        status: status,
+        scanQty: item.sapQty,
+        foundIn: bin
+    });
+    renderAuditList();
+}
+
+function missItem(hu) {
+    const item = sapMaster.find(i => i.hu === hu);
+    sessionRegistry.set(hu, {
+        ...item,
+        status: 'MISSING',
+        scanQty: 0
+    });
+    renderAuditList();
+}
+
+function adjQty(hu, delta) {
+    const reg = sessionRegistry.get(hu) || { ...sapMaster.find(i => i.hu === hu), scanQty: sapMaster.find(i => i.hu === hu).sapQty };
+    reg.scanQty = Math.max(0, reg.scanQty + delta);
+    reg.status = (reg.scanQty === 0) ? 'MISSING' : (reg.sapBin === currentBins[currentBinIdx] ? 'OK' : 'MOVEMENT');
+    sessionRegistry.set(hu, reg);
+    renderAuditList();
+}
+
+function addNote(hu) {
+    const note = prompt("Add note / movement info:");
+    if (note) {
+        const reg = sessionRegistry.get(hu) || { ...sapMaster.find(i => i.hu === hu), scanQty: sapMaster.find(i => i.hu === hu).sapQty };
+        reg.note = note;
+        sessionRegistry.set(hu, reg);
+        renderAuditList();
+    }
 }
 
 /**
- * UI HELPERS
+ * NAVIGATION & UI
  */
-function notify(msg, color) {
-    const t = document.getElementById('toast');
-    t.innerText = msg;
-    t.style.background = `var(--${color})`;
-    t.style.display = 'block';
-    setTimeout(() => t.style.display = 'none', 2500);
+function showView(id) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(`view-${id}`).classList.add('active');
+}
+
+function initAisleGrid() {
+    const grid = document.getElementById('aisle-grid');
+    "ABCDEFGHJKLMNP".split("").forEach(l => {
+        const btn = document.createElement('div');
+        btn.className = 'aisle-btn';
+        btn.onclick = () => startAisleAudit(l);
+        btn.innerHTML = `<span class="letter">${l}</span>`;
+        grid.appendChild(btn);
+    });
+}
+
+function renderBinStrip() {
+    const strip = document.getElementById('bin-strip');
+    strip.innerHTML = '';
+    const start = Math.max(0, currentBinIdx - 2);
+    const end = Math.min(currentBins.length, start + 10);
+    
+    for(let i=start; i<end; i++) {
+        const dot = document.createElement('div');
+        dot.className = `strip-dot ${i === currentBinIdx ? 'active' : ''}`;
+        dot.innerText = currentBins[i].slice(-3);
+        dot.onclick = () => { currentBinIdx = i; renderAuditList(); renderBinStrip(); };
+        strip.appendChild(dot);
+    }
+}
+
+function finalizeAuditStep() {
+    if (currentBinIdx < currentBins.length - 1) {
+        currentBinIdx++;
+        renderAuditList();
+        renderBinStrip();
+    } else {
+        showView('hub');
+        showToast("Audit Complete", "green");
+    }
+}
+
+function pivotToProductAudit() {
+    closeModal();
+    const match = sapMaster.find(i => i.hu === activeGhostHU);
+    initProductAudit(match ? match.product : "UNKNOWN");
 }
 
 function showGhostModal(hu) {
@@ -350,19 +458,23 @@ function showGhostModal(hu) {
     document.getElementById('modal-ghost').style.display = 'flex';
 }
 
-function closeModal() {
-    document.getElementById('modal-ghost').style.display = 'none';
+function closeModal() { document.getElementById('modal-ghost').style.display = 'none'; }
+
+function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3000);
 }
+
+function notify(msg) { showToast(msg); }
 
 async function pullSAPData() {
     try {
         const res = await fetch('https://script.google.com/macros/s/AKfycbwZ1Dhmf6cK_hWV2xLKYmwEImUvifIRCPqVm0Fz4E7gjvfcpyzoqhAFIgvgwrjBretc/exec?type=sapdata');
         const data = await res.json();
         sapMaster = data.sapData;
-        notify("SAP Master Loaded", "accent");
-    } catch(e) {
-        notify("Offline Mode", "amber");
-    }
+    } catch(e) { showToast("Offline Mode", "amber"); }
 }
 </script>
 </body>
