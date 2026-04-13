@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -7,7 +6,7 @@
 <title>Control Center — Novus Ops</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js" onerror="window._mermaidFailed=true"></script>
 <style>
 :root{--bg:#0f1117;--surface:#181a23;--surface-2:#1f2230;--surface-3:#2a2d3a;--border:#313546;--text:#eceef4;--text-2:#9ba1b5;--text-3:#6c7189;--accent:#5b9aff;--accent-dim:rgba(91,154,255,.1);--green:#34d399;--green-bg:rgba(52,211,153,.1);--red:#f87171;--red-bg:rgba(248,113,113,.1);--amber:#fbbf24;--amber-bg:rgba(251,191,36,.1);--purple:#a78bfa;--purple-bg:rgba(167,139,250,.1);--cyan:#22d3ee;--cyan-bg:rgba(34,211,238,.1);--radius:14px}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -152,7 +151,6 @@ tr:hover{background:var(--surface-2)}
 <div id="toast" class="toast"><span id="toast-text"></span></div>
 
 <!-- Training Editor Modal -->
-
 <div class="modal-overlay" id="training-modal">
   <div class="modal-box" style="max-width:750px">
     <div class="modal-header">
@@ -216,7 +214,6 @@ tr:hover{background:var(--surface-2)}
 </div>
 
 <!-- Slide Viewer Modal -->
-
 <div class="modal-overlay" id="slide-viewer-modal">
   <div style="width:100%;max-width:900px">
     <div class="slide-deck">
@@ -234,7 +231,6 @@ tr:hover{background:var(--surface-2)}
 </div>
 
 <!-- Dashboard -->
-
 <div class="dashboard">
   <header class="topbar">
     <div class="topbar-left">
@@ -301,43 +297,39 @@ tr:hover{background:var(--surface-2)}
       </div>
     </aside>
 
-```
-<main class="main-pane">
-  <div id="view-audit" style="display:flex; flex-direction:column; height:100%;">
-    <div class="status-pills" id="status-pills"></div>
-    <div class="table-wrap" id="table-wrap">
-      <div class="empty-main"><span>📡</span><h2>Upload SAP data & start counting</h2></div>
-    </div>
-  </div>
-  <div id="view-training" style="display:none; flex-direction:column; height:100%; background:var(--bg);">
-    <div class="status-pills" style="justify-content:space-between;">
-      <h2 style="font-size:14px;font-weight:800;display:flex;align-items:center;">Training & SOP Library</h2>
-      <button class="assign-btn push" onclick="openTrainingEditor()">+ New SOP</button>
-    </div>
-    <div class="table-wrap" style="padding:16px;">
-      <div id="training-list-container" style="display:flex;flex-direction:column;gap:12px;"></div>
-    </div>
-  </div>
+    <main class="main-pane">
+      <div id="view-audit" style="display:flex; flex-direction:column; height:100%;">
+        <div class="status-pills" id="status-pills"></div>
+        <div class="table-wrap" id="table-wrap">
+          <div class="empty-main"><span>📡</span><h2>Upload SAP data & start counting</h2></div>
+        </div>
+      </div>
+      <div id="view-training" style="display:none; flex-direction:column; height:100%; background:var(--bg);">
+        <div class="status-pills" style="justify-content:space-between;">
+          <h2 style="font-size:14px;font-weight:800;display:flex;align-items:center;">Training & SOP Library</h2>
+          <button class="assign-btn push" onclick="openTrainingEditor()">+ New SOP</button>
+        </div>
+        <div class="table-wrap" style="padding:16px;">
+          <div id="training-list-container" style="display:flex;flex-direction:column;gap:12px;"></div>
+        </div>
+      </div>
 
-  <!-- Safety View -->
-  <div id="view-safety" style="display:none; flex-direction:column; height:100%; background:var(--bg);">
-    <div class="status-pills" style="justify-content:space-between;">
-      <h2 style="font-size:14px;font-weight:800;display:flex;align-items:center;">🦺 Safety & Incident Reports</h2>
-      <div style="display:flex;gap:6px;" id="safety-filter-pills"></div>
-    </div>
-    <div class="table-wrap" style="padding:16px;">
-      <div id="safety-list-container" style="display:flex;flex-direction:column;gap:8px;"></div>
-    </div>
-  </div>
+      <!-- Safety View -->
+      <div id="view-safety" style="display:none; flex-direction:column; height:100%; background:var(--bg);">
+        <div class="status-pills" style="justify-content:space-between;">
+          <h2 style="font-size:14px;font-weight:800;display:flex;align-items:center;">🦺 Safety & Incident Reports</h2>
+          <div style="display:flex;gap:6px;" id="safety-filter-pills"></div>
+        </div>
+        <div class="table-wrap" style="padding:16px;">
+          <div id="safety-list-container" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+      </div>
 
-</main>
-```
-
+    </main>
   </div>
 </div>
 
 <!-- Settings engine (shared across all pages) -->
-
 <script src="novus-settings.js"></script>
 
 <script>
@@ -350,16 +342,22 @@ let currentStatusFilter = 'all';
 // Expose toast globally so NovusSettings can use it
 window.toast = toast;
 
-// Init Mermaid
-mermaid.initialize({
-  startOnLoad: false, theme: 'dark',
-  themeVariables: {
-    darkMode: true, primaryColor: '#5b9aff', primaryTextColor: '#eceef4',
-    primaryBorderColor: '#313546', lineColor: '#6c7189', secondaryColor: '#1f2230',
-    tertiaryColor: '#2a2d3a', fontFamily: 'DM Sans, sans-serif', fontSize: '13px',
-  },
-  flowchart: { curve: 'basis', padding: 16 },
-});
+// Init Mermaid (guarded — CDN may fail on restricted networks)
+if (typeof mermaid !== 'undefined') {
+  try {
+    mermaid.initialize({
+      startOnLoad: false, theme: 'dark',
+      themeVariables: {
+        darkMode: true, primaryColor: '#5b9aff', primaryTextColor: '#eceef4',
+        primaryBorderColor: '#313546', lineColor: '#6c7189', secondaryColor: '#1f2230',
+        tertiaryColor: '#2a2d3a', fontFamily: 'DM Sans, sans-serif', fontSize: '13px',
+      },
+      flowchart: { curve: 'basis', padding: 16 },
+    });
+  } catch (e) { console.warn('Mermaid init failed:', e); }
+} else {
+  console.warn('Mermaid CDN not loaded — flowcharts disabled');
+}
 
 // ══════════════════════════════════════════
 // INIT — Split fetch strategy
@@ -372,25 +370,43 @@ setInterval(pollLightweight, 10000);
 
 /** ONE-TIME heavy fetch — includes SAP master data */
 async function fetchFullDashboard() {
+  // Show loading state
+  const badge = document.getElementById('freshness-badge');
+  badge.className = 'freshness none';
+  badge.textContent = '📋 Connecting to API...';
+
   try {
     const res = await fetch(API_URL, { redirect: 'follow' });
     const text = await res.text();
     let data;
-    try { data = JSON.parse(text); } catch {
-      console.error('Dashboard returned non-JSON:', text.substring(0, 300));
+    try { data = JSON.parse(text); } catch (parseErr) {
+      console.error('Dashboard returned non-JSON:', text.substring(0, 500));
+      badge.textContent = '❌ API returned HTML (not JSON)';
       toast('API returned invalid data — check Apps Script deployment', 'red');
       return;
     }
+
+    // Check if GAS returned an error payload
+    if (data.error) {
+      console.error('GAS server error:', data.error, data.stack);
+      badge.textContent = '❌ Server error';
+      toast('Server error: ' + data.error, 'red');
+      // Still try to use any partial data that came back
+    }
+
     sapMeta = data.sapMeta;
     report = data.report || [];
     assignments = data.assignments || [];
-    updateFreshness();
-    updateMetrics();
-    renderPills();
-    renderTable();
+
+    try { updateFreshness(); } catch (e) { console.error('updateFreshness crashed:', e); }
+    try { updateMetrics(); } catch (e) { console.error('updateMetrics crashed:', e); }
+    try { renderPills(); } catch (e) { console.error('renderPills crashed:', e); }
+    try { renderTable(); } catch (e) { console.error('renderTable crashed:', e); }
+
   } catch (err) {
     console.error('Dashboard fetch failed:', err);
-    toast('Cannot reach API — check connection', 'red');
+    badge.textContent = '❌ Cannot reach API';
+    toast('Cannot reach API — check connection or Apps Script URL', 'red');
   }
 }
 
@@ -404,19 +420,26 @@ async function pollLightweight() {
     try { data = JSON.parse(text); } catch {
       _pollFailCount++;
       if (_pollFailCount <= 2) console.warn('Poll returned non-JSON:', text.substring(0, 200));
-      return; // don't overwrite good data with bad parse
+      return;
     }
     _pollFailCount = 0;
+
+    // Detect GAS error payload
+    if (data.error) {
+      console.warn('Poll GAS error:', data.error);
+      return; // don't overwrite good data
+    }
+
     sapMeta = data.sapMeta;
     report = data.report || [];
     assignments = data.assignments || [];
-    updateFreshness();
-    updateMetrics();
-    renderPills();
-    renderTable();
+
+    try { updateFreshness(); } catch (e) { console.error('Poll updateFreshness:', e); }
+    try { updateMetrics(); } catch (e) { console.error('Poll updateMetrics:', e); }
+    try { renderPills(); } catch (e) { console.error('Poll renderPills:', e); }
+    try { renderTable(); } catch (e) { console.error('Poll renderTable:', e); }
   } catch (err) {
     _pollFailCount++;
-    // Only log the first few failures to avoid console spam
     if (_pollFailCount <= 3) console.warn('Poll failed:', err.message);
   }
 }
@@ -782,11 +805,20 @@ function toggleTrainingView() {
 
 async function loadTrainingData() {
   try {
-    const res = await fetch(API_URL + '?type=training');
-    const data = await res.json();
+    const res = await fetch(API_URL + '?type=training', { redirect: 'follow' });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch {
+      console.error('Training data non-JSON:', text.substring(0, 200));
+      toast('Training data failed to parse', 'red');
+      return;
+    }
     trainingData = data.categories || [];
     renderTrainingList();
-  } catch { toast('Failed to load training data', 'red'); }
+  } catch (err) {
+    console.error('Training fetch failed:', err);
+    toast('Failed to load training data', 'red');
+  }
 }
 
 function renderTrainingList() {
@@ -836,95 +868,106 @@ function renderTrainingList() {
 }
 
 async function renderMermaidInto(el, code, id) {
+  if (typeof mermaid === 'undefined') {
+    el.innerHTML = '<div style="color:var(--amber);font-size:11px;font-weight:700">⚠ Mermaid library not loaded — flowcharts unavailable</div>';
+    return;
+  }
   try {
     const { svg } = await mermaid.render(id + '-svg', code);
     el.innerHTML = svg;
   } catch (err) {
     el.innerHTML = `<div style="color:var(--red);font-size:11px;font-weight:700">⚠ Parse error: ${err.message}</div><pre style="font-size:10px;color:var(--text-3);margin-top:8px;white-space:pre-wrap">${code}</pre>`;
-
-}
+  }
 }
 
 function toggleEditorSections() {
-const type = document.getElementById(‘sop-type’).value;
-document.getElementById(‘editor-text-section’).style.display = (type === ‘Text’ || type === ‘Link’) ? ‘block’ : ‘none’;
-document.getElementById(‘editor-mermaid-section’).style.display = type === ‘Flowchart’ ? ‘block’ : ‘none’;
-document.getElementById(‘editor-slides-section’).style.display = type === ‘Slides’ ? ‘block’ : ‘none’;
+  const type = document.getElementById('sop-type').value;
+  document.getElementById('editor-text-section').style.display = (type === 'Text' || type === 'Link') ? 'block' : 'none';
+  document.getElementById('editor-mermaid-section').style.display = type === 'Flowchart' ? 'block' : 'none';
+  document.getElementById('editor-slides-section').style.display = type === 'Slides' ? 'block' : 'none';
 }
 
 async function previewMermaid() {
-const code = document.getElementById(‘sop-mermaid’).value.trim();
-const preview = document.getElementById(‘mermaid-preview’);
-if (!code) { preview.innerHTML = ‘’; return; }
-await renderMermaidInto(preview, code, ‘mermaid-preview’);
+  const code = document.getElementById('sop-mermaid').value.trim();
+  const preview = document.getElementById('mermaid-preview');
+  if (!code) { preview.innerHTML = ''; return; }
+  await renderMermaidInto(preview, code, 'mermaid-preview');
 }
 
 function renderSlideEditor() {
-document.getElementById(‘slide-editor-list’).innerHTML = slideEditorData.map((s, i) => ` <div class="slide-editor-item"> <span class="slide-num">${i + 1}</span> <div class="slide-fields"> <input type="text" placeholder="Slide title" value="${escHtml(s.title)}" oninput="slideEditorData[${i}].title=this.value"> <textarea rows="3" placeholder="Slide body" oninput="slideEditorData[${i}].body=this.value">${escHtml(s.body)}</textarea> </div> <button class="slide-remove-btn" onclick="removeSlideEditor(${i})">✕</button> </div>`).join(’’);
+  document.getElementById('slide-editor-list').innerHTML = slideEditorData.map((s, i) => `
+    <div class="slide-editor-item">
+      <span class="slide-num">${i + 1}</span>
+      <div class="slide-fields">
+        <input type="text" placeholder="Slide title" value="${escHtml(s.title)}" oninput="slideEditorData[${i}].title=this.value">
+        <textarea rows="3" placeholder="Slide body" oninput="slideEditorData[${i}].body=this.value">${escHtml(s.body)}</textarea>
+      </div>
+      <button class="slide-remove-btn" onclick="removeSlideEditor(${i})">✕</button>
+    </div>`).join('');
 }
 
-function addSlideEditor() { slideEditorData.push({ title: ‘’, body: ‘’ }); renderSlideEditor(); }
+function addSlideEditor() { slideEditorData.push({ title: '', body: '' }); renderSlideEditor(); }
 function removeSlideEditor(idx) { slideEditorData.splice(idx, 1); renderSlideEditor(); }
 
 function openTrainingEditor(idx = null) {
-document.getElementById(‘training-modal’).classList.add(‘open’);
-if (idx !== null) {
-const sop = trainingData[idx];
-document.getElementById(‘sop-id’).value = sop.id;
-document.getElementById(‘sop-title’).value = sop.title;
-document.getElementById(‘sop-category’).value = sop.category;
-document.getElementById(‘sop-type’).value = sop.type;
-document.getElementById(‘sop-body’).value = sop.body || ‘’;
-document.getElementById(‘sop-mermaid’).value = sop.mermaid || ‘’;
-slideEditorData = (sop.slides || []).map(s => ({ …s }));
-document.getElementById(‘btn-delete-sop’).style.display = ‘block’;
-document.getElementById(‘modal-title’).textContent = ‘Edit Training Module’;
-} else {
-document.getElementById(‘sop-id’).value = Date.now().toString();
-document.getElementById(‘sop-title’).value = ‘’;
-document.getElementById(‘sop-body’).value = ‘’;
-document.getElementById(‘sop-mermaid’).value = ‘’;
-slideEditorData = [{ title: ‘’, body: ‘’ }];
-document.getElementById(‘btn-delete-sop’).style.display = ‘none’;
-document.getElementById(‘modal-title’).textContent = ‘New Training Module’;
-}
-toggleEditorSections(); renderSlideEditor();
-document.getElementById(‘mermaid-preview’).innerHTML = ‘’;
+  document.getElementById('training-modal').classList.add('open');
+  if (idx !== null) {
+    const sop = trainingData[idx];
+    document.getElementById('sop-id').value = sop.id;
+    document.getElementById('sop-title').value = sop.title;
+    document.getElementById('sop-category').value = sop.category;
+    document.getElementById('sop-type').value = sop.type;
+    document.getElementById('sop-body').value = sop.body || '';
+    document.getElementById('sop-mermaid').value = sop.mermaid || '';
+    slideEditorData = (sop.slides || []).map(s => ({ ...s }));
+    document.getElementById('btn-delete-sop').style.display = 'block';
+    document.getElementById('modal-title').textContent = 'Edit Training Module';
+  } else {
+    document.getElementById('sop-id').value = Date.now().toString();
+    document.getElementById('sop-title').value = '';
+    document.getElementById('sop-body').value = '';
+    document.getElementById('sop-mermaid').value = '';
+    slideEditorData = [{ title: '', body: '' }];
+    document.getElementById('btn-delete-sop').style.display = 'none';
+    document.getElementById('modal-title').textContent = 'New Training Module';
+  }
+  toggleEditorSections(); renderSlideEditor();
+  document.getElementById('mermaid-preview').innerHTML = '';
 }
 
-function closeTrainingEditor() { document.getElementById(‘training-modal’).classList.remove(‘open’); }
+function closeTrainingEditor() { document.getElementById('training-modal').classList.remove('open'); }
 
 function deleteTrainingModule() {
-const id = document.getElementById(‘sop-id’).value;
-if (!id || !confirm(‘Delete this module?’)) return;
-trainingData = trainingData.filter(s => s.id !== id);
-closeTrainingEditor(); renderTrainingList();
-fetch(API_URL, { method: ‘POST’, headers: { ‘Content-Type’: ‘text/plain’ }, redirect: ‘follow’, body: JSON.stringify({ action: ‘saveTraining’, categories: trainingData }) });
-toast(‘Module deleted’, ‘amber’);
+  const id = document.getElementById('sop-id').value;
+  if (!id || !confirm('Delete this module?')) return;
+  trainingData = trainingData.filter(s => s.id !== id);
+  closeTrainingEditor(); renderTrainingList();
+  fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, redirect: 'follow', body: JSON.stringify({ action: 'saveTraining', categories: trainingData }) });
+  toast('Module deleted', 'amber');
 }
 
 async function saveTrainingModule() {
-const id = document.getElementById(‘sop-id’).value;
-const type = document.getElementById(‘sop-type’).value;
-const newSop = {
-id, title: document.getElementById(‘sop-title’).value.trim(),
-category: document.getElementById(‘sop-category’).value, type,
-body: document.getElementById(‘sop-body’).value.trim(),
-mermaid: document.getElementById(‘sop-mermaid’).value.trim(),
-slides: slideEditorData.filter(s => s.title || s.body),
-updatedAt: new Date().toISOString()
-};
-if (!newSop.title) { toast(‘Title required’, ‘amber’); return; }
-if (type === ‘Flowchart’ && !newSop.mermaid) { toast(‘Flowchart required’, ‘amber’); return; }
-if (type === ‘Slides’ && newSop.slides.length === 0) { toast(‘Add at least one slide’, ‘amber’); return; }
-if ((type === ‘Text’ || type === ‘Link’) && !newSop.body) { toast(‘Content required’, ‘amber’); return; }
-const existingIdx = trainingData.findIndex(s => s.id === id);
-if (existingIdx > -1) trainingData[existingIdx] = newSop; else trainingData.push(newSop);
-closeTrainingEditor(); renderTrainingList(); toast(‘Saving…’, ‘blue’);
-try {
-await fetch(API_URL, { method: ‘POST’, headers: { ‘Content-Type’: ‘text/plain’ }, redirect: ‘follow’, body: JSON.stringify({ action: ‘saveTraining’, categories: trainingData }) });
-toast(‘Published’, ‘green’);
-} catch { toast(‘Sync failed’, ‘red’); }
+  const id = document.getElementById('sop-id').value;
+  const type = document.getElementById('sop-type').value;
+  const newSop = {
+    id, title: document.getElementById('sop-title').value.trim(),
+    category: document.getElementById('sop-category').value, type,
+    body: document.getElementById('sop-body').value.trim(),
+    mermaid: document.getElementById('sop-mermaid').value.trim(),
+    slides: slideEditorData.filter(s => s.title || s.body),
+    updatedAt: new Date().toISOString()
+  };
+  if (!newSop.title) { toast('Title required', 'amber'); return; }
+  if (type === 'Flowchart' && !newSop.mermaid) { toast('Flowchart required', 'amber'); return; }
+  if (type === 'Slides' && newSop.slides.length === 0) { toast('Add at least one slide', 'amber'); return; }
+  if ((type === 'Text' || type === 'Link') && !newSop.body) { toast('Content required', 'amber'); return; }
+  const existingIdx = trainingData.findIndex(s => s.id === id);
+  if (existingIdx > -1) trainingData[existingIdx] = newSop; else trainingData.push(newSop);
+  closeTrainingEditor(); renderTrainingList(); toast('Saving...', 'blue');
+  try {
+    await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, redirect: 'follow', body: JSON.stringify({ action: 'saveTraining', categories: trainingData }) });
+    toast('Published', 'green');
+  } catch { toast('Sync failed', 'red'); }
 }
 
 // ══════════════════════════════════════════
@@ -933,140 +976,175 @@ toast(‘Published’, ‘green’);
 let viewerSlides = [], viewerIdx = 0;
 
 function openSlideViewer(sopIdx) {
-const sop = trainingData[sopIdx];
-if (!sop?.slides?.length) return;
-viewerSlides = sop.slides; viewerIdx = 0;
-document.getElementById(‘slide-viewer-modal’).classList.add(‘open’);
-renderSlideViewer();
+  const sop = trainingData[sopIdx];
+  if (!sop?.slides?.length) return;
+  viewerSlides = sop.slides; viewerIdx = 0;
+  document.getElementById('slide-viewer-modal').classList.add('open');
+  renderSlideViewer();
 }
-function closeSlideViewer() { document.getElementById(‘slide-viewer-modal’).classList.remove(‘open’); }
+function closeSlideViewer() { document.getElementById('slide-viewer-modal').classList.remove('open'); }
 
 function renderSlideViewer() {
-document.getElementById(‘slide-viewport’).innerHTML = viewerSlides.map((s, i) =>
-`<div class="slide ${i === viewerIdx ? 'active' : ''}"> <span class="slide-number">${i + 1} / ${viewerSlides.length}</span> <h2>${escHtml(s.title || 'Untitled')}</h2> <p>${escHtml(s.body || '')}</p> </div>`).join(’’);
-document.getElementById(‘slide-progress’).innerHTML = viewerSlides.map((_, i) =>
-`<div class="slide-pip ${i === viewerIdx ? 'active' : ''}"></div>`).join(’’);
-document.getElementById(‘slide-prev’).disabled = viewerIdx === 0;
-document.getElementById(‘slide-next’).disabled = viewerIdx === viewerSlides.length - 1;
+  document.getElementById('slide-viewport').innerHTML = viewerSlides.map((s, i) =>
+    `<div class="slide ${i === viewerIdx ? 'active' : ''}">
+      <span class="slide-number">${i + 1} / ${viewerSlides.length}</span>
+      <h2>${escHtml(s.title || 'Untitled')}</h2>
+      <p>${escHtml(s.body || '')}</p>
+    </div>`).join('');
+  document.getElementById('slide-progress').innerHTML = viewerSlides.map((_, i) =>
+    `<div class="slide-pip ${i === viewerIdx ? 'active' : ''}"></div>`).join('');
+  document.getElementById('slide-prev').disabled = viewerIdx === 0;
+  document.getElementById('slide-next').disabled = viewerIdx === viewerSlides.length - 1;
 }
 
 function slideNav(dir) {
-const next = viewerIdx + dir;
-if (next < 0 || next >= viewerSlides.length) return;
-const cur = document.querySelector(’.slide.active’);
-if (cur) { cur.classList.remove(‘active’); cur.classList.add(‘exit’); }
-viewerIdx = next;
-setTimeout(renderSlideViewer, 50);
+  const next = viewerIdx + dir;
+  if (next < 0 || next >= viewerSlides.length) return;
+  const cur = document.querySelector('.slide.active');
+  if (cur) { cur.classList.remove('active'); cur.classList.add('exit'); }
+  viewerIdx = next;
+  setTimeout(renderSlideViewer, 50);
 }
 
-document.addEventListener(‘keydown’, (e) => {
-if (!document.getElementById(‘slide-viewer-modal’).classList.contains(‘open’)) return;
-if (e.key === ‘ArrowRight’ || e.key === ’ ’) { e.preventDefault(); slideNav(1); }
-if (e.key === ‘ArrowLeft’) { e.preventDefault(); slideNav(-1); }
-if (e.key === ‘Escape’) closeSlideViewer();
+document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('slide-viewer-modal').classList.contains('open')) return;
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); slideNav(1); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); slideNav(-1); }
+  if (e.key === 'Escape') closeSlideViewer();
 });
 
-function escHtml(s) { const d = document.createElement(‘div’); d.textContent = s; return d.innerHTML; }
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
 // ══════════════════════════════════════════
 // SAFETY & INCIDENT REPORTS
 // ══════════════════════════════════════════
 let safetyData = [];
-let safetyFilter = ‘all’;
+let safetyFilter = 'all';
 
 function toggleSafetyView() {
-const auditView = document.getElementById(‘view-audit’);
-const trainingView = document.getElementById(‘view-training’);
-const safetyView = document.getElementById(‘view-safety’);
+  const auditView = document.getElementById('view-audit');
+  const trainingView = document.getElementById('view-training');
+  const safetyView = document.getElementById('view-safety');
 
-if (safetyView.style.display !== ‘flex’) {
-auditView.style.display = ‘none’;
-trainingView.style.display = ‘none’;
-safetyView.style.display = ‘flex’;
-loadSafetyData();
-} else {
-safetyView.style.display = ‘none’;
-auditView.style.display = ‘flex’;
-}
+  if (safetyView.style.display !== 'flex') {
+    auditView.style.display = 'none';
+    trainingView.style.display = 'none';
+    safetyView.style.display = 'flex';
+    loadSafetyData();
+  } else {
+    safetyView.style.display = 'none';
+    auditView.style.display = 'flex';
+  }
 }
 
 async function loadSafetyData() {
-try {
-const res = await fetch(API_URL + ‘?type=safety’);
-const data = await res.json();
-safetyData = data.incidents || [];
-renderSafetyView();
-updateSafetySummary();
-} catch { toast(‘Failed to load safety data’, ‘red’); }
+  try {
+    const res = await fetch(API_URL + '?type=safety', { redirect: 'follow' });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch {
+      console.error('Safety data non-JSON:', text.substring(0, 200));
+      toast('Safety data failed to parse', 'red');
+      return;
+    }
+    safetyData = data.incidents || [];
+    renderSafetyView();
+    updateSafetySummary();
+  } catch (err) {
+    console.error('Safety fetch failed:', err);
+    toast('Failed to load safety data', 'red');
+  }
 }
 
 function updateSafetySummary() {
-const el = document.getElementById(‘safety-summary’);
-if (!el) return;
-const open = safetyData.filter(i => i.status === ‘open’).length;
-const total = safetyData.length;
-if (total === 0) { el.textContent = ‘No reports filed’; return; }
-el.innerHTML = `<strong style="color:${open > 0 ? 'var(--red)' : 'var(--green)'}">${open} open</strong> · ${total} total`;
+  const el = document.getElementById('safety-summary');
+  if (!el) return;
+  const open = safetyData.filter(i => i.status === 'open').length;
+  const total = safetyData.length;
+  if (total === 0) { el.textContent = 'No reports filed'; return; }
+  el.innerHTML = `<strong style="color:${open > 0 ? 'var(--red)' : 'var(--green)'}">${open} open</strong> · ${total} total`;
 }
 
 // Fetch safety summary on init (lightweight — just for the rail badge)
 (async function initSafetySummary() {
-try {
-const res = await fetch(API_URL + ‘?type=safety’);
-const data = await res.json();
-safetyData = data.incidents || [];
-updateSafetySummary();
-} catch {
-const el = document.getElementById(‘safety-summary’);
-if (el) el.textContent = ‘Unable to load’;
-}
+  try {
+    const res = await fetch(API_URL + '?type=safety', { redirect: 'follow' });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch { return; }
+    safetyData = data.incidents || [];
+    updateSafetySummary();
+  } catch {
+    const el = document.getElementById('safety-summary');
+    if (el) el.textContent = 'Unable to load';
+  }
 })();
 
 function renderSafetyView() {
-// Filter pills
-const filters = [
-{ key: ‘all’, label: ‘All’, color: ‘’ },
-{ key: ‘open’, label: ‘Open’, color: ‘red’ },
-{ key: ‘resolved’, label: ‘Resolved’, color: ‘green’ },
-];
-const counts = { all: safetyData.length };
-safetyData.forEach(i => { counts[i.status] = (counts[i.status] || 0) + 1; });
+  // Filter pills
+  const filters = [
+    { key: 'all', label: 'All', color: '' },
+    { key: 'open', label: 'Open', color: 'red' },
+    { key: 'resolved', label: 'Resolved', color: 'green' },
+  ];
+  const counts = { all: safetyData.length };
+  safetyData.forEach(i => { counts[i.status] = (counts[i.status] || 0) + 1; });
 
-document.getElementById(‘safety-filter-pills’).innerHTML = filters.map(f => {
-const count = counts[f.key] || 0;
-const active = safetyFilter === f.key ? ‘active’ : ‘’;
-return `<div class="pill ${active}" onclick="filterSafety('${f.key}')"> <span class="pill-count ${f.color}">${count}</span> <span class="pill-label">${f.label}</span> </div>`;
-}).join(’’);
+  document.getElementById('safety-filter-pills').innerHTML = filters.map(f => {
+    const count = counts[f.key] || 0;
+    const active = safetyFilter === f.key ? 'active' : '';
+    return `<div class="pill ${active}" onclick="filterSafety('${f.key}')">
+              <span class="pill-count ${f.color}">${count}</span>
+              <span class="pill-label">${f.label}</span>
+            </div>`;
+  }).join('');
 
-const filtered = safetyFilter === ‘all’ ? safetyData : safetyData.filter(i => i.status === safetyFilter);
-const container = document.getElementById(‘safety-list-container’);
+  const filtered = safetyFilter === 'all' ? safetyData : safetyData.filter(i => i.status === safetyFilter);
+  const container = document.getElementById('safety-list-container');
 
-if (filtered.length === 0) {
-container.innerHTML = ‘<div style="text-align:center;padding:60px 20px;color:var(--text-3)"><span style="font-size:42px;display:block;margin-bottom:10px">🦺</span><p>No incidents to display</p></div>’;
-return;
-}
+  if (filtered.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text-3)"><span style="font-size:42px;display:block;margin-bottom:10px">🦺</span><p>No incidents to display</p></div>';
+    return;
+  }
 
-// Stats row
-const open = safetyData.filter(i => i.status === ‘open’).length;
-const critical = safetyData.filter(i => i.severity === ‘critical’ || i.severity === ‘high’).length;
-const resolved = safetyData.filter(i => i.status === ‘resolved’).length;
+  // Stats row
+  const open = safetyData.filter(i => i.status === 'open').length;
+  const critical = safetyData.filter(i => i.severity === 'critical' || i.severity === 'high').length;
+  const resolved = safetyData.filter(i => i.status === 'resolved').length;
 
-let html = ` <div class="safety-stat-row"> <div class="safety-stat"><div class="s-val red">${open}</div><div class="s-label">Open</div></div> <div class="safety-stat"><div class="s-val amber">${critical}</div><div class="s-label">High / Critical</div></div> <div class="safety-stat"><div class="s-val green">${resolved}</div><div class="s-label">Resolved</div></div> <div class="safety-stat"><div class="s-val" style="color:var(--accent)">${safetyData.length}</div><div class="s-label">Total</div></div> </div>`;
+  let html = `
+    <div class="safety-stat-row">
+      <div class="safety-stat"><div class="s-val red">${open}</div><div class="s-label">Open</div></div>
+      <div class="safety-stat"><div class="s-val amber">${critical}</div><div class="s-label">High / Critical</div></div>
+      <div class="safety-stat"><div class="s-val green">${resolved}</div><div class="s-label">Resolved</div></div>
+      <div class="safety-stat"><div class="s-val" style="color:var(--accent)">${safetyData.length}</div><div class="s-label">Total</div></div>
+    </div>`;
 
-html += filtered.map(i => {
-const ts = i.timestamp ? new Date(i.timestamp).toLocaleDateString() : ‘—’;
-const resolutionHTML = i.resolution ? `<div class="inc-resolution">✓ ${escHtml(i.resolution)}</div>` : ‘’;
-return `<div class="inc-card"> <div class="inc-top"> <span class="inc-sev ${i.severity}">${i.severity}</span> <span class="inc-status ${i.status}">${i.status}</span> </div> <div class="inc-loc">📍 ${escHtml(i.location || 'No location')}</div> <div class="inc-desc">${escHtml(i.description || '')}</div> ${resolutionHTML} <div class="inc-footer"> <span>👤 ${escHtml(i.reportedBy || 'Anonymous')}</span> <span>${ts}</span> </div> </div>`;
-}).join(’’);
+  html += filtered.map(i => {
+    const ts = i.timestamp ? new Date(i.timestamp).toLocaleDateString() : '—';
+    const resolutionHTML = i.resolution ? `<div class="inc-resolution">✓ ${escHtml(i.resolution)}</div>` : '';
+    return `<div class="inc-card">
+      <div class="inc-top">
+        <span class="inc-sev ${i.severity}">${i.severity}</span>
+        <span class="inc-status ${i.status}">${i.status}</span>
+      </div>
+      <div class="inc-loc">📍 ${escHtml(i.location || 'No location')}</div>
+      <div class="inc-desc">${escHtml(i.description || '')}</div>
+      ${resolutionHTML}
+      <div class="inc-footer">
+        <span>👤 ${escHtml(i.reportedBy || 'Anonymous')}</span>
+        <span>${ts}</span>
+      </div>
+    </div>`;
+  }).join('');
 
-container.innerHTML = html;
+  container.innerHTML = html;
 }
 
 function filterSafety(key) {
-safetyFilter = key;
-renderSafetyView();
+  safetyFilter = key;
+  renderSafetyView();
 }
 </script>
-
 </body>
 </html>
