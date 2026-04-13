@@ -1,12 +1,10 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Cycle Counter — Novus Ops</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#0f1117;--surface:#181a23;--surface-2:#1f2230;--surface-3:#2a2d3a;--border:#313546;--text:#eceef4;--text-2:#9ba1b5;--text-3:#6c7189;--accent:#5b9aff;--accent-dim:rgba(91,154,255,.1);--green:#34d399;--green-bg:rgba(52,211,153,.1);--green-border:rgba(52,211,153,.25);--red:#f87171;--red-bg:rgba(248,113,113,.1);--red-border:rgba(248,113,113,.25);--amber:#fbbf24;--amber-bg:rgba(251,191,36,.1);--amber-border:rgba(251,191,36,.25);--purple:#a78bfa;--purple-bg:rgba(167,139,250,.1);--cyan:#22d3ee;--cyan-bg:rgba(34,211,238,.1);--radius:14px;--radius-sm:10px}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -24,113 +22,103 @@ input,textarea{font-family:inherit}
 .toast.blue{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(79,140,255,.2)}
 .toast.amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
 
-/* ── Header ── */
-.header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(–surface);border-bottom:1px solid var(–border);flex-shrink:0}
+.header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
 .header h1{font-size:15px;font-weight:800}
-.header-sub{font-size:10px;color:var(–text-2);font-weight:600}
+.header-sub{font-size:10px;color:var(--text-2);font-weight:600}
 .header-right{display:flex;align-items:center;gap:8px}
-.hdr-btn{background:var(–surface-2);color:var(–text-2);padding:8px 12px;border-radius:var(–radius-sm);font-size:10px;font-weight:700}
-.sync-dot{width:8px;height:8px;border-radius:50%;background:var(–green)}
-.sync-dot.offline{background:var(–amber);animation:pulse 1.5s infinite}
-.queue-badge{background:var(–amber-bg);color:var(–amber);padding:3px 8px;border-radius:6px;font-size:9px;font-weight:800}
+.hdr-btn{background:var(--surface-2);color:var(--text-2);padding:8px 12px;border-radius:var(--radius-sm);font-size:10px;font-weight:700}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+.sync-dot.offline{background:var(--amber);animation:pulse 1.5s infinite}
+.queue-badge{background:var(--amber-bg);color:var(--amber);padding:3px 8px;border-radius:6px;font-size:9px;font-weight:800}
 @keyframes pulse{50%{opacity:.3}}
 
-/* ── Setup screen ── */
 .setup-content{flex:1;overflow-y:auto;padding:16px;padding-bottom:90px;-webkit-overflow-scrolling:touch}
 .setup-content::-webkit-scrollbar{display:none}
 .stat-row{display:flex;gap:8px;margin-bottom:16px}
-.stat-box{flex:1;background:var(–surface);border:1px solid var(–border);border-radius:var(–radius);padding:14px;text-align:center}
-.stat-val{font-family:‘JetBrains Mono’,monospace;font-size:22px;font-weight:700;color:var(–accent)}
-.stat-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(–text-3);margin-top:4px}
-.section-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(–text-3);margin:18px 0 10px}
+.stat-box{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--accent)}
+.stat-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);margin-top:4px}
+.section-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);margin:18px 0 10px}
 .aisle-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.aisle-btn{background:var(–surface);border:1.5px solid var(–border);border-radius:var(–radius);padding:20px 0;text-align:center;font-size:24px;font-weight:900;color:var(–text);position:relative;overflow:hidden}
-.aisle-btn.done{border-color:var(–green-border);background:var(–green-bg)}
-.aisle-btn .a-count{position:absolute;top:5px;right:7px;font-size:8px;font-weight:700;color:var(–text-3)}
+.aisle-btn{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:20px 0;text-align:center;font-size:24px;font-weight:900;color:var(--text);position:relative;overflow:hidden}
+.aisle-btn.done{border-color:var(--green-border);background:var(--green-bg)}
+.aisle-btn .a-count{position:absolute;top:5px;right:7px;font-size:8px;font-weight:700;color:var(--text-3)}
 
-/* ── Counting screen ── */
-.phase-bar{display:flex;gap:2px;padding:10px 16px 0;background:var(–surface)}
-.phase-step{flex:1;height:4px;border-radius:2px;background:var(–surface-3)}
-.phase-step.active{background:var(–accent)}
-.phase-step.done{background:var(–green)}
-.phase-labels{display:flex;justify-content:space-between;padding:4px 16px 10px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(–text-3);background:var(–surface);border-bottom:1px solid var(–border)}
-.phase-labels span.active{color:var(–accent)}
-.phase-labels span.done{color:var(–green)}
+.phase-bar{display:flex;gap:2px;padding:10px 16px 0;background:var(--surface)}
+.phase-step{flex:1;height:4px;border-radius:2px;background:var(--surface-3)}
+.phase-step.active{background:var(--accent)}
+.phase-step.done{background:var(--green)}
+.phase-labels{display:flex;justify-content:space-between;padding:4px 16px 10px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);background:var(--surface);border-bottom:1px solid var(--border)}
+.phase-labels span.active{color:var(--accent)}
+.phase-labels span.done{color:var(--green)}
 
-/* Bin nav */
-.bin-nav{display:flex;gap:6px;padding:12px 16px;background:var(–surface);border-bottom:1px solid var(–border);flex-shrink:0;align-items:center}
-.nav-btn{width:52px;height:52px;border-radius:12px;background:var(–surface-2);color:var(–text-3);font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.bin-input{flex:1;padding:14px;background:var(–surface-2);border:2px solid var(–border);border-radius:12px;font-family:‘JetBrains Mono’,monospace;font-size:20px;font-weight:700;color:var(–accent);text-transform:uppercase;text-align:center;outline:none}
-.bin-input:focus{border-color:var(–accent)}
+.bin-nav{display:flex;gap:6px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;align-items:center}
+.nav-btn{width:52px;height:52px;border-radius:12px;background:var(--surface-2);color:var(--text-3);font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.bin-input{flex:1;padding:14px;background:var(--surface-2);border:2px solid var(--border);border-radius:12px;font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--accent);text-transform:uppercase;text-align:center;outline:none}
+.bin-input:focus{border-color:var(--accent)}
 
-/* Bin strip */
-.bin-strip{display:flex;gap:3px;padding:8px 16px;overflow-x:auto;background:var(–surface);scrollbar-width:none;flex-shrink:0}
+.bin-strip{display:flex;gap:3px;padding:8px 16px;overflow-x:auto;background:var(--surface);scrollbar-width:none;flex-shrink:0}
 .bin-strip::-webkit-scrollbar{display:none}
-.strip-dot{min-width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;background:var(–surface-2);color:var(–text-3);flex-shrink:0}
-.strip-dot.current{min-width:38px;font-size:10px;background:var(–accent);color:#fff}
-.strip-dot.done{background:var(–green-bg);color:var(–green);border:1px solid var(–green-border)}
+.strip-dot{min-width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;background:var(--surface-2);color:var(--text-3);flex-shrink:0}
+.strip-dot.current{min-width:38px;font-size:10px;background:var(--accent);color:#fff}
+.strip-dot.done{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
 
-/* HU list */
 .hu-list{flex:1;overflow-y:auto;padding:12px 16px 260px;-webkit-overflow-scrolling:touch}
 .hu-list::-webkit-scrollbar{display:none}
-.hu-card{background:var(–surface);border:1.5px solid var(–border);border-radius:var(–radius);padding:16px;margin-bottom:8px}
-.hu-card.confirmed{border-color:var(–green-border);background:var(–green-bg)}
-.hu-card.missing{border-color:var(–red-border);background:var(–red-bg);opacity:.7}
-.hu-card.adjusted{border-color:var(–amber-border);background:var(–amber-bg)}
-.hu-card.extra{border-color:rgba(6,182,212,.25);background:var(–cyan-bg)}
+.hu-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:8px}
+.hu-card.confirmed{border-color:var(--green-border);background:var(--green-bg)}
+.hu-card.missing{border-color:var(--red-border);background:var(--red-bg);opacity:.7}
+.hu-card.adjusted{border-color:var(--amber-border);background:var(--amber-bg)}
+.hu-card.extra{border-color:rgba(6,182,212,.25);background:var(--cyan-bg)}
 .hu-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.hu-id{font-family:‘JetBrains Mono’,monospace;font-size:11px;font-weight:700;color:var(–accent);background:var(–accent-dim);padding:3px 10px;border-radius:6px}
+.hu-id{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-dim);padding:3px 10px;border-radius:6px}
 .hu-badge{font-size:8px;font-weight:800;text-transform:uppercase;padding:3px 10px;border-radius:6px;letter-spacing:.5px}
-.hu-badge.ok{background:var(–green-bg);color:var(–green)}.hu-badge.miss{background:var(–red-bg);color:var(–red)}
-.hu-badge.adj{background:var(–amber-bg);color:var(–amber)}.hu-badge.ext{background:var(–cyan-bg);color:var(–cyan)}
+.hu-badge.ok{background:var(--green-bg);color:var(--green)}.hu-badge.miss{background:var(--red-bg);color:var(--red)}
+.hu-badge.adj{background:var(--amber-bg);color:var(--amber)}.hu-badge.ext{background:var(--cyan-bg);color:var(--cyan)}
 .hu-meta{display:flex;gap:16px;margin-bottom:6px}
-.meta-label{display:block;font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(–text-3)}
+.meta-label{display:block;font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-3)}
 .meta-val{font-size:13px;font-weight:700;margin-top:1px}
-.hu-desc{font-size:10px;color:var(–text-2);margin-bottom:10px}
+.hu-desc{font-size:10px;color:var(--text-2);margin-bottom:10px}
 
-/* Qty stepper */
-.qty-row{display:flex;align-items:center;gap:6px;background:var(–surface-2);border-radius:12px;padding:6px;margin-bottom:8px}
-.qty-btn{width:64px;height:64px;border-radius:12px;background:var(–surface-3);font-size:28px;font-weight:900;color:var(–text-3);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.qty-btn.plus{color:var(–accent)}
-.qty-input{flex:1;background:transparent;border:none;text-align:center;font-family:‘JetBrains Mono’,monospace;font-size:38px;font-weight:700;color:var(–accent);outline:none;min-width:0}
-.qty-input::placeholder{color:var(–surface-3)}
-.sap-hint{text-align:center;font-size:9px;font-weight:700;color:var(–text-3);margin-bottom:8px}
+.qty-row{display:flex;align-items:center;gap:6px;background:var(--surface-2);border-radius:12px;padding:6px;margin-bottom:8px}
+.qty-btn{width:64px;height:64px;border-radius:12px;background:var(--surface-3);font-size:28px;font-weight:900;color:var(--text-3);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.qty-btn.plus{color:var(--accent)}
+.qty-input{flex:1;background:transparent;border:none;text-align:center;font-family:'JetBrains Mono',monospace;font-size:38px;font-weight:700;color:var(--accent);outline:none;min-width:0}
+.qty-input::placeholder{color:var(--surface-3)}
+.sap-hint{text-align:center;font-size:9px;font-weight:700;color:var(--text-3);margin-bottom:8px}
 .hu-actions{display:flex;gap:6px}
 .act-btn{flex:1;padding:18px 0;border-radius:12px;font-size:12px;font-weight:800;text-transform:uppercase;min-height:56px;display:flex;align-items:center;justify-content:center}
-.act-btn.confirm{background:var(–green);color:#fff}
-.act-btn.miss{background:var(–surface-3);color:var(–red);border:1.5px solid var(–red-border)}
-.act-btn.miss.active{background:var(–red);color:#fff}
-.resolved-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(–surface-2);border-radius:var(–radius-sm);margin-bottom:6px}
-.resolved-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(–text-3)}
-.resolved-val{font-family:‘JetBrains Mono’,monospace;font-size:20px;font-weight:700}
-.resolved-val.match{color:var(–green)}.resolved-val.mismatch{color:var(–amber)}
-.undo-btn{width:100%;padding:8px;background:none;color:var(–text-3);font-size:9px;font-weight:700}
-.note-btn{width:100%;margin-top:6px;padding:10px 14px;background:var(–surface-2);border:1px solid var(–border);border-radius:var(–radius-sm);font-size:10px;font-weight:700;color:var(–text-3);text-align:left}
-.note-btn.has{background:var(–amber-bg);border-color:var(–amber-border);color:var(–amber)}
-.empty-bin{text-align:center;padding:48px 24px;color:var(–text-3)}
+.act-btn.confirm{background:var(--green);color:#fff}
+.act-btn.miss{background:var(--surface-3);color:var(--red);border:1.5px solid var(--red-border)}
+.act-btn.miss.active{background:var(--red);color:#fff}
+.resolved-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface-2);border-radius:var(--radius-sm);margin-bottom:6px}
+.resolved-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text-3)}
+.resolved-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700}
+.resolved-val.match{color:var(--green)}.resolved-val.mismatch{color:var(--amber)}
+.undo-btn{width:100%;padding:8px;background:none;color:var(--text-3);font-size:9px;font-weight:700}
+.note-btn{width:100%;margin-top:6px;padding:10px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:10px;font-weight:700;color:var(--text-3);text-align:left}
+.note-btn.has{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber)}
+.empty-bin{text-align:center;padding:48px 24px;color:var(--text-3)}
 .empty-bin .icon{font-size:40px;margin-bottom:10px;display:block}
-.counted-banner{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(–radius);margin-bottom:8px;background:var(–green-bg);border:1px solid var(–green-border)}
-.counted-banner strong{font-size:11px;color:var(–green);font-weight:800}
-.counted-banner small{font-size:9px;color:var(–text-2)}
+.counted-banner{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--radius);margin-bottom:8px;background:var(--green-bg);border:1px solid var(--green-border)}
+.counted-banner strong{font-size:11px;color:var(--green);font-weight:800}
+.counted-banner small{font-size:9px;color:var(--text-2)}
 
-/* Bottom bar */
-.bottom-bar{position:fixed;bottom:0;left:0;right:0;padding:10px 16px calc(env(safe-area-inset-bottom,14px) + 10px);background:rgba(11,12,16,.92);backdrop-filter:blur(20px);border-top:1px solid var(–border);z-index:50}
+.bottom-bar{position:fixed;bottom:0;left:0;right:0;padding:10px 16px calc(env(safe-area-inset-bottom,14px) + 10px);background:rgba(11,12,16,.92);backdrop-filter:blur(20px);border-top:1px solid var(--border);z-index:50}
 .bottom-row{display:flex;gap:6px;margin-bottom:8px}
-.btn-sec{flex:1;padding:14px 0;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;background:var(–surface-2);color:var(–text-2);border:1.5px solid var(–border);text-align:center;min-height:48px}
-.btn-pri{width:100%;padding:18px 0;border-radius:var(–radius);font-size:14px;font-weight:800;text-transform:uppercase;background:var(–green);color:#fff;min-height:60px;display:flex;align-items:center;justify-content:center}
-.btn-pri.disabled{background:var(–surface-3);color:var(–text-3);pointer-events:none}
+.btn-sec{flex:1;padding:14px 0;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;background:var(--surface-2);color:var(--text-2);border:1.5px solid var(--border);text-align:center;min-height:48px}
+.btn-pri{width:100%;padding:18px 0;border-radius:var(--radius);font-size:14px;font-weight:800;text-transform:uppercase;background:var(--green);color:#fff;min-height:60px;display:flex;align-items:center;justify-content:center}
+.btn-pri.disabled{background:var(--surface-3);color:var(--text-3);pointer-events:none}
 
-/* Setup nav */
-.setup-nav{position:fixed;bottom:0;left:0;right:0;display:flex;gap:6px;padding:10px 16px calc(env(safe-area-inset-bottom,14px) + 10px);background:rgba(11,12,16,.92);backdrop-filter:blur(20px);border-top:1px solid var(–border)}
-.setup-nav .nav-tab{flex:1;padding:14px 0;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;background:var(–surface-2);color:var(–text-2);border:1.5px solid var(–border);text-align:center;min-height:48px}
-.setup-nav .nav-tab.active{background:var(–accent);color:#fff;border-color:var(–accent)}
+.setup-nav{position:fixed;bottom:0;left:0;right:0;display:flex;gap:6px;padding:10px 16px calc(env(safe-area-inset-bottom,14px) + 10px);background:rgba(11,12,16,.92);backdrop-filter:blur(20px);border-top:1px solid var(--border)}
+.setup-nav .nav-tab{flex:1;padding:14px 0;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;background:var(--surface-2);color:var(--text-2);border:1.5px solid var(--border);text-align:center;min-height:48px}
+.setup-nav .nav-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 
-/* Extra form */
-.extra-form{background:var(–surface);border:1.5px dashed var(–border);border-radius:var(–radius);padding:16px;margin-bottom:8px}
-.extra-form h3{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(–cyan);margin-bottom:10px}
-.field{width:100%;padding:14px;background:var(–surface-2);border:1.5px solid var(–border);border-radius:12px;font-size:15px;font-weight:600;color:var(–text);outline:none;margin-bottom:6px}
-.field:focus{border-color:var(–accent)}
-.field::placeholder{color:var(–text-3)}
+.extra-form{background:var(--surface);border:1.5px dashed var(--border);border-radius:var(--radius);padding:16px;margin-bottom:8px}
+.extra-form h3{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--cyan);margin-bottom:10px}
+.field{width:100%;padding:14px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:12px;font-size:15px;font-weight:600;color:var(--text);outline:none;margin-bottom:6px}
+.field:focus{border-color:var(--accent)}
+.field::placeholder{color:var(--text-3)}
 .field-row{display:flex;gap:6px}
 .hidden{display:none !important}
 </style>
@@ -139,8 +127,6 @@ input,textarea{font-family:inherit}
 <body>
 
 <div id="toast" class="toast"><span id="toast-text"></span></div>
-
-<!-- ═══ SETUP ═══ -->
 
 <div id="screen-setup" class="screen active">
   <div class="header">
@@ -162,27 +148,19 @@ input,textarea{font-family:inherit}
       <div class="stat-box"><div class="stat-val" id="stat-bins">0</div><div class="stat-label">Bins</div></div>
       <div class="stat-box"><div class="stat-val" id="stat-done">0</div><div class="stat-label">Done</div></div>
     </div>
-
-```
-<div class="section-title">Count By Product</div>
-<div style="display:flex; gap:8px; margin-bottom: 24px;">
-  <input type="text" id="product-search" class="field mono" placeholder="Enter Product #..." style="flex:1; padding:12px; border-radius:12px; background:var(--surface); border:1px solid var(--border); color:var(--accent); font-weight:700; outline:none;">
-  <button class="hdr-btn" style="background:var(--accent); color:#fff; font-size:12px; padding:0 16px;" onclick="searchProduct()">Search</button>
-</div>
-
-<div class="section-title">Select Aisle</div>
-<div class="aisle-grid" id="aisle-grid"></div>
-```
-
+    <div class="section-title">Count By Product</div>
+    <div style="display:flex; gap:8px; margin-bottom: 24px;">
+      <input type="text" id="product-search" class="field mono" placeholder="Enter Product #..." style="flex:1; padding:12px; border-radius:12px; background:var(--surface); border:1px solid var(--border); color:var(--accent); font-weight:700; outline:none; margin:0;">
+      <button class="hdr-btn" style="background:var(--accent); color:#fff; font-size:12px; padding:0 16px;" onclick="searchProduct()">Search</button>
+    </div>
+    <div class="section-title">Select Aisle</div>
+    <div class="aisle-grid" id="aisle-grid"></div>
   </div>
-
   <div class="setup-nav">
     <button class="nav-tab active">Count</button>
     <a href="index.html" class="nav-tab" style="text-decoration:none;display:flex;align-items:center;justify-content:center">Home</a>
   </div>
 </div>
-
-<!-- ═══ COUNTING ═══ -->
 
 <div id="screen-counting" class="screen">
   <div class="header">
@@ -207,8 +185,6 @@ input,textarea{font-family:inherit}
     <button class="btn-pri" id="btn-finalize" onclick="finalizeBin()">Finalize & Next Bin →</button>
   </div>
 </div>
-
-<!-- ═══ QUICK MOVE MODAL ═══ -->
 
 <div id="modal-move" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.8); backdrop-filter:blur(5px); z-index:100; align-items:center; justify-content:center; padding:20px;">
   <div style="background:var(--surface); width:100%; max-width:400px; padding:20px; border-radius:var(--radius); border:1px solid var(--purple);">
@@ -235,18 +211,157 @@ input,textarea{font-family:inherit}
   </div>
 </div>
 
-<script src="novus-settings.js"></script>
+<script>
+const NovusSettings = (() => {
+  const STORAGE_KEY = 'novus_settings';
+  const DEFAULTS = { userName: '', theme: 'dark', pollInterval: 10, hapticFeedback: true, compactMode: false };
+
+  const LIGHT_VARS = {
+    '--bg': '#f8f9fb', '--surface': '#ffffff', '--surface-2': '#f1f3f5', '--surface-3': '#e5e7eb',
+    '--border': '#d1d5dc', '--text': '#111827', '--text-2': '#374151', '--text-3': '#6b7280',
+    '--accent': '#2563eb', '--accent-dim': 'rgba(37,99,235,.07)',
+    '--green': '#059669', '--green-bg': 'rgba(5,150,105,.08)',
+    '--red': '#dc2626', '--red-bg': 'rgba(220,38,38,.07)',
+    '--amber': '#b45309', '--amber-bg': 'rgba(180,83,9,.07)',
+    '--purple': '#7c3aed', '--purple-bg': 'rgba(124,58,237,.07)',
+    '--cyan': '#0e7490', '--cyan-bg': 'rgba(14,116,144,.07)'
+  };
+
+  const DARK_VARS = {
+    '--bg': '#0f1117', '--surface': '#181a23', '--surface-2': '#1f2230', '--surface-3': '#2a2d3a',
+    '--border': '#313546', '--text': '#eceef4', '--text-2': '#9ba1b5', '--text-3': '#6c7189',
+    '--accent': '#5b9aff', '--accent-dim': 'rgba(91,154,255,.1)',
+    '--green': '#34d399', '--green-bg': 'rgba(52,211,153,.1)',
+    '--red': '#f87171', '--red-bg': 'rgba(248,113,113,.1)',
+    '--amber': '#fbbf24', '--amber-bg': 'rgba(251,191,36,.1)',
+    '--purple': '#a78bfa', '--purple-bg': 'rgba(167,139,250,.1)',
+    '--cyan': '#22d3ee', '--cyan-bg': 'rgba(34,211,238,.1)'
+  };
+
+  function loadAll() {
+    try { const r = localStorage.getItem(STORAGE_KEY); return r ? { ...DEFAULTS, ...JSON.parse(r) } : { ...DEFAULTS }; }
+    catch { return { ...DEFAULTS }; }
+  }
+  function saveAll(s) { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
+
+  let _cache = loadAll();
+  const legacyName = localStorage.getItem('novus_name');
+  if (legacyName && !_cache.userName) { _cache.userName = legacyName; saveAll(_cache); }
+
+  function get(key) { return _cache[key] !== undefined ? _cache[key] : DEFAULTS[key]; }
+  function set(key, val) {
+    _cache[key] = val; saveAll(_cache);
+    if (key === 'userName') localStorage.setItem('novus_name', val);
+    if (key === 'theme') applyTheme();
+  }
+  function getUser() { return get('userName') || ''; }
+  function applyTheme() {
+    const vars = get('theme') === 'light' ? LIGHT_VARS : DARK_VARS;
+    Object.entries(vars).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+    document.body.setAttribute('data-theme', get('theme'));
+  }
+
+  let _modalInjected = false;
+  function _injectModal() {
+    if (_modalInjected) return;
+    _modalInjected = true;
+    const overlay = document.createElement('div');
+    overlay.id = 'novus-settings-overlay';
+    overlay.innerHTML = `
+      <div class="ns-modal">
+        <div class="ns-header"><h3>⚙ Settings</h3><button class="ns-close" onclick="NovusSettings.closeModal()">✕</button></div>
+        <div class="ns-body">
+          <div class="ns-section"><div class="ns-section-title">Identity</div>
+            <label class="ns-field-label">Your Name / ID</label>
+            <input type="text" class="ns-input" id="ns-username" placeholder="Enter your name...">
+            <div class="ns-hint">Attached to all audit payloads and reports</div></div>
+          <div class="ns-section"><div class="ns-section-title">Appearance</div>
+            <div class="ns-toggle-row"><div><div class="ns-toggle-label">Theme</div><div class="ns-hint" style="margin-top:2px">Dark or light mode</div></div>
+              <div class="ns-theme-switch" id="ns-theme-switch" onclick="NovusSettings._toggleTheme()">
+                <span class="ns-switch-option" data-val="dark">🌙 Dark</span>
+                <span class="ns-switch-option" data-val="light">☀️ Light</span>
+                <div class="ns-switch-slider" id="ns-switch-slider"></div></div></div></div>
+          <div class="ns-section"><div class="ns-section-title">Preferences</div>
+            <div class="ns-toggle-row"><div><div class="ns-toggle-label">Haptic Feedback</div><div class="ns-hint" style="margin-top:2px">Vibrate on taps (mobile)</div></div>
+              <label class="ns-checkbox"><input type="checkbox" id="ns-haptic" onchange="NovusSettings.set('hapticFeedback',this.checked)"><span class="ns-check-slider"></span></label></div>
+            <div class="ns-toggle-row" style="margin-top:10px"><div><div class="ns-toggle-label">Compact Mode</div><div class="ns-hint" style="margin-top:2px">Smaller spacing</div></div>
+              <label class="ns-checkbox"><input type="checkbox" id="ns-compact" onchange="NovusSettings.set('compactMode',this.checked)"><span class="ns-check-slider"></span></label></div></div>
+          <div class="ns-section"><div class="ns-section-title">Data</div>
+            <button class="ns-danger-btn" onclick="if(confirm('Clear all local data?')){localStorage.removeItem('novus_sap');localStorage.removeItem('novus_done');localStorage.removeItem('novus_queue');NovusSettings._toast('Cache cleared');}">🗑 Clear Local Cache</button>
+            <div class="ns-hint" style="margin-top:6px">App v2.2 · Plant 1730</div></div>
+        </div>
+        <div class="ns-footer"><button class="ns-save-btn" onclick="NovusSettings._save()">Save & Close</button></div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const style = document.createElement('style');
+    style.textContent = `
+      #novus-settings-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;padding:20px}
+      #novus-settings-overlay.open{display:flex}
+      .ns-modal{background:var(--surface);width:100%;max-width:480px;border-radius:16px;border:1.5px solid var(--border);display:flex;flex-direction:column;max-height:90vh;overflow:hidden}
+      .ns-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+      .ns-header h3{font-size:16px;font-weight:800;color:var(--text)}
+      .ns-close{background:none;border:none;color:var(--text-3);font-size:18px;font-weight:900;cursor:pointer}
+      .ns-body{padding:0;overflow-y:auto;flex:1}
+      .ns-section{padding:16px 20px;border-bottom:1px solid var(--border)}.ns-section:last-child{border-bottom:none}
+      .ns-section-title{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin-bottom:12px}
+      .ns-field-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);display:block;margin-bottom:6px}
+      .ns-input{width:100%;padding:12px 14px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-weight:600;color:var(--text);outline:none;font-family:inherit}
+      .ns-input:focus{border-color:var(--accent)}
+      .ns-hint{font-size:9px;color:var(--text-3);margin-top:4px}
+      .ns-toggle-row{display:flex;justify-content:space-between;align-items:center}
+      .ns-toggle-label{font-size:12px;font-weight:700;color:var(--text)}
+      .ns-theme-switch{display:flex;position:relative;background:var(--surface-2);border-radius:8px;border:1px solid var(--border);overflow:hidden;cursor:pointer;user-select:none}
+      .ns-switch-option{padding:6px 14px;font-size:10px;font-weight:800;color:var(--text-3);position:relative;z-index:2;transition:color .2s}
+      .ns-switch-option.active{color:#fff}
+      .ns-switch-slider{position:absolute;top:2px;left:2px;width:calc(50% - 2px);height:calc(100% - 4px);background:var(--accent);border-radius:6px;transition:transform .2s ease;z-index:1}
+      .ns-switch-slider.right{transform:translateX(100%)}
+      .ns-checkbox{position:relative;width:44px;height:24px;flex-shrink:0}
+      .ns-checkbox input{opacity:0;width:0;height:0}
+      .ns-check-slider{position:absolute;inset:0;background:var(--surface-3);border-radius:12px;cursor:pointer;transition:background .2s}
+      .ns-check-slider::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform .2s}
+      .ns-checkbox input:checked+.ns-check-slider{background:var(--accent)}
+      .ns-checkbox input:checked+.ns-check-slider::after{transform:translateX(20px)}
+      .ns-danger-btn{width:100%;padding:10px;background:var(--red-bg);color:var(--red);border:1px solid rgba(248,113,113,.25);border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit}
+      .ns-footer{padding:12px 20px;border-top:1px solid var(--border)}
+      .ns-save-btn{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit}`;
+    document.body.appendChild(style);
+  }
+
+  function openModal() {
+    _injectModal();
+    document.getElementById('novus-settings-overlay').classList.add('open');
+    document.getElementById('ns-username').value = get('userName');
+    document.getElementById('ns-haptic').checked = get('hapticFeedback');
+    document.getElementById('ns-compact').checked = get('compactMode');
+    _updateThemeSwitch();
+  }
+  function closeModal() { const o = document.getElementById('novus-settings-overlay'); if (o) o.classList.remove('open'); }
+  function _updateThemeSwitch() {
+    const s = document.getElementById('ns-switch-slider'); const opts = document.querySelectorAll('.ns-switch-option');
+    if (!s) return; s.classList.toggle('right', get('theme') === 'light');
+    opts.forEach(o => o.classList.toggle('active', o.dataset.val === get('theme')));
+  }
+  function _toggleTheme() { set('theme', get('theme') === 'dark' ? 'light' : 'dark'); _updateThemeSwitch(); }
+  function _save() {
+    set('userName', document.getElementById('ns-username').value.trim());
+    closeModal(); _toast('Settings saved');
+    window.dispatchEvent(new CustomEvent('novus-settings-changed'));
+  }
+  function _toast(msg) {
+    if (typeof window.toast === 'function') { window.toast(msg, 'green'); return; }
+    const t = document.getElementById('toast');
+    if (t) { const x = document.getElementById('toast-text'); if (x) x.textContent = msg; t.className = 'toast green show'; setTimeout(() => t.classList.remove('show'), 2000); }
+  }
+
+  applyTheme();
+  return { get, set, getUser, applyTheme, openModal, closeModal, _toggleTheme, _save, _toast };
+})();
+</script>
 
 <script>
-// ══════════════════════════════════════════
-// CONFIG
-// ══════════════════════════════════════════
 const API_URL = 'https://script.google.com/macros/s/AKfycbwZ1Dhmf6cK_hWV2xLKYmwEImUvifIRCPqVm0Fz4E7gjvfcpyzoqhAFIgvgwrjBretc/exec';
 const AISLE_ROWS = 'ABCDEFGHJKLMNP'.split('');
 
-// ══════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════
 let sapMaster = JSON.parse(localStorage.getItem('novus_sap') || '[]');
 let binIndex = {};
 let huIndex = new Map();
@@ -263,9 +378,6 @@ let offlineQueue = JSON.parse(localStorage.getItem('novus_queue') || '[]');
 let activeMoveIdx = -1;
 let isOnline = navigator.onLine;
 
-// ══════════════════════════════════════════
-// INIT
-// ══════════════════════════════════════════
 document.getElementById('name-display').textContent = auditorName || 'Set Name';
 updateQueueBadge();
 updateSyncDot();
@@ -357,12 +469,6 @@ function updateDoneCount() {
   document.getElementById('stat-progress').textContent = `${completedBins.size} / ${Object.keys(binIndex).length}`;
 }
 
-// ══════════════════════════════════════════
-// IDEMPOTENCY KEY GENERATOR
-// Must be DETERMINISTIC for the same bin+session so offline replays
-// are caught as duplicates, but unique across different counts.
-// Uses item count + first HU as a fingerprint.
-// ══════════════════════════════════════════
 function makeIdempotencyKey(bin, sessionId, items) {
   const fingerprint = items 
     ? `${items.length}|${(items[0]?.hu || 'empty')}`
@@ -370,9 +476,6 @@ function makeIdempotencyKey(bin, sessionId, items) {
   return `${sessionId}|${bin}|${auditorName}|${fingerprint}`;
 }
 
-// ══════════════════════════════════════════
-// AISLE GRID & NAVIGATION
-// ══════════════════════════════════════════
 function buildAisleGrid() {
   const grid = document.getElementById('aisle-grid');
   grid.innerHTML = '';
@@ -472,9 +575,6 @@ function renderPhase() {
   });
 }
 
-// ══════════════════════════════════════════
-// HU LIST RENDERING
-// ══════════════════════════════════════════
 function renderHUList() {
   const list = document.getElementById('hu-list');
   list.innerHTML = '';
@@ -570,9 +670,6 @@ function renderCard(item, idx) {
   </div>`;
 }
 
-// ══════════════════════════════════════════
-// HU ACTIONS
-// ══════════════════════════════════════════
 function confirmHU(idx) {
   haptic();
   currentItems[idx].scannedQty = currentItems[idx].scannedQty || currentItems[idx].sapQty;
@@ -632,7 +729,6 @@ function checkPhaseAdvance() {
   }
 }
 
-// ── Move Modal (in-cycle only) ──
 function openMoveModal(idx) {
   activeMoveIdx = idx;
   const item = currentItems[idx];
@@ -655,7 +751,6 @@ async function submitQuickMove() {
   const sapBin = item.sapBin, sapQty = item.sapQty, product = item.product, desc = item.desc, batch = item.batch;
   const type = scanQty === sapQty ? 'move' : 'move_adj';
 
-  // Update the current count screen state
   if (item.isExtra) { currentItems.splice(activeMoveIdx, 1); }
   else { item.scannedQty = 0; item.status = 'missing'; item.note = `Moved to ${scanBin}`; }
   renderHUList(); checkPhaseAdvance();
@@ -672,7 +767,6 @@ async function submitQuickMove() {
   await sendPayload(payload, 'Movement logged');
 }
 
-// ── Extras ──
 function toggleExtra() { showingExtra = !showingExtra; renderHUList(); }
 
 function extraLookup() {
@@ -706,9 +800,6 @@ function addExtra() {
   toast('Extra item added', 'blue');
 }
 
-// ══════════════════════════════════════════
-// FINALIZE & SYNC — BULLETPROOFED
-// ══════════════════════════════════════════
 function updateFinalizeBtn() {
   const pending = currentItems.filter(i => i.status === 'pending').length;
   const btn = document.getElementById('btn-finalize');
@@ -727,7 +818,6 @@ async function finalizeBin() {
   if (currentItems.some(i => i.status === 'pending')) return;
   haptic();
 
-  // ── Build items with correct type classification ──
   const items = currentItems.map(i => {
     let type = 'ok';
     if (i.status === 'missing') {
@@ -757,7 +847,6 @@ async function finalizeBin() {
 
   const success = await sendPayload(payload, 'Bin finalized');
 
-  // Only advance if the payload was sent or queued successfully
   if (success) {
     completedBins.add(currentBin);
     localStorage.setItem('novus_done', JSON.stringify([...completedBins]));
@@ -766,32 +855,25 @@ async function finalizeBin() {
   }
 }
 
-// ══════════════════════════════════════════
-// NETWORK LAYER — Offline-safe with queue
-// Returns true if sent or queued, false on unrecoverable error
-// ══════════════════════════════════════════
 async function sendPayload(payload, successMsg) {
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },  // GAS requires text/plain to avoid CORS preflight
+      headers: { 'Content-Type': 'text/plain' },
       redirect: 'follow',
       body: JSON.stringify(payload),
     });
 
-    // GAS can return HTML error pages — guard the JSON parse
     const text = await res.text();
     let result;
     try {
       result = JSON.parse(text);
     } catch {
-      console.error('GAS returned non-JSON:', text.substring(0, 200));
       toast('Server returned invalid response', 'red');
-      // Queue it for retry
       offlineQueue.push(payload);
       localStorage.setItem('novus_queue', JSON.stringify(offlineQueue));
       updateQueueBadge();
-      return true; // queued, so caller can advance
+      return true; 
     }
 
     if (result.success === false) {
@@ -807,13 +889,12 @@ async function sendPayload(payload, successMsg) {
     isOnline = true; updateSyncDot();
     return true;
   } catch (err) {
-    console.warn('Network error, queuing payload:', err);
     offlineQueue.push(payload);
     localStorage.setItem('novus_queue', JSON.stringify(offlineQueue));
     updateQueueBadge();
     isOnline = false; updateSyncDot();
     toast('Saved offline — will sync later', 'amber');
-    return true; // queued successfully
+    return true; 
   }
 }
 
@@ -835,7 +916,7 @@ async function flushQueue() {
         const result = JSON.parse(text);
         if (result.success === false) failed.push(payload);
       } catch {
-        failed.push(payload); // non-JSON response, retry later
+        failed.push(payload); 
       }
     } catch {
       failed.push(payload);
@@ -849,12 +930,8 @@ async function flushQueue() {
   }
 }
 
-// Periodic flush
 setInterval(flushQueue, 15000);
 
-// ══════════════════════════════════════════
-// UTILITIES
-// ══════════════════════════════════════════
 function switchScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
@@ -876,7 +953,6 @@ function setName() {
   }
 }
 
-// Sync name when settings modal saves
 window.addEventListener('novus-settings-changed', () => {
   auditorName = NovusSettings.getUser();
   document.getElementById('name-display').textContent = auditorName || 'Set Name';
@@ -891,7 +967,7 @@ function toast(msg, color) {
 
 function haptic() { if (NovusSettings.get('hapticFeedback') && navigator.vibrate) navigator.vibrate(15); }
 
-window.toast = toast; // Expose for NovusSettings modal
+window.toast = toast; 
 
 document.getElementById('bin-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') navigateToBin(e.target.value);
