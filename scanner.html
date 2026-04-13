@@ -122,7 +122,6 @@ input,textarea{font-family:inherit}
 .field-row{display:flex;gap:6px}
 .hidden{display:none !important}
 </style>
-
 </head>
 <body>
 
@@ -365,7 +364,24 @@ const AISLE_ROWS = 'ABCDEFGHJKLMNP'.split('');
 let sapMaster = JSON.parse(localStorage.getItem('novus_sap') || '[]');
 let binIndex = {};
 let huIndex = new Map();
-let completedBins = new Set(JSON.parse(localStorage.getItem('novus_done') || '[]'));
+
+// ── NEW DAILY CACHE EXPIRATION LOGIC ──
+let todayStr = new Date().toDateString();
+let rawDone = JSON.parse(localStorage.getItem('novus_done') || '{"date":"","bins":[]}');
+let completedBins = new Set();
+
+// Check if it is a legacy array OR if the date is from yesterday
+if (Array.isArray(rawDone)) {
+  localStorage.setItem('novus_done', JSON.stringify({ date: todayStr, bins: [] }));
+} else if (rawDone.date !== todayStr) {
+  // It's a new day! Wipe the cache automatically so bins aren't marked 'Already Counted'
+  localStorage.setItem('novus_done', JSON.stringify({ date: todayStr, bins: [] }));
+} else {
+  // Same day, restore the bins
+  completedBins = new Set(rawDone.bins);
+}
+// ──────────────────────────────────────
+
 let auditorName = NovusSettings.getUser();
 let currentBin = '';
 let currentItems = [];
@@ -455,6 +471,17 @@ async function refreshAll() {
       buildIndexes();
       buildAisleGrid();
       isOnline = true; updateSyncDot();
+      
+      // Prompt user to clear bins when they refresh SAP data manually
+      if (completedBins.size > 0) {
+         if (confirm("New SAP data loaded! Do you want to clear your 'Already Counted' bins to start a fresh cycle?")) {
+             completedBins.clear();
+             localStorage.setItem('novus_done', JSON.stringify({ date: new Date().toDateString(), bins: [] }));
+             updateDoneCount();
+             buildAisleGrid();
+         }
+      }
+
       toast(`Refreshed · ${sapMaster.length} items`, 'blue');
     }
   } catch { 
@@ -849,7 +876,7 @@ async function finalizeBin() {
 
   if (success) {
     completedBins.add(currentBin);
-    localStorage.setItem('novus_done', JSON.stringify([...completedBins]));
+    localStorage.setItem('novus_done', JSON.stringify({ date: new Date().toDateString(), bins: [...completedBins] }));
     updateDoneCount();
     stepBin(1);
   }
