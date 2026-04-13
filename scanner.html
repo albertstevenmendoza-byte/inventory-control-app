@@ -21,7 +21,7 @@ button:active{transform:scale(.97)}
 .header{padding:16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
 .header h1{font-size:18px;font-weight:900;letter-spacing:-0.5px}
 
-/* Search / Command Bar */
+/* Search Area */
 .search-container{position:relative;margin-bottom:20px; padding:0 16px}
 .search-input{width:100%;padding:16px 16px 16px 48px;border-radius:14px;border:2px solid var(--border);background:var(--surface-2);color:#fff;font-size:16px;outline:none}
 .search-input:focus{border-color:var(--accent)}
@@ -52,27 +52,19 @@ button:active{transform:scale(.97)}
 .btn-miss{background:var(--red-bg);color:var(--red);border:1px solid var(--red)}
 .btn-note{background:var(--surface-3);color:var(--text-2)}
 
-/* FRESH Mode (Optimized) */
+/* FRESH Mode */
 .fresh-tally-list{display:flex;flex-direction:column;gap:12px;padding:16px}
 .fresh-sku-card{background:var(--surface);border:2px solid var(--border);border-radius:16px;padding:16px;display:flex;justify-content:space-between;align-items:center}
-.fresh-sku-card.active{border-color:var(--amber)}
-.tally-display{text-align:right}
 .tally-count{font-family:'JetBrains Mono';font-size:32px;font-weight:900;color:var(--amber)}
 
-/* Bin Strip */
+/* Navigation Strip */
 .bin-strip{display:flex;gap:6px;overflow-x:auto;padding:12px 16px;background:var(--surface-2);border-bottom:1px solid var(--border);scrollbar-width:none}
 .strip-dot{min-width:50px;height:32px;border-radius:8px;background:var(--surface-3);color:var(--text-2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800}
 .strip-dot.active{background:var(--accent);color:#fff; border: 2px solid #fff}
-.strip-dot.done{color:var(--green); border: 1px solid var(--green)}
-.strip-dot.has-miss{color:var(--red); border: 1px solid var(--red)}
 
-/* Footer */
 .footer{padding:16px;background:var(--surface);border-top:1px solid var(--border);display:flex;gap:10px}
 .footer-btn{padding:16px;border-radius:12px;font-size:13px;font-weight:800;text-transform:uppercase}
-.btn-primary{background:var(--green);color:#000}
-.btn-sec{background:var(--surface-3);color:#fff}
 
-/* Toast & Modals */
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:12px;background:var(--accent);color:#000;font-weight:800;z-index:9999;display:none}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
 .modal{background:var(--surface);padding:30px;border-radius:20px;width:100%;max-width:400px;text-align:center;border:2px solid var(--accent)}
@@ -104,14 +96,14 @@ button:active{transform:scale(.97)}
 <div id="view-audit" class="view">
     <header class="header">
         <button onclick="showView('hub')" style="background:none; color:var(--accent); font-weight:800">← EXIT</button>
-        <h1 id="audit-title" onclick="manualJumpPrompt()" style="cursor:pointer; text-decoration: underline dotted var(--text-3)">Audit</h1>
+        <h1 id="audit-title" onclick="manualJump()">Audit</h1>
         <div id="audit-meta" style="font-size:10px; background:var(--accent-dim); color:var(--accent); padding:4px 8px; border-radius:10px"></div>
     </header>
     <div class="bin-strip" id="bin-strip"></div>
     <main class="audit-scroll" id="audit-list"></main>
-    <footer class="footer" id="audit-footer">
-        <button class="footer-btn btn-sec" onclick="prevBin()" style="flex:1">← PREV</button>
-        <button class="footer-btn btn-primary" style="flex:3; background:var(--accent); color:#000" onclick="nextBin()">NEXT BIN →</button>
+    <footer class="footer">
+        <button class="footer-btn" style="flex:1; background:var(--surface-3); color:#fff" onclick="prevBin()">PREV</button>
+        <button class="footer-btn" style="flex:3; background:var(--green); color:#000" onclick="submitAndNext()">SUBMIT & NEXT →</button>
     </footer>
 </div>
 
@@ -120,14 +112,14 @@ button:active{transform:scale(.97)}
     <header class="header">
         <button onclick="showView('hub')" style="background:none; color:var(--amber); font-weight:800">← EXIT</button>
         <h1 style="color:var(--amber)">FRESH Tally</h1>
-        <div style="font-size:10px; color:var(--text-3)">SKU-CENTRIC</div>
+        <div></div>
     </header>
     <div class="search-container" style="margin-top:15px">
         <input type="text" id="fresh-scan-input" class="search-input" style="border-color:var(--amber)" placeholder="Scan any FRESH Pallet...">
     </div>
     <div class="fresh-tally-list" id="fresh-list"></div>
     <footer class="footer">
-        <button class="footer-btn btn-primary" style="width:100%; background:var(--amber); color:#000" onclick="finalizeFresh()">SUBMIT FRESH AUDIT</button>
+        <button class="footer-btn" style="width:100%; background:var(--amber); color:#000" onclick="finalizeFresh()">SUBMIT FRESH AUDIT</button>
     </footer>
 </div>
 
@@ -145,10 +137,15 @@ button:active{transform:scale(.97)}
 </div>
 
 <script>
+/**
+ * NOVUS OPS RECONCILIATION ENGINE
+ */
+const API_URL = 'https://script.google.com/macros/s/AKfycbwZ1Dhmf6cK_hWV2xLKYmwEImUvifIRCPqVm0Fz4E7gjvfcpyzoqhAFIgvgwrjBretc/exec';
 const FRESH_SKUS = ["3305704","3307506","3307509","3307515","3307518","3307525","3307710","3308356","3309009","3309016","3309017","3309019","3309138","3309139"];
+
 let sapMaster = [];
-let sessionRegistry = new Map(); 
-let currentMode = 'HUB'; 
+let sessionRegistry = new Map(); // Global State (HU -> RegistryRecord)
+let currentMode = 'HUB';
 let currentAisle = "";
 let currentBinIdx = 0;
 let currentBins = [];
@@ -158,6 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initAisleGrid();
     pullSAPData();
     
+    // Command Bar
     document.getElementById('hub-search').addEventListener('keypress', (e) => {
         if(e.key === 'Enter') {
             const val = e.target.value.trim().toUpperCase();
@@ -167,6 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Fresh Mode Scanner
     document.getElementById('fresh-scan-input').addEventListener('keypress', (e) => {
         if(e.key === 'Enter') {
             handleFreshScan(e.target.value.trim());
@@ -176,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * RECONCILIATION ENGINE
+ * 1. RECONCILIATION & CONFLICT RESOLUTION
  */
 function handleGlobalSearch(input) {
     const huMatch = sapMaster.find(i => i.hu === input);
@@ -196,8 +195,34 @@ function handleGlobalSearch(input) {
     showToast("No SAP Match Found", "red");
 }
 
+function processScan(hu, bin) {
+    const sapMatch = sapMaster.find(i => i.hu === hu);
+    if (!sapMatch) {
+        activeGhostHU = hu;
+        showGhostModal(hu);
+        return;
+    }
+
+    const isOk = sapMatch.sapBin === bin;
+    const status = isOk ? 'OK' : 'MOVEMENT';
+
+    // Conflict Resolution: If found in Bin A, it's MOVEMENT.
+    // When we reach expected Bin B, this registry entry prevents a MISSING log.
+    sessionRegistry.set(hu, {
+        ...sapMatch,
+        status: status,
+        scanQty: sapMatch.sapQty,
+        foundIn: bin,
+        note: status === 'MOVEMENT' ? `Found in ${bin} (Expected ${sapMatch.sapBin})` : ''
+    });
+
+    notify(status === 'OK' ? "Verified" : "Movement Logged");
+    renderAuditList();
+    renderBinStrip();
+}
+
 /**
- * NAVIGATION LOGIC
+ * 2. AUDIT MODES
  */
 function startAisleAudit(aisle, targetBin = null) {
     currentMode = 'AISLE';
@@ -213,92 +238,58 @@ function startAisleAudit(aisle, targetBin = null) {
     renderBinStrip();
 }
 
-function nextBin() {
-    if (currentBinIdx < currentBins.length - 1) {
-        currentBinIdx++;
-        renderAuditList();
-        renderBinStrip();
-    } else {
-        showToast("Aisle Audit Complete!", "green");
-    }
+function initProductAudit(sku) {
+    currentMode = 'PRODUCT';
+    currentAisle = `SKU: ${sku}`;
+    currentBins = ["GLOBAL"]; 
+    showView('audit');
+    document.getElementById('bin-strip').innerHTML = '';
+    renderAuditList(sku);
 }
 
-function prevBin() {
-    if (currentBinIdx > 0) {
-        currentBinIdx--;
-        renderAuditList();
-        renderBinStrip();
-    }
-}
-
-function manualJumpPrompt() {
-    const target = prompt("Jump to Bin (e.g. WA05B):").toUpperCase();
-    if (currentBins.includes(target)) {
-        currentBinIdx = currentBins.indexOf(target);
-        renderAuditList();
-        renderBinStrip();
-    } else {
-        showToast("Bin not in current aisle", "red");
-    }
+function initFreshMode() {
+    currentMode = 'FRESH';
+    const list = document.getElementById('fresh-list');
+    list.innerHTML = '';
+    FRESH_SKUS.forEach(sku => {
+        const card = document.createElement('div');
+        card.className = 'fresh-sku-card';
+        card.innerHTML = `
+            <div>
+                <div style="font-size:10px; color:var(--text-3)">SKU</div>
+                <div style="font-weight:800; font-size:18px; color:var(--accent)">${sku}</div>
+            </div>
+            <div class="tally-display">
+                <div class="tally-count" id="tally-${sku}">0</div>
+                <div style="font-size:9px; font-weight:700; color:var(--text-3)">PALLETS</div>
+            </div>
+        `;
+        list.appendChild(card);
+    });
+    showView('fresh');
 }
 
 /**
- * UI RENDERING
+ * 3. CARD RENDERING & ACTIONS
  */
-function renderBinStrip() {
-    const strip = document.getElementById('bin-strip');
-    strip.innerHTML = '';
-    
-    // Show a window of 10 bins around the current one
-    const start = Math.max(0, currentBinIdx - 4);
-    const end = Math.min(currentBins.length, start + 10);
-    
-    for(let i=start; i<end; i++) {
-        const bin = currentBins[i];
-        const dot = document.createElement('div');
-        
-        // Status Check for colors
-        const expected = sapMaster.filter(item => item.sapBin === bin);
-        const confirmedCount = expected.filter(item => {
-            const reg = sessionRegistry.get(item.hu);
-            return reg && reg.status === 'OK';
-        }).length;
-        const missCount = expected.filter(item => {
-            const reg = sessionRegistry.get(item.hu);
-            return reg && reg.status === 'MISSING';
-        }).length;
-
-        let statusClass = '';
-        if (i === currentBinIdx) statusClass = 'active';
-        else if (expected.length > 0 && confirmedCount === expected.length) statusClass = 'done';
-        else if (missCount > 0) statusClass = 'has-miss';
-
-        dot.className = `strip-dot ${statusClass}`;
-        dot.innerText = bin.slice(-3);
-        dot.onclick = () => { currentBinIdx = i; renderAuditList(); renderBinStrip(); };
-        strip.appendChild(dot);
-    }
-    // Auto-scroll
-    strip.scrollTo({ left: (currentBinIdx - start) * 50, behavior: 'smooth' });
-}
-
 function renderAuditList(filterSku = null) {
     const list = document.getElementById('audit-list');
     const bin = currentBins[currentBinIdx];
     list.innerHTML = '';
 
     document.getElementById('audit-title').innerText = currentMode === 'AISLE' ? bin : `SKU: ${filterSku}`;
-    document.getElementById('audit-meta').innerText = currentMode === 'AISLE' ? `Bin ${currentBinIdx+1}/${currentBins.length}` : 'Global Audit';
     
     let displayItems = (currentMode === 'AISLE') ? sapMaster.filter(i => i.sapBin === bin) : sapMaster.filter(i => i.product === filterSku);
-    const movements = Array.from(sessionRegistry.values()).filter(i => i.foundIn === bin && i.sapBin !== bin);
     
-    const allToRender = [...displayItems];
-    movements.forEach(m => { if(!allToRender.find(i => i.hu === m.hu)) allToRender.push(m); });
+    // Merge Registry (Found here, but expected elsewhere)
+    const movementsHere = Array.from(sessionRegistry.values()).filter(i => i.foundIn === bin && i.sapBin !== bin);
+    const allItems = [...displayItems];
+    movementsHere.forEach(m => { if(!allItems.find(i => i.hu === m.hu)) allItems.push(m); });
 
-    allToRender.forEach(item => {
+    allItems.forEach(item => {
         const reg = sessionRegistry.get(item.hu);
-        const isMovedElsewhere = !reg && Array.from(sessionRegistry.values()).find(r => r.hu === item.hu && r.status === 'MOVEMENT');
+        // Overlap Rule: check if this item was found in another bin already
+        const movedElsewhere = !reg && Array.from(sessionRegistry.values()).find(r => r.hu === item.hu && r.status === 'MOVEMENT');
         
         const card = document.createElement('div');
         card.className = `hu-card ${reg ? reg.status.toLowerCase() : ''}`;
@@ -307,7 +298,7 @@ function renderAuditList(filterSku = null) {
                 <div class="hu-info">
                     <div class="hu-num">${item.hu}</div>
                     <div class="sku-num">${item.product}</div>
-                    ${isMovedElsewhere ? `<div style="color:var(--purple); font-size:10px; font-weight:800">FOUND IN ${isMovedElsewhere.foundIn}</div>` : ''}
+                    ${movedElsewhere ? `<div style="color:var(--purple); font-size:10px; font-weight:800">FOUND IN ${movedElsewhere.foundIn}</div>` : ''}
                 </div>
                 <div class="qty-control">
                     <button class="qty-btn" onclick="adjQty('${item.hu}', -1)">-</button>
@@ -325,9 +316,19 @@ function renderAuditList(filterSku = null) {
     });
 }
 
-/**
- * HELPERS
- */
+function confirmItem(hu) {
+    const item = sapMaster.find(i => i.hu === hu);
+    const bin = currentBins[currentBinIdx];
+    sessionRegistry.set(hu, { ...item, status: (item.sapBin === bin ? 'OK' : 'MOVEMENT'), scanQty: item.sapQty, foundIn: bin });
+    renderAuditList();
+}
+
+function missItem(hu) {
+    const item = sapMaster.find(i => i.hu === hu);
+    sessionRegistry.set(hu, { ...item, status: 'MISSING', scanQty: 0 });
+    renderAuditList();
+}
+
 function adjQty(hu, delta) {
     const item = sapMaster.find(i => i.hu === hu);
     const reg = sessionRegistry.get(hu) || { ...item, scanQty: item.sapQty };
@@ -335,28 +336,71 @@ function adjQty(hu, delta) {
     reg.status = (reg.scanQty === 0) ? 'MISSING' : (reg.sapBin === currentBins[currentBinIdx] ? 'OK' : 'MOVEMENT');
     sessionRegistry.set(hu, reg);
     renderAuditList();
-    renderBinStrip();
 }
 
-function confirmItem(hu) {
-    const item = sapMaster.find(i => i.hu === hu);
-    sessionRegistry.set(hu, { ...item, status: (item.sapBin === currentBins[currentBinIdx] ? 'OK' : 'MOVEMENT'), scanQty: item.sapQty, foundIn: currentBins[currentBinIdx] });
-    renderAuditList();
-    renderBinStrip();
+function addNote(hu) {
+    const note = prompt("Add note / movement info:");
+    if (note) {
+        const reg = sessionRegistry.get(hu) || { ...sapMaster.find(i => i.hu === hu), scanQty: sapMaster.find(i => i.hu === hu).sapQty };
+        reg.note = note;
+        sessionRegistry.set(hu, reg);
+        renderAuditList();
+    }
 }
 
-function missItem(hu) {
-    const item = sapMaster.find(i => i.hu === hu);
-    sessionRegistry.set(hu, { ...item, status: 'MISSING', scanQty: 0 });
-    renderAuditList();
-    renderBinStrip();
+/**
+ * 4. API SYNC
+ */
+async function submitAndNext() {
+    const bin = currentBins[currentBinIdx];
+    const itemsToLog = Array.from(sessionRegistry.values()).filter(i => i.foundIn === bin || (i.sapBin === bin && i.status === 'MISSING'));
+    
+    if (itemsToLog.length > 0) {
+        const payload = {
+            action: 'logAudit',
+            user: localStorage.getItem('novus_name') || 'Counter',
+            bin: bin,
+            sessionId: 'S-' + new Date().getTime(),
+            items: itemsToLog.map(i => ({
+                hu: i.hu, product: i.product, sapBin: i.sapBin, sapQty: i.sapQty,
+                countQty: i.scanQty, type: i.status === 'MISSING' ? 'miss' : i.status.toLowerCase(), note: i.note
+            }))
+        };
+        
+        notify("Syncing Bin...");
+        try {
+            await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+        } catch(e) { showToast("Offline - Saved Locally", "amber"); }
+    }
+    
+    nextBin();
 }
 
-function showView(id) {
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.getElementById(`view-${id}`).classList.add('active');
+/**
+ * UI NAVIGATION
+ */
+function nextBin() { if (currentBinIdx < currentBins.length - 1) { currentBinIdx++; renderAuditList(); renderBinStrip(); } }
+function prevBin() { if (currentBinIdx > 0) { currentBinIdx--; renderAuditList(); renderBinStrip(); } }
+function manualJump() {
+    const target = prompt("Jump to Bin:").toUpperCase();
+    if (currentBins.includes(target)) { currentBinIdx = currentBins.indexOf(target); renderAuditList(); renderBinStrip(); }
 }
 
+function renderBinStrip() {
+    const strip = document.getElementById('bin-strip');
+    strip.innerHTML = '';
+    const start = Math.max(0, currentBinIdx - 4);
+    const end = Math.min(currentBins.length, start + 10);
+    for(let i=start; i<end; i++) {
+        const dot = document.createElement('div');
+        dot.className = `strip-dot ${i === currentBinIdx ? 'active' : ''}`;
+        dot.innerText = currentBins[i].slice(-3);
+        dot.onclick = () => { currentBinIdx = i; renderAuditList(); renderBinStrip(); };
+        strip.appendChild(dot);
+    }
+}
+
+function showView(id) { document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); document.getElementById(`view-${id}`).classList.add('active'); }
 function initAisleGrid() {
     const grid = document.getElementById('aisle-grid');
     "ABCDEFGHJKLMNP".split("").forEach(l => {
@@ -368,23 +412,24 @@ function initAisleGrid() {
     });
 }
 
-function showToast(msg, color="accent") {
-    const t = document.getElementById('toast');
-    t.innerText = msg;
-    t.style.background = `var(--${color})`;
-    t.style.display = 'block';
-    setTimeout(() => t.style.display = 'none', 2500);
+function pivotToProductAudit() {
+    closeModal();
+    const match = sapMaster.find(i => i.hu === activeGhostHU);
+    initProductAudit(match ? match.product : "UNKNOWN");
 }
+
+function showGhostModal(hu) { document.getElementById('ghost-hu').innerText = hu; document.getElementById('modal-ghost').style.display = 'flex'; }
+function closeModal() { document.getElementById('modal-ghost').style.display = 'none'; }
+function showToast(msg, color="accent") { const t = document.getElementById('toast'); t.innerText = msg; t.style.background = `var(--${color})`; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2500); }
+function notify(msg) { showToast(msg); }
 
 async function pullSAPData() {
     try {
-        const res = await fetch('https://script.google.com/macros/s/AKfycbwZ1Dhmf6cK_hWV2xLKYmwEImUvifIRCPqVm0Fz4E7gjvfcpyzoqhAFIgvgwrjBretc/exec?type=sapdata');
+        const res = await fetch(API_URL + '?type=sapdata');
         const data = await res.json();
         sapMaster = data.sapData;
     } catch(e) { showToast("Offline Mode", "amber"); }
 }
-
-function closeModal() { document.getElementById('modal-ghost').style.display = 'none'; }
 </script>
 </body>
 </html>
