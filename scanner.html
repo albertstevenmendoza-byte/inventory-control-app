@@ -1,435 +1,455 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Novus Ops — Cycle Counter</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
-<style>
-:root{--bg:#0f1117;--surface:#181a23;--surface-2:#1f2230;--surface-3:#2a2d3a;--border:#313546;--text:#eceef4;--text-2:#9ba1b5;--text-3:#6c7189;--accent:#5b9aff;--accent-dim:rgba(91,154,255,.1);--green:#34d399;--green-bg:rgba(52,211,153,.1);--red:#f87171;--red-bg:rgba(248,113,113,.1);--amber:#fbbf24;--amber-bg:rgba(251,191,36,.1);--purple:#a78bfa;--purple-bg:rgba(167,139,250,.1);--radius:16px}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);height:100dvh;overflow:hidden}
-.mono{font-family:'JetBrains Mono',monospace}
-button{cursor:pointer;border:none;font-family:inherit;transition:transform .1s}
-button:active{transform:scale(.97)}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Novus Ops — Cycle Counter 2.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f5f5f7;
+            --surface: #ffffff;
+            --surface-2: #f0f0f3;
+            --surface-3: #e8e8ec;
+            --border: #dcdce2;
+            --text: #1a1a1f;
+            --text-2: #6b6b78;
+            --text-3: #9898a6;
+            --accent: #3b6cf5;
+            --accent-glow: rgba(59,108,245,0.08);
+            --green: #16a34a;
+            --green-bg: #f0fdf4;
+            --green-border: #bbf7d0;
+            --red: #dc2626;
+            --red-bg: #fef2f2;
+            --red-border: #fecaca;
+            --amber: #d97706;
+            --amber-bg: #fffbeb;
+            --amber-border: #fde68a;
+            --purple: #7c3aed;
+            --purple-bg: #f5f3ff;
+            --purple-border: #ddd6fe;
+            --cyan: #0891b2;
+            --cyan-bg: #ecfeff;
+            --cyan-border: #a5f3fc;
+            --radius: 16px;
+            --radius-sm: 10px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); overscroll-behavior: none; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+        .mono { font-family: 'IBM Plex Mono', monospace; }
+        button { font-family: inherit; border: none; cursor: pointer; -webkit-user-select: none; user-select: none; transition: transform 0.1s; }
+        button:active { transform: scale(0.96); }
+        input { font-family: inherit; }
 
-/* View Management */
-.view{display:none;flex-direction:column;height:100dvh}
-.view.active{display:flex}
+        /* ===== SCREENS ===== */
+        .screen { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+        .screen.active { display: flex; }
 
-/* Header */
-.header{padding:16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
-.header h1{font-size:18px;font-weight:900;letter-spacing:-0.5px}
+        /* ===== HEADER ===== */
+        .app-header { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-shrink: 0; background: var(--surface); box-shadow: var(--shadow-sm); }
+        .app-header h1 { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; }
+        .header-right { display: flex; align-items: center; gap: 10px; }
+        .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+        .sync-dot.offline { background: var(--red); animation: pulse 1.5s infinite; }
 
-/* Search Area */
-.search-container{position:relative;margin-bottom:20px; padding:0 16px}
-.search-input{width:100%;padding:16px 16px 16px 48px;border-radius:14px;border:2px solid var(--border);background:var(--surface-2);color:#fff;font-size:16px;outline:none}
-.search-input:focus{border-color:var(--accent)}
+        /* ===== PHASE INDICATOR ===== */
+        .phase-bar { display: flex; gap: 2px; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        .phase-step { flex: 1; height: 4px; border-radius: 2px; background: var(--surface-3); transition: background 0.4s; }
+        .phase-step.done { background: var(--green); }
+        .phase-step.active { background: var(--accent); }
+        .phase-label { display: flex; justify-content: space-between; padding: 0 16px 8px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-3); }
+        .phase-label span.active { color: var(--accent); }
 
-/* Aisle Grid */
-.aisle-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:0 16px 20px}
-.aisle-btn{background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:20px 0;text-align:center}
-.aisle-btn .letter{font-size:24px;font-weight:900;color:var(--text);display:block}
+        /* ===== HU CARDS ===== */
+        .scroll-area { flex: 1; overflow-y: auto; padding: 16px 16px 200px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .hu-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 10px; transition: all 0.25s; box-shadow: var(--shadow-sm); }
+        .hu-card.ok { border-color: var(--green-border); background: var(--green-bg); }
+        .hu-card.missing { border-color: var(--red-border); background: var(--red-bg); opacity: 0.65; }
+        .hu-card.movement { border-color: var(--purple-border); background: var(--purple-bg); }
+        .hu-card.adjusted { border-color: var(--amber-border); background: var(--amber-bg); }
 
-/* Audit Cards */
-.audit-scroll{flex:1;overflow-y:auto;padding:16px}
-.hu-card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px;display:flex;flex-direction:column;gap:12px}
-.hu-card.ok{border-color:var(--green);background:var(--green-bg)}
-.hu-card.missing{border-color:var(--red);background:var(--red-bg)}
-.hu-card.movement{border-color:var(--purple);background:var(--purple-bg)}
+        .hu-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .hu-id { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700; color: var(--accent); background: var(--accent-glow); padding: 4px 10px; border-radius: 6px; }
+        .hu-status { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; padding: 4px 10px; border-radius: 6px; }
+        
+        .hu-meta { display: flex; gap: 16px; margin-bottom: 12px; }
+        .hu-meta-label { font-size: 8px; font-weight: 700; text-transform: uppercase; color: var(--text-3); }
+        .hu-meta-value { font-size: 14px; font-weight: 700; color: var(--text); }
 
-.card-top{display:flex;justify-content:space-between;align-items:flex-start}
-.hu-info .hu-num{font-family:'JetBrains Mono';font-size:16px;font-weight:800;color:var(--accent)}
-.hu-info .sku-num{font-size:12px;color:var(--text-2);font-weight:700}
+        /* ===== QTY STEPPER ===== */
+        .qty-row { display: flex; align-items: center; gap: 6px; background: var(--surface-2); border-radius: var(--radius-sm); padding: 8px; margin-bottom: 10px; }
+        .qty-stepper { width: 44px; height: 44px; border-radius: var(--radius-sm); background: var(--surface-3); color: var(--text); font-size: 20px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+        .qty-input { flex: 1; background: transparent; border: none; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 24px; font-weight: 700; color: var(--accent); outline: none; }
 
-.qty-control{display:flex;align-items:center;gap:10px;background:var(--surface-2);padding:8px;border-radius:10px;width:fit-content}
-.qty-btn{width:32px;height:32px;border-radius:6px;background:var(--surface-3);color:#fff;font-size:18px;font-weight:900}
-.qty-val{font-family:'JetBrains Mono';font-size:18px;font-weight:700;min-width:40px;text-align:center}
+        /* ===== BOTTOM BAR ===== */
+        .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 16px calc(env(safe-area-inset-bottom, 16px) + 12px); background: rgba(255,255,255,0.95); backdrop-filter: blur(24px); border-top: 1px solid var(--border); z-index: 50; display: flex; gap: 8px; }
+        .primary-btn { flex: 3; padding: 18px 0; border-radius: var(--radius); font-size: 14px; font-weight: 800; text-transform: uppercase; background: var(--green); color: white; }
+        .secondary-btn { flex: 1; padding: 18px 0; border-radius: var(--radius); font-size: 14px; background: var(--surface-3); color: var(--text-2); font-weight: 800; }
 
-.card-actions{display:flex;gap:8px}
-.act-btn{flex:1;padding:12px;border-radius:10px;font-size:11px;font-weight:800;text-transform:uppercase}
-.btn-confirm{background:var(--green);color:#000}
-.btn-miss{background:var(--red-bg);color:var(--red);border:1px solid var(--red)}
-.btn-note{background:var(--surface-3);color:var(--text-2)}
+        /* ===== HUB SPECIFICS ===== */
+        .aisle-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 16px; }
+        .aisle-btn { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 20px 0; text-align: center; font-size: 24px; font-weight: 900; }
+        
+        .search-container { padding: 16px; position: relative; }
+        .search-field { width: 100%; padding: 16px 16px 16px 44px; border-radius: var(--radius); border: 1.5px solid var(--border); background: var(--surface); font-size: 16px; outline: none; }
+        .search-icon { position: absolute; left: 30px; top: 34px; color: var(--text-3); }
 
-/* FRESH Mode */
-.fresh-tally-list{display:flex;flex-direction:column;gap:12px;padding:16px}
-.fresh-sku-card{background:var(--surface);border:2px solid var(--border);border-radius:16px;padding:16px;display:flex;justify-content:space-between;align-items:center}
-.tally-count{font-family:'JetBrains Mono';font-size:32px;font-weight:900;color:var(--amber)}
+        /* ===== BIN STRIP ===== */
+        .bin-strip { display: flex; gap: 6px; overflow-x: auto; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); scrollbar-width: none; }
+        .strip-dot { min-width: 50px; height: 32px; border-radius: 8px; background: var(--surface-2); color: var(--text-2); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; }
+        .strip-dot.active { background: var(--accent); color: white; }
 
-/* Navigation Strip */
-.bin-strip{display:flex;gap:6px;overflow-x:auto;padding:12px 16px;background:var(--surface-2);border-bottom:1px solid var(--border);scrollbar-width:none}
-.strip-dot{min-width:50px;height:32px;border-radius:8px;background:var(--surface-3);color:var(--text-2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800}
-.strip-dot.active{background:var(--accent);color:#fff; border: 2px solid #fff}
+        /* ===== MODALS ===== */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+        .modal-sheet { background: var(--surface); border-radius: var(--radius) var(--radius) 0 0; width: 100%; padding: 24px 20px; animation: sheet-up 0.3s ease-out; }
+        @keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-.footer{padding:16px;background:var(--surface);border-top:1px solid var(--border);display:flex;gap:10px}
-.footer-btn{padding:16px;border-radius:12px;font-size:13px;font-weight:800;text-transform:uppercase}
-
-.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:12px;background:var(--accent);color:#000;font-weight:800;z-index:9999;display:none}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
-.modal{background:var(--surface);padding:30px;border-radius:20px;width:100%;max-width:400px;text-align:center;border:2px solid var(--accent)}
-</style>
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 20px; background: var(--accent); color: white; font-weight: 700; z-index: 1000; display: none; }
+    </style>
 </head>
 <body>
 
 <div id="toast" class="toast"></div>
 
-<!-- HUB VIEW -->
-<div id="view-hub" class="view active">
-    <header class="header">
+<!-- SCREEN: HUB -->
+<div id="screen-setup" class="screen active">
+    <div class="app-header">
         <h1>Novus Ops</h1>
-        <div style="font-size:10px; color:var(--text-3)">PLANT 1730</div>
-    </header>
-    <div class="hub-content" style="flex:1; overflow-y:auto; padding-top:20px">
+        <div class="header-right">
+            <div id="sync-dot" class="sync-dot"></div>
+            <button class="name-btn">👤 <span id="name-display">Operator</span></button>
+        </div>
+    </div>
+    <div class="scroll-area">
         <div class="search-container">
-            <input type="text" id="hub-search" class="search-input" placeholder="Scan SKU, HU, or type 'FRESH'...">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="hub-search" class="search-field" placeholder="Scan SKU, Bin, or type 'FRESH'...">
         </div>
-        <h3 style="padding:0 16px; font-size:11px; color:var(--text-dim); text-transform:uppercase; margin-bottom:10px">Aisle Audit</h3>
+        
+        <div class="section-title" style="padding: 0 16px; font-size: 10px; font-weight: 800; color: var(--text-3); text-transform: uppercase;">Aisle Audit</div>
         <div class="aisle-grid" id="aisle-grid"></div>
-        <div style="padding:0 16px">
-            <button onclick="initFreshMode()" style="width:100%; padding:20px; border-radius:14px; background:linear-gradient(135deg, var(--amber), #d97706); font-weight:900; color:#000">START FRESH AUDIT</button>
+
+        <div style="padding: 0 16px">
+            <button onclick="initFreshMode()" style="width:100%; padding:20px; border-radius:var(--radius); background:linear-gradient(135deg, var(--amber), #d97706); color:white; font-weight:900; font-size:15px">START FRESH AUDIT</button>
         </div>
     </div>
 </div>
 
-<!-- AUDIT VIEW -->
-<div id="view-audit" class="view">
-    <header class="header">
-        <button onclick="showView('hub')" style="background:none; color:var(--accent); font-weight:800">← EXIT</button>
-        <h1 id="audit-title" onclick="manualJump()">Audit</h1>
-        <div id="audit-meta" style="font-size:10px; background:var(--accent-dim); color:var(--accent); padding:4px 8px; border-radius:10px"></div>
-    </header>
-    <div class="bin-strip" id="bin-strip"></div>
-    <main class="audit-scroll" id="audit-list"></main>
-    <footer class="footer">
-        <button class="footer-btn" style="flex:1; background:var(--surface-3); color:#fff" onclick="prevBin()">PREV</button>
-        <button class="footer-btn" style="flex:3; background:var(--green); color:#000" onclick="submitAndNext()">SUBMIT & NEXT →</button>
-    </footer>
-</div>
-
-<!-- FRESH VIEW -->
-<div id="view-fresh" class="view">
-    <header class="header">
-        <button onclick="showView('hub')" style="background:none; color:var(--amber); font-weight:800">← EXIT</button>
-        <h1 style="color:var(--amber)">FRESH Tally</h1>
-        <div></div>
-    </header>
-    <div class="search-container" style="margin-top:15px">
-        <input type="text" id="fresh-scan-input" class="search-input" style="border-color:var(--amber)" placeholder="Scan any FRESH Pallet...">
+<!-- SCREEN: COUNTING -->
+<div id="screen-count" class="screen">
+    <div class="app-header">
+        <button onclick="switchScreen('setup')" style="background:none; font-weight:700; color:var(--accent)">← EXIT</button>
+        <h1 id="count-title">Bin Audit</h1>
+        <div class="sync-dot"></div>
     </div>
-    <div class="fresh-tally-list" id="fresh-list"></div>
-    <footer class="footer">
-        <button class="footer-btn" style="width:100%; background:var(--amber); color:#000" onclick="finalizeFresh()">SUBMIT FRESH AUDIT</button>
-    </footer>
+    <div class="phase-bar">
+        <div id="p1" class="phase-step active"></div>
+        <div id="p2" class="phase-step"></div>
+        <div id="p3" class="phase-step"></div>
+    </div>
+    <div class="phase-label">
+        <span id="l1" class="active">Verify</span>
+        <span id="l2">Extras</span>
+        <span id="l3">Review</span>
+    </div>
+    <div class="bin-strip" id="bin-strip"></div>
+    <div class="scroll-area" id="hu-list">
+        <!-- Cards generated by JS -->
+    </div>
+    <div class="bottom-bar">
+        <button class="secondary-btn" onclick="manualJump()">Jump</button>
+        <button class="primary-btn" id="btn-next" onclick="nextBin()">Next Bin →</button>
+    </div>
 </div>
 
-<!-- GHOST MODAL -->
-<div id="modal-ghost" class="modal-overlay">
-    <div class="modal">
-        <div style="font-size:40px">👻</div>
-        <h2 style="margin:10px 0">Ghost Item</h2>
-        <p style="color:var(--text-2); font-size:14px; margin-bottom:20px">HU <span id="ghost-hu" style="color:var(--accent); font-weight:800"></span> is not in SAP. Cycle count recommended.</p>
+<!-- SCREEN: FRESH / PRODUCT AUDIT -->
+<div id="screen-fresh" class="screen">
+    <div class="app-header">
+        <button onclick="switchScreen('setup')" style="background:none; font-weight:700; color:var(--amber)">← EXIT</button>
+        <h1 id="fresh-title">FRESH Tally</h1>
+        <div class="sync-dot"></div>
+    </div>
+    <div class="search-container">
+        <input type="text" id="fresh-scan-input" class="search-field" style="border-color:var(--amber)" placeholder="Scan any pallet...">
+    </div>
+    <div class="scroll-area" id="fresh-list">
+        <!-- SKU Tally cards -->
+    </div>
+    <div class="bottom-bar">
+        <button class="primary-btn" style="background:var(--amber)" onclick="finalizeFresh()">Finalize Audit</button>
+    </div>
+</div>
+
+<!-- MODAL: GHOST ITEM -->
+<div id="modal-cc-trigger" class="modal-overlay">
+    <div class="modal-sheet">
+        <div style="text-align:center; margin-bottom:20px">
+            <div style="font-size:48px">👻</div>
+            <h2 style="font-weight:900">Ghost Item Detected</h2>
+            <p style="color:var(--text-2); font-size:14px">HU <span id="ghost-hu" class="mono" style="color:var(--accent); font-weight:700"></span> is not in SAP.</p>
+        </div>
+        <p style="text-align:center; font-size:13px; color:var(--text-2); margin-bottom:24px">Would you like to pivot to a global Product Audit for this item?</p>
         <div style="display:flex; gap:10px">
-            <button class="act-btn btn-note" onclick="closeModal()">DISMISS</button>
-            <button class="act-btn btn-confirm" onclick="pivotToProductAudit()">START PRODUCT AUDIT</button>
+            <button class="secondary-btn" style="flex:1" onclick="closeGhostModal()">Dismiss</button>
+            <button class="primary-btn" style="flex:2; background:var(--accent)" onclick="pivotToProduct()">Start Audit</button>
         </div>
     </div>
 </div>
 
 <script>
-/**
- * NOVUS OPS RECONCILIATION ENGINE
- */
-const API_URL = 'https://script.google.com/macros/s/AKfycbwZ1Dhmf6cK_hWV2xLKYmwEImUvifIRCPqVm0Fz4E7gjvfcpyzoqhAFIgvgwrjBretc/exec';
-const FRESH_SKUS = ["3305704","3307506","3307509","3307515","3307518","3307525","3307710","3308356","3309009","3309016","3309017","3309019","3309138","3309139"];
-
-let sapMaster = [];
-let sessionRegistry = new Map(); // Global State (HU -> RegistryRecord)
-let currentMode = 'HUB';
-let currentAisle = "";
-let currentBinIdx = 0;
-let currentBins = [];
-let activeGhostHU = "";
-
-document.addEventListener('DOMContentLoaded', () => {
-    initAisleGrid();
-    pullSAPData();
+    /**
+     * STATE & CONFIG
+     */
+    const FRESH_SKUS = ["3305704","3307506","3307509","3307515","3307518","3307525","3307710","3308356","3309009","3309016","3309017","3309019","3309138","3309139"];
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwZ1Dhmf6cK_hWV2xLKYmwEImUvifIRCPqVm0Fz4E7gjvfcpyzoqhAFIgvgwrjBretc/exec';
     
-    // Command Bar
-    document.getElementById('hub-search').addEventListener('keypress', (e) => {
-        if(e.key === 'Enter') {
-            const val = e.target.value.trim().toUpperCase();
-            if(val === 'FRESH') initFreshMode();
-            else handleGlobalSearch(val);
-            e.target.value = '';
-        }
+    let sapMaster = [];
+    let sessionRegistry = new Map(); // Global State (HU -> Record)
+    let currentAisle = "";
+    let currentBinIdx = 0;
+    let currentBins = [];
+    let activeGhostHU = "";
+
+    // Init
+    document.addEventListener('DOMContentLoaded', () => {
+        renderAisleGrid();
+        pullSAPData();
+
+        // Command Bar Logic
+        document.getElementById('hub-search').addEventListener('keypress', e => {
+            if(e.key === 'Enter') {
+                handleGateway(e.target.value.trim().toUpperCase());
+                e.target.value = '';
+            }
+        });
+
+        // Fresh Mode Scanner
+        document.getElementById('fresh-scan-input').addEventListener('keypress', e => {
+            if(e.key === 'Enter') {
+                processFreshScan(e.target.value.trim().toUpperCase());
+                e.target.value = '';
+            }
+        });
     });
 
-    // Fresh Mode Scanner
-    document.getElementById('fresh-scan-input').addEventListener('keypress', (e) => {
-        if(e.key === 'Enter') {
-            handleFreshScan(e.target.value.trim());
-            e.target.value = '';
-        }
-    });
-});
-
-/**
- * 1. RECONCILIATION & CONFLICT RESOLUTION
- */
-function handleGlobalSearch(input) {
-    const huMatch = sapMaster.find(i => i.hu === input);
-    if (huMatch) {
-        initProductAudit(huMatch.product);
-        return;
-    }
-    const skuMatch = sapMaster.filter(i => i.product === input);
-    if (skuMatch.length > 0) {
-        initProductAudit(input);
-        return;
-    }
-    if (input.match(/^W[A-P][0-9]{2}[A-C]$/)) {
-        startAisleAudit(input.charAt(1), input);
-        return;
-    }
-    showToast("No SAP Match Found", "red");
-}
-
-function processScan(hu, bin) {
-    const sapMatch = sapMaster.find(i => i.hu === hu);
-    if (!sapMatch) {
-        activeGhostHU = hu;
-        showGhostModal(hu);
-        return;
-    }
-
-    const isOk = sapMatch.sapBin === bin;
-    const status = isOk ? 'OK' : 'MOVEMENT';
-
-    // Conflict Resolution: If found in Bin A, it's MOVEMENT.
-    // When we reach expected Bin B, this registry entry prevents a MISSING log.
-    sessionRegistry.set(hu, {
-        ...sapMatch,
-        status: status,
-        scanQty: sapMatch.sapQty,
-        foundIn: bin,
-        note: status === 'MOVEMENT' ? `Found in ${bin} (Expected ${sapMatch.sapBin})` : ''
-    });
-
-    notify(status === 'OK' ? "Verified" : "Movement Logged");
-    renderAuditList();
-    renderBinStrip();
-}
-
-/**
- * 2. AUDIT MODES
- */
-function startAisleAudit(aisle, targetBin = null) {
-    currentMode = 'AISLE';
-    currentAisle = aisle;
-    currentBins = [];
-    for(let i=0; i<=38; i++) {
-        const num = String(i).padStart(2, '0');
-        ["A","B","C"].forEach(s => currentBins.push(`W${aisle}${num}${s}`));
-    }
-    currentBinIdx = targetBin ? currentBins.indexOf(targetBin) : 0;
-    showView('audit');
-    renderAuditList();
-    renderBinStrip();
-}
-
-function initProductAudit(sku) {
-    currentMode = 'PRODUCT';
-    currentAisle = `SKU: ${sku}`;
-    currentBins = ["GLOBAL"]; 
-    showView('audit');
-    document.getElementById('bin-strip').innerHTML = '';
-    renderAuditList(sku);
-}
-
-function initFreshMode() {
-    currentMode = 'FRESH';
-    const list = document.getElementById('fresh-list');
-    list.innerHTML = '';
-    FRESH_SKUS.forEach(sku => {
-        const card = document.createElement('div');
-        card.className = 'fresh-sku-card';
-        card.innerHTML = `
-            <div>
-                <div style="font-size:10px; color:var(--text-3)">SKU</div>
-                <div style="font-weight:800; font-size:18px; color:var(--accent)">${sku}</div>
-            </div>
-            <div class="tally-display">
-                <div class="tally-count" id="tally-${sku}">0</div>
-                <div style="font-size:9px; font-weight:700; color:var(--text-3)">PALLETS</div>
-            </div>
-        `;
-        list.appendChild(card);
-    });
-    showView('fresh');
-}
-
-/**
- * 3. CARD RENDERING & ACTIONS
- */
-function renderAuditList(filterSku = null) {
-    const list = document.getElementById('audit-list');
-    const bin = currentBins[currentBinIdx];
-    list.innerHTML = '';
-
-    document.getElementById('audit-title').innerText = currentMode === 'AISLE' ? bin : `SKU: ${filterSku}`;
-    
-    let displayItems = (currentMode === 'AISLE') ? sapMaster.filter(i => i.sapBin === bin) : sapMaster.filter(i => i.product === filterSku);
-    
-    // Merge Registry (Found here, but expected elsewhere)
-    const movementsHere = Array.from(sessionRegistry.values()).filter(i => i.foundIn === bin && i.sapBin !== bin);
-    const allItems = [...displayItems];
-    movementsHere.forEach(m => { if(!allItems.find(i => i.hu === m.hu)) allItems.push(m); });
-
-    allItems.forEach(item => {
-        const reg = sessionRegistry.get(item.hu);
-        // Overlap Rule: check if this item was found in another bin already
-        const movedElsewhere = !reg && Array.from(sessionRegistry.values()).find(r => r.hu === item.hu && r.status === 'MOVEMENT');
+    /**
+     * 1. GATEWAY & NAVIGATION
+     */
+    function handleGateway(input) {
+        if (!input) return;
+        if (input === 'FRESH') return initFreshMode();
         
-        const card = document.createElement('div');
-        card.className = `hu-card ${reg ? reg.status.toLowerCase() : ''}`;
-        card.innerHTML = `
-            <div class="card-top">
-                <div class="hu-info">
-                    <div class="hu-num">${item.hu}</div>
-                    <div class="sku-num">${item.product}</div>
-                    ${movedElsewhere ? `<div style="color:var(--purple); font-size:10px; font-weight:800">FOUND IN ${movedElsewhere.foundIn}</div>` : ''}
+        const huMatch = sapMaster.find(i => i.hu === input);
+        if (huMatch) return initProductAudit(huMatch.product);
+
+        const skuMatch = sapMaster.filter(i => i.product === input);
+        if (skuMatch.length > 0) return initProductAudit(input);
+
+        if (input.match(/^W[A-P][0-9]{2}[A-C]$/)) {
+            startAisleAudit(input.charAt(1), input);
+            return;
+        }
+        showToast("No SAP Match Found", "red");
+    }
+
+    function startAisleAudit(aisle, targetBin = null) {
+        currentAisle = aisle;
+        currentBins = [];
+        const max = (aisle === 'B' || aisle === 'C') ? 25 : 38;
+        for(let i=0; i<=max; i++) {
+            const num = String(i).padStart(2, '0');
+            ["A","B","C"].forEach(s => currentBins.push(`W${aisle}${num}${s}`));
+        }
+        currentBinIdx = targetBin ? currentBins.indexOf(targetBin) : 0;
+        switchScreen('count');
+        renderBinStrip();
+        renderHUList();
+    }
+
+    /**
+     * 2. RECONCILIATION ENGINE (THE OVERRIDE RULE)
+     */
+    function renderHUList() {
+        const container = document.getElementById('hu-list');
+        const bin = currentBins[currentBinIdx];
+        container.innerHTML = '';
+        document.getElementById('count-title').innerText = bin;
+
+        // 1. Get SAP Expected
+        const expected = sapMaster.filter(i => i.sapBin === bin);
+        
+        // 2. Get Registry Movements (Items found here, expected elsewhere)
+        const movementsHere = Array.from(sessionRegistry.values()).filter(i => i.foundIn === bin && i.sapBin !== bin);
+
+        const allItems = [...expected];
+        movementsHere.forEach(m => { if(!allItems.find(i => i.hu === m.hu)) allItems.push(m); });
+
+        allItems.forEach(item => {
+            const reg = sessionRegistry.get(item.hu);
+            
+            // CONFLICT RESOLUTION: Check if this item was found in another bin earlier
+            const movedElsewhere = !reg && Array.from(sessionRegistry.values()).find(r => r.hu === item.hu && r.status === 'MOVEMENT');
+
+            const card = document.createElement('div');
+            card.className = `hu-card ${reg ? reg.status.toLowerCase() : ''}`;
+            
+            const statusLabel = reg ? reg.status : (movedElsewhere ? 'MOVED' : 'PENDING');
+            const statusClass = reg ? reg.status.toLowerCase() : (movedElsewhere ? 'move' : 'pending');
+
+            card.innerHTML = `
+                <div class="hu-header">
+                    <span class="hu-id">${item.hu}</span>
+                    <span class="hu-status ${statusClass}">${statusLabel}</span>
                 </div>
-                <div class="qty-control">
-                    <button class="qty-btn" onclick="adjQty('${item.hu}', -1)">-</button>
-                    <div class="qty-val">${reg ? reg.scanQty : item.sapQty}</div>
-                    <button class="qty-btn" onclick="adjQty('${item.hu}', 1)">+</button>
+                <div class="hu-meta">
+                    <div style="flex:2"><div class="hu-meta-label">Product</div><div class="hu-meta-value">${item.product}</div></div>
+                    <div style="flex:1"><div class="hu-meta-label">SAP Qty</div><div class="hu-meta-value mono">${item.sapQty}</div></div>
                 </div>
-            </div>
-            <div class="card-actions">
-                <button class="act-btn btn-confirm" onclick="confirmItem('${item.hu}')">Confirm</button>
-                <button class="act-btn btn-miss" onclick="missItem('${item.hu}')">Missing</button>
-                <button class="act-btn btn-note" onclick="addNote('${item.hu}')">Note</button>
-            </div>
-        `;
-        list.appendChild(card);
-    });
-}
+                ${movedElsewhere ? `<div style="font-size:11px; color:var(--purple); font-weight:700; margin-bottom:12px">📍 Found earlier in ${movedElsewhere.foundIn}</div>` : ''}
+                
+                <div class="qty-row">
+                    <button class="qty-stepper" onclick="adjQty('${item.hu}', -1)">−</button>
+                    <input type="number" class="qty-input" value="${reg ? reg.scanQty : item.sapQty}" onchange="setQty('${item.hu}', this.value)">
+                    <button class="qty-stepper" onclick="adjQty('${item.hu}', 1)">+</button>
+                </div>
 
-function confirmItem(hu) {
-    const item = sapMaster.find(i => i.hu === hu);
-    const bin = currentBins[currentBinIdx];
-    sessionRegistry.set(hu, { ...item, status: (item.sapBin === bin ? 'OK' : 'MOVEMENT'), scanQty: item.sapQty, foundIn: bin });
-    renderAuditList();
-}
+                <div style="display:flex; gap:8px">
+                    <button class="primary-btn" style="padding:12px; font-size:12px" onclick="confirmItem('${item.hu}')">Confirm</button>
+                    <button class="secondary-btn" style="flex:1; padding:12px; font-size:12px; color:var(--red)" onclick="markMissing('${item.hu}')">Missing</button>
+                    <button class="secondary-btn" style="flex:1; padding:12px; font-size:12px" onclick="addNote('${item.hu}')">Note</button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
 
-function missItem(hu) {
-    const item = sapMaster.find(i => i.hu === hu);
-    sessionRegistry.set(hu, { ...item, status: 'MISSING', scanQty: 0 });
-    renderAuditList();
-}
+    /**
+     * 3. CARD ACTIONS
+     */
+    function confirmItem(hu) {
+        const sap = sapMaster.find(i => i.hu === hu);
+        const bin = currentBins[currentBinIdx];
+        sessionRegistry.set(hu, { 
+            ...sap, 
+            status: (sap.sapBin === bin ? 'OK' : 'MOVEMENT'), 
+            scanQty: sap.sapQty, 
+            foundIn: bin 
+        });
+        renderHUList();
+    }
 
-function adjQty(hu, delta) {
-    const item = sapMaster.find(i => i.hu === hu);
-    const reg = sessionRegistry.get(hu) || { ...item, scanQty: item.sapQty };
-    reg.scanQty = Math.max(0, reg.scanQty + delta);
-    reg.status = (reg.scanQty === 0) ? 'MISSING' : (reg.sapBin === currentBins[currentBinIdx] ? 'OK' : 'MOVEMENT');
-    sessionRegistry.set(hu, reg);
-    renderAuditList();
-}
+    function markMissing(hu) {
+        const sap = sapMaster.find(i => i.hu === hu);
+        sessionRegistry.set(hu, { ...sap, status: 'MISSING', scanQty: 0 });
+        renderHUList();
+    }
 
-function addNote(hu) {
-    const note = prompt("Add note / movement info:");
-    if (note) {
-        const reg = sessionRegistry.get(hu) || { ...sapMaster.find(i => i.hu === hu), scanQty: sapMaster.find(i => i.hu === hu).sapQty };
-        reg.note = note;
+    function adjQty(hu, delta) {
+        const sap = sapMaster.find(i => i.hu === hu);
+        const reg = sessionRegistry.get(hu) || { ...sap, scanQty: sap.sapQty };
+        reg.scanQty = Math.max(0, reg.scanQty + delta);
+        reg.status = reg.scanQty === 0 ? 'MISSING' : (reg.sapBin === currentBins[currentBinIdx] ? 'OK' : 'MOVEMENT');
         sessionRegistry.set(hu, reg);
-        renderAuditList();
+        renderHUList();
     }
-}
 
-/**
- * 4. API SYNC
- */
-async function submitAndNext() {
-    const bin = currentBins[currentBinIdx];
-    const itemsToLog = Array.from(sessionRegistry.values()).filter(i => i.foundIn === bin || (i.sapBin === bin && i.status === 'MISSING'));
-    
-    if (itemsToLog.length > 0) {
-        const payload = {
-            action: 'logAudit',
-            user: localStorage.getItem('novus_name') || 'Counter',
-            bin: bin,
-            sessionId: 'S-' + new Date().getTime(),
-            items: itemsToLog.map(i => ({
-                hu: i.hu, product: i.product, sapBin: i.sapBin, sapQty: i.sapQty,
-                countQty: i.scanQty, type: i.status === 'MISSING' ? 'miss' : i.status.toLowerCase(), note: i.note
-            }))
-        };
-        
-        notify("Syncing Bin...");
+    /**
+     * 4. FRESH MODE (RAPID TALLY)
+     */
+    function initFreshMode() {
+        const list = document.getElementById('fresh-list');
+        list.innerHTML = '';
+        FRESH_SKUS.forEach(sku => {
+            const card = document.createElement('div');
+            card.className = 'hu-card';
+            card.id = `fresh-${sku}`;
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center">
+                    <div>
+                        <div class="hu-meta-label">SKU</div>
+                        <div style="font-size:20px; font-weight:900">${sku}</div>
+                    </div>
+                    <div style="text-align:right">
+                        <div id="tally-${sku}" style="font-size:32px; font-weight:900; color:var(--amber)">0</div>
+                        <div class="hu-meta-label">Total Found</div>
+                    </div>
+                </div>
+            `;
+            list.appendChild(card);
+        });
+        switchScreen('fresh');
+    }
+
+    function processFreshScan(input) {
+        const sap = sapMaster.find(i => i.hu === input || i.product === input);
+        if (sap && FRESH_SKUS.includes(sap.product)) {
+            const sku = sap.product;
+            const reg = sessionRegistry.get(input) || { scanQty: 0 };
+            sessionRegistry.set(input, { ...sap, scanQty: reg.scanQty + 1, status: 'OK' });
+            
+            // UI Update
+            const total = Array.from(sessionRegistry.values()).filter(i => i.product === sku).reduce((s,i) => s+i.scanQty, 0);
+            document.getElementById(`tally-${sku}`).innerText = total;
+            document.getElementById(`fresh-${sku}`).style.borderColor = 'var(--amber)';
+            showToast(`Added ${sku}`, "amber");
+        } else {
+            showToast("Invalid Item", "red");
+        }
+    }
+
+    /**
+     * UI UTILS
+     */
+    function switchScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(`screen-${id}`).classList.add('active');
+    }
+
+    function renderBinStrip() {
+        const strip = document.getElementById('bin-strip');
+        strip.innerHTML = '';
+        const start = Math.max(0, currentBinIdx - 2);
+        const end = Math.min(currentBins.length, start + 10);
+        for(let i=start; i<end; i++) {
+            const dot = document.createElement('div');
+            dot.className = `strip-dot ${i === currentBinIdx ? 'active' : ''}`;
+            dot.innerText = currentBins[i].slice(-3);
+            dot.onclick = () => { currentBinIdx = i; renderHUList(); renderBinStrip(); };
+            strip.appendChild(dot);
+        }
+    }
+
+    function showToast(msg, color) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.style.background = `var(--${color})`;
+        t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 2000);
+    }
+
+    function nextBin() { if(currentBinIdx < currentBins.length -1) { currentBinIdx++; renderHUList(); renderBinStrip(); } }
+
+    async function pullSAPData() {
         try {
-            await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
-        } catch(e) { showToast("Offline - Saved Locally", "amber"); }
+            const res = await fetch(API_URL + '?type=sapdata');
+            const data = await res.json();
+            sapMaster = data.sapData;
+            showToast("SAP Synced", "green");
+        } catch(e) { showToast("Offline", "amber"); }
     }
-    
-    nextBin();
-}
 
-/**
- * UI NAVIGATION
- */
-function nextBin() { if (currentBinIdx < currentBins.length - 1) { currentBinIdx++; renderAuditList(); renderBinStrip(); } }
-function prevBin() { if (currentBinIdx > 0) { currentBinIdx--; renderAuditList(); renderBinStrip(); } }
-function manualJump() {
-    const target = prompt("Jump to Bin:").toUpperCase();
-    if (currentBins.includes(target)) { currentBinIdx = currentBins.indexOf(target); renderAuditList(); renderBinStrip(); }
-}
-
-function renderBinStrip() {
-    const strip = document.getElementById('bin-strip');
-    strip.innerHTML = '';
-    const start = Math.max(0, currentBinIdx - 4);
-    const end = Math.min(currentBins.length, start + 10);
-    for(let i=start; i<end; i++) {
-        const dot = document.createElement('div');
-        dot.className = `strip-dot ${i === currentBinIdx ? 'active' : ''}`;
-        dot.innerText = currentBins[i].slice(-3);
-        dot.onclick = () => { currentBinIdx = i; renderAuditList(); renderBinStrip(); };
-        strip.appendChild(dot);
+    function renderAisleGrid() {
+        const grid = document.getElementById('aisle-grid');
+        "ABCDEFGHJKLMNP".split("").forEach(l => {
+            const btn = document.createElement('div');
+            btn.className = 'aisle-btn';
+            btn.innerText = l;
+            btn.onclick = () => startAisleAudit(l);
+            grid.appendChild(btn);
+        });
     }
-}
-
-function showView(id) { document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); document.getElementById(`view-${id}`).classList.add('active'); }
-function initAisleGrid() {
-    const grid = document.getElementById('aisle-grid');
-    "ABCDEFGHJKLMNP".split("").forEach(l => {
-        const btn = document.createElement('div');
-        btn.className = 'aisle-btn';
-        btn.onclick = () => startAisleAudit(l);
-        btn.innerHTML = `<span class="letter">${l}</span>`;
-        grid.appendChild(btn);
-    });
-}
-
-function pivotToProductAudit() {
-    closeModal();
-    const match = sapMaster.find(i => i.hu === activeGhostHU);
-    initProductAudit(match ? match.product : "UNKNOWN");
-}
-
-function showGhostModal(hu) { document.getElementById('ghost-hu').innerText = hu; document.getElementById('modal-ghost').style.display = 'flex'; }
-function closeModal() { document.getElementById('modal-ghost').style.display = 'none'; }
-function showToast(msg, color="accent") { const t = document.getElementById('toast'); t.innerText = msg; t.style.background = `var(--${color})`; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2500); }
-function notify(msg) { showToast(msg); }
-
-async function pullSAPData() {
-    try {
-        const res = await fetch(API_URL + '?type=sapdata');
-        const data = await res.json();
-        sapMaster = data.sapData;
-    } catch(e) { showToast("Offline Mode", "amber"); }
-}
 </script>
 </body>
 </html>
