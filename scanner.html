@@ -167,7 +167,7 @@ body {
 <div id="root"></div>
 
 <script>
-const NovusSettings = (() => {
+window.NovusSettings = (() => {
   const STORAGE_KEY = 'novus_settings';
   const DEFAULTS = { userName: '', theme: 'dark', pollInterval: 10, hapticFeedback: true, compactMode: false };
 
@@ -195,12 +195,12 @@ const NovusSettings = (() => {
     overlay.innerHTML = `
       <div class="ns-modal" style="background:var(--surface);width:100%;max-width:400px;border-radius:24px;border:1px solid var(--border);padding:24px;">
         <div style="display:flex;justify-content:space-between;margin-bottom:20px;">
-            <h3 style="margin:0;font-size:18px;">⚙ Settings</h3>
-            <button onclick="NovusSettings.closeModal()" style="background:none;border:none;color:var(--text-3);font-size:20px;cursor:pointer;">✕</button>
+            <h3 style="margin:0;font-size:18px;color:var(--text);">⚙ Settings</h3>
+            <button onclick="window.NovusSettings.closeModal()" style="background:none;border:none;color:var(--text-3);font-size:20px;cursor:pointer;">✕</button>
         </div>
         <label style="font-size:10px;font-weight:800;text-transform:uppercase;color:var(--text-3);display:block;margin-bottom:8px;">Identity (ID)</label>
         <input type="text" id="ns-username" class="input-glass" style="margin-bottom:24px;" placeholder="Enter your name...">
-        <button onclick="NovusSettings._save()" class="btn-primary" style="width:100%;">Save Preferences</button>
+        <button onclick="window.NovusSettings._save()" class="btn-primary" style="width:100%;">Save Preferences</button>
       </div>`;
     Object.assign(overlay.style, {
         display: 'none', position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', 
@@ -270,22 +270,28 @@ const Icon = ({name, size=22, color="currentColor"}) => {
 };
 
 function CycleCounter() {
+  // Application State Hoisted to Prevent Re-mount Focus Loss
   const [sapData, setSapData] = useState({});
   const [mode, setMode] = useState("idle"); 
   const [records, setRecords] = useState({}); 
   const [ghostItems, setGhostItems] = useState([]); 
 
+  const [showAisles, setShowAisles] = useState(false);
   const [selectedAisle, setSelectedAisle] = useState(null);
   const [currentBinIndex, setCurrentBinIndex] = useState(0);
   const [productSearch, setProductSearch] = useState("");
   const [activeProduct, setActiveProduct] = useState(null);
 
   const [freshCounts, setFreshCounts] = useState({}); 
+  const [activeFreshItem, setActiveFreshItem] = useState(null);
+  const [freshBinInput, setFreshBinInput] = useState("");
+  const [bulkAmount, setBulkAmount] = useState(1);
 
   const [scanInput, setScanInput] = useState("");
   const [showReport, setShowReport] = useState(false);
   const [ghostPrompt, setGhostPrompt] = useState(null);
   const scanRef = useRef(null);
+  const freshBinRef = useRef(null);
 
   const notify = useCallback((msg, type="info") => {
     let color = 'blue';
@@ -472,8 +478,8 @@ function CycleCounter() {
   }, [updateFreshCount]);
 
   const launchMode = useCallback((newMode, payload) => {
-    setRecords({}); setGhostItems({}); setFreshCounts({}); setShowReport(false);
-    setCurrentBinIndex(0); setActiveProduct(null); setSelectedAisle(null);
+    setRecords({}); setGhostItems([]); setFreshCounts({}); setShowReport(false);
+    setCurrentBinIndex(0); setActiveProduct(null); setSelectedAisle(null); setActiveFreshItem(null);
     if (newMode === "aisle") { setSelectedAisle(payload); setMode("aisle"); }
     else if (newMode === "product") { setActiveProduct(payload); setMode("product"); }
     else { setMode(newMode); }
@@ -507,10 +513,10 @@ function CycleCounter() {
 
 
   // ═════════════════════════════════════════════════════════════════════
-  // UI COMPONENTS (Overhauled for mobile-first scanning)
+  // RENDER FUNCTIONS (Hoisted to preserve Focus State)
   // ═════════════════════════════════════════════════════════════════════
 
-  const TopNav = ({ title, showReportBtn, onBack }) => (
+  const renderTopNav = (title, showReportBtn, onBack) => (
     <div className="glass-header">
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         {onBack && <button onClick={onBack} className="btn-icon"><Icon name="back" size={20}/></button>}
@@ -522,7 +528,7 @@ function CycleCounter() {
     </div>
   );
 
-  const BottomNav = () => (
+  const renderBottomNav = () => (
     <nav className="bottom-nav">
       <button className={`nav-item ${mode === 'idle' ? 'active' : ''}`} onClick={() => launchMode('idle')}>
         <Icon name="home" size={24} /><span>Home</span>
@@ -536,7 +542,7 @@ function CycleCounter() {
     </nav>
   );
 
-  const GhostModalUI = () => {
+  const renderGhostModal = () => {
     if (!ghostPrompt) return null;
     return (
       <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9998, padding: 20 }}>
@@ -555,72 +561,69 @@ function CycleCounter() {
     );
   };
 
-  const IdleScreen = () => {
-    const [showAisles, setShowAisles] = useState(false);
-    return (
-      <div className="app-layout animate-enter" style={{ padding: "16px 20px" }}>
-        <div style={{ marginBottom: 32, marginTop: 16 }}>
-          <p style={{ color: "var(--text-3)", fontSize: 13, textTransform: "uppercase", fontWeight: 800, letterSpacing: 1, marginBottom: 4 }}>Novus Ops · Plant 1730</p>
-          <h1 style={{ fontSize: 32, fontWeight: 900, margin: 0, letterSpacing: "-1px" }}>Cycle Counter</h1>
-        </div>
-
-        <div style={{ position: "relative", marginBottom: 24 }}>
-          <div style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "var(--accent)" }}><Icon name="search" size={20} /></div>
-          <input value={productSearch} onChange={e => handleModeSearch(e.target.value)} placeholder='Search Material # or "FRESH"'
-            className="input-glass mono" style={{ paddingLeft: 48, height: 60, fontSize: 16 }}
-            onKeyDown={e => {
-              if (e.key === "Enter" && productSearch.trim()) {
-                const mat = productSearch.trim();
-                if (Object.values(sapData).some(h => h.material === mat)) launchMode("product", mat);
-                else notify("Material not found in SAP data", "warning");
-              }
-            }}
-          />
-        </div>
-
-        <div className="bento-grid">
-          <button className="card interactive bento-full" onClick={() => setShowAisles(!showAisles)} style={{ display: "flex", alignItems: "center", gap: 16, padding: "24px", textAlign: "left", border: "none", background: "linear-gradient(145deg, var(--surface-2), var(--surface))", cursor: "pointer" }}>
-            <div style={{ width: 56, height: 56, borderRadius: 16, background: "var(--accent-dim)", color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon name="grid" size={28}/></div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 800, fontSize: 18, color: "var(--text)" }}>Aisle Audit</div>
-              <div style={{ color: "var(--text-3)", fontSize: 13, marginTop: 4 }}>Sequential verification</div>
-            </div>
-            <Icon name={showAisles ? "minus" : "plus"} color="var(--text-3)"/>
-          </button>
-
-          {showAisles && (
-            <div className="bento-full animate-enter" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(60px, 1fr))", gap: 10 }}>
-              {AISLES.map(a => (
-                <button key={a} onClick={() => launchMode("aisle", a)} className="btn-icon mono" style={{ height: 56, width: '100%', fontSize: 16, fontWeight: 800, background: 'var(--surface)', borderColor: 'var(--border)' }}>{a}</button>
-              ))}
-            </div>
-          )}
-
-          <button className="card interactive" onClick={() => document.querySelector('input').focus()} style={{ display: "flex", flexDirection: "column", gap: 16, padding: "20px", textAlign: "left", border: "none", cursor: "pointer" }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: "var(--green-bg)", color: "var(--green)", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="box" size={24}/></div>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: 15, color: "var(--text)" }}>Product</div>
-              <div style={{ color: "var(--text-3)", fontSize: 12, marginTop: 2 }}>Targeted hunt</div>
-            </div>
-          </button>
-
-          <button className="card interactive" onClick={() => launchMode("fresh")} style={{ display: "flex", flexDirection: "column", gap: 16, padding: "20px", textAlign: "left", border: "none", background: "linear-gradient(135deg, var(--surface), var(--amber-bg))", cursor: "pointer" }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(245, 158, 11, 0.2)", color: "var(--amber)", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="zap" size={24}/></div>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: 15, color: "var(--text)" }}>FRESH</div>
-              <div style={{ color: "var(--text-3)", fontSize: 12, marginTop: 2 }}>Speed mode</div>
-            </div>
-          </button>
-        </div>
-
-        <div style={{ marginTop: 32, padding: 16, borderRadius: var(--radius-sm), background: "rgba(255,255,255,0.02)", textAlign: "center" }}>
-          <p style={{ color: "var(--text-3)", fontSize: 12, margin: 0 }}>System Active · <strong style={{color:"var(--text)"}}>{Object.keys(sapData).length}</strong> HUs Indexed</p>
-        </div>
+  const renderIdleScreen = () => (
+    <div className="app-layout animate-enter" style={{ padding: "16px 20px" }}>
+      <div style={{ marginBottom: 32, marginTop: 16 }}>
+        <p style={{ color: "var(--text-3)", fontSize: 13, textTransform: "uppercase", fontWeight: 800, letterSpacing: 1, marginBottom: 4 }}>Novus Ops · Plant 1730</p>
+        <h1 style={{ fontSize: 32, fontWeight: 900, margin: 0, letterSpacing: "-1px" }}>Cycle Counter</h1>
       </div>
-    );
-  };
 
-  const AisleAuditScreen = () => {
+      <div style={{ position: "relative", marginBottom: 24 }}>
+        <div style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "var(--accent)" }}><Icon name="search" size={20} /></div>
+        <input value={productSearch} onChange={e => handleModeSearch(e.target.value)} placeholder='Search Material # or "FRESH"'
+          className="input-glass mono" style={{ paddingLeft: 48, height: 60, fontSize: 16 }}
+          onKeyDown={e => {
+            if (e.key === "Enter" && productSearch.trim()) {
+              const mat = productSearch.trim();
+              if (Object.values(sapData).some(h => h.material === mat)) launchMode("product", mat);
+              else notify("Material not found in SAP data", "warning");
+            }
+          }}
+        />
+      </div>
+
+      <div className="bento-grid">
+        <button className="card interactive bento-full" onClick={() => setShowAisles(!showAisles)} style={{ display: "flex", alignItems: "center", gap: 16, padding: "24px", textAlign: "left", border: "none", background: "linear-gradient(145deg, var(--surface-2), var(--surface))", cursor: "pointer" }}>
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: "var(--accent-dim)", color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon name="grid" size={28}/></div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 800, fontSize: 18, color: "var(--text)" }}>Aisle Audit</div>
+            <div style={{ color: "var(--text-3)", fontSize: 13, marginTop: 4 }}>Sequential verification</div>
+          </div>
+          <Icon name={showAisles ? "minus" : "plus"} color="var(--text-3)"/>
+        </button>
+
+        {showAisles && (
+          <div className="bento-full animate-enter" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(60px, 1fr))", gap: 10 }}>
+            {AISLES.map(a => (
+              <button key={a} onClick={() => launchMode("aisle", a)} className="btn-icon mono" style={{ height: 56, width: '100%', fontSize: 16, fontWeight: 800, background: 'var(--surface)', borderColor: 'var(--border)' }}>{a}</button>
+            ))}
+          </div>
+        )}
+
+        <button className="card interactive" onClick={() => document.querySelector('input').focus()} style={{ display: "flex", flexDirection: "column", gap: 16, padding: "20px", textAlign: "left", border: "none", cursor: "pointer" }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: "var(--green-bg)", color: "var(--green)", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="box" size={24}/></div>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 15, color: "var(--text)" }}>Product</div>
+            <div style={{ color: "var(--text-3)", fontSize: 12, marginTop: 2 }}>Targeted hunt</div>
+          </div>
+        </button>
+
+        <button className="card interactive" onClick={() => launchMode("fresh")} style={{ display: "flex", flexDirection: "column", gap: 16, padding: "20px", textAlign: "left", border: "none", background: "linear-gradient(135deg, var(--surface), var(--amber-bg))", cursor: "pointer" }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(245, 158, 11, 0.2)", color: "var(--amber)", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="zap" size={24}/></div>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 15, color: "var(--text)" }}>FRESH</div>
+            <div style={{ color: "var(--text-3)", fontSize: 12, marginTop: 2 }}>Speed mode</div>
+          </div>
+        </button>
+      </div>
+
+      <div style={{ marginTop: 32, padding: 16, borderRadius: "12px", background: "rgba(255,255,255,0.02)", textAlign: "center" }}>
+        <p style={{ color: "var(--text-3)", fontSize: 12, margin: 0 }}>System Active · <strong style={{color:"var(--text)"}}>{Object.keys(sapData).length}</strong> HUs Indexed</p>
+      </div>
+    </div>
+  );
+
+  const renderAisleAuditScreen = () => {
     const binProgress = currentBins.map(bin => {
       const expected = Object.values(sapData).filter(h => h.expectedBin === bin);
       const scanned = expected.filter(h => records[h.hu]);
@@ -632,7 +635,7 @@ function CycleCounter() {
 
     return (
       <div className="app-layout animate-enter">
-        <TopNav title={`Aisle ${selectedAisle}`} showReportBtn onBack={() => launchMode("idle")} />
+        {renderTopNav(`Aisle ${selectedAisle}`, true, () => launchMode("idle"))}
         
         <div style={{ padding: "0 20px" }}>
           <div style={{ height: 4, borderRadius: 2, background: "var(--surface-3)", margin: "16px 0 24px", overflow: "hidden" }}>
@@ -657,14 +660,14 @@ function CycleCounter() {
               <div style={{ marginBottom: 24 }}>
                 <p style={{ fontSize: 10, color: "var(--text-3)", margin: "0 0 12px", textTransform: "uppercase", fontWeight: 800, letterSpacing: 1 }}>Manifest Expectations</p>
                 {expectedHUsForBin.length === 0 ? (
-                  <div style={{ padding: 20, textAlign: "center", background: "var(--surface-2)", borderRadius: var(--radius-sm), color: "var(--text-3)", fontSize: 13, fontWeight: 600 }}>Empty Bin in SAP</div>
+                  <div style={{ padding: 20, textAlign: "center", background: "var(--surface-2)", borderRadius: "12px", color: "var(--text-3)", fontSize: 13, fontWeight: 600 }}>Empty Bin in SAP</div>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {expectedHUsForBin.map(h => {
                       const rec = records[h.hu];
                       const stateColor = !rec ? "var(--text-3)" : rec.state === "OK" ? "var(--green)" : rec.state === "MOVEMENT" ? "var(--amber)" : "var(--red)";
                       return (
-                        <div key={h.hu} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: var(--radius-sm), background: "var(--surface-2)", borderLeft: `4px solid ${stateColor}` }}>
+                        <div key={h.hu} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: "12px", background: "var(--surface-2)", borderLeft: `4px solid ${stateColor}` }}>
                           <span className="mono" style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{h.hu}</span>
                           <span style={{ fontSize: 12, color: "var(--text-2)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{h.material}</span>
                           <span style={{ fontSize: 10, fontWeight: 900, textTransform: "uppercase", color: stateColor }}>{rec ? rec.state : "PENDING"}</span>
@@ -677,7 +680,7 @@ function CycleCounter() {
 
               <div style={{ display: "flex", gap: 12 }}>
                 <button onClick={() => { finalizeBin(currentBin); if(currentBinIndex < currentBins.length - 1) setCurrentBinIndex(i=>i+1); }} className="btn-primary" style={{ flex: 2, background: "var(--green)", boxShadow: "0 4px 12px var(--green-bg)" }}>Finalize Bin</button>
-                <button onClick={() => currentBinIndex < currentBins.length - 1 && setCurrentBinIndex(i=>i+1)} className="btn-icon" style={{ flex: 1, height: "auto" }}>Skip</button>
+                <button onClick={() => currentBinIndex < currentBins.length - 1 && setCurrentBinIndex(i=>i+1)} className="btn-icon" style={{ flex: 1, height: "auto", width: "auto" }}>Skip</button>
               </div>
             </div>
           )}
@@ -699,9 +702,9 @@ function CycleCounter() {
     );
   };
 
-  const ProductAuditScreen = () => (
+  const renderProductAuditScreen = () => (
     <div className="app-layout animate-enter">
-      <TopNav title={`Product: ${activeProduct}`} showReportBtn onBack={() => launchMode("idle")} />
+      {renderTopNav(`Product: ${activeProduct}`, true, () => launchMode("idle"))}
       
       <div style={{ padding: "20px" }}>
         <div className="card" style={{ padding: 24 }}>
@@ -724,7 +727,7 @@ function CycleCounter() {
               const rec = records[h.hu];
               const stateColor = !rec ? "var(--border)" : rec.state === "OK" ? "var(--green)" : rec.state === "MOVEMENT" ? "var(--amber)" : "var(--red)";
               return (
-                <div key={h.hu} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: var(--radius-sm), background: "var(--surface-2)", border: `1px solid ${stateColor}` }}>
+                <div key={h.hu} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: "12px", background: "var(--surface-2)", border: `1px solid ${stateColor}` }}>
                   <span className="mono" style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{h.hu}</span>
                   <span className="mono" style={{ fontSize: 13, color: "var(--text-2)", background: "var(--surface-3)", padding: "2px 8px", borderRadius: 4 }}>{h.expectedBin}</span>
                   <span style={{ fontSize: 11, color: "var(--text-3)" }}>×{h.qty}</span>
@@ -738,18 +741,13 @@ function CycleCounter() {
     </div>
   );
 
-  const FreshAuditScreen = () => {
-    const [activeFreshItem, setActiveFreshItem] = useState(null);
-    const [freshBinInput, setFreshBinInput] = useState("");
-    const [bulkAmount, setBulkAmount] = useState(1);
-    const freshBinRef = useRef(null);
-
+  const renderFreshAuditScreen = () => {
     const activeData = activeFreshItem ? freshSAPData[activeFreshItem] : null;
     const activeCounts = activeFreshItem ? (freshCounts[activeFreshItem] || { locations: [], totalQty: 0 }) : null;
 
     return (
       <div className="app-layout animate-enter">
-        <TopNav title={activeFreshItem ? activeFreshItem : "FRESH Audit"} showReportBtn onBack={() => activeFreshItem ? setActiveFreshItem(null) : launchMode("idle")} />
+        {renderTopNav(activeFreshItem ? activeFreshItem : "FRESH Audit", true, () => activeFreshItem ? setActiveFreshItem(null) : launchMode("idle"))}
         
         <div style={{ padding: "20px" }}>
           {!activeFreshItem ? (
@@ -758,7 +756,6 @@ function CycleCounter() {
                 const sap = freshSAPData[mat] || { totalExpected: 0 };
                 const counted = freshCounts[mat] || { totalQty: 0 };
                 const variance = counted.totalQty - sap.totalExpected;
-                // Exception-based Progress styling: Highlight cards that have been touched but not matched
                 const touched = counted.totalQty > 0;
                 const matched = touched && variance === 0;
                 const warning = touched && variance !== 0;
@@ -817,7 +814,7 @@ function CycleCounter() {
                 {activeCounts.locations.length === 0 ? (
                   <p style={{ color: "var(--text-3)", fontSize: 13, textAlign: "center", padding: 24, fontWeight: 600 }}>No scans recorded</p>
                 ) : activeCounts.locations.sort((a,b)=>a.bin.localeCompare(b.bin)).map(loc => (
-                  <div key={loc.bin} style={{ display: "flex", alignItems: "center", padding: "12px 16px", borderRadius: var(--radius-sm), background: "var(--surface)", border: "1px solid var(--border)" }}>
+                  <div key={loc.bin} style={{ display: "flex", alignItems: "center", padding: "12px 16px", borderRadius: "12px", background: "var(--surface)", border: "1px solid var(--border)" }}>
                     <span className="mono" style={{ fontSize: 16, fontWeight: 800, color: "var(--text)", width: 80 }}>{loc.bin}</span>
                     <div style={{ flex: 1 }}/>
                     <div style={{ display: "flex", alignItems: "center", background: "var(--surface-2)", borderRadius: 8, padding: 4 }}>
@@ -835,7 +832,7 @@ function CycleCounter() {
     );
   };
 
-  const ReportModal = () => {
+  const renderReportModal = () => {
     if (!showReport) return null;
     const isFresh = mode === "fresh";
 
@@ -891,7 +888,7 @@ function CycleCounter() {
                   <p style={{ fontSize: 10, color: "var(--text-3)", margin: "0 0 12px", textTransform: "uppercase", fontWeight: 800 }}>Discrepancies</p>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {reportData.records.filter(r => r.state !== "OK").map(r => (
-                      <div key={r.hu} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: var(--radius-sm), background: "var(--surface-2)" }}>
+                      <div key={r.hu} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: "12px", background: "var(--surface-2)" }}>
                         <span style={{ padding: "4px 8px", borderRadius: 6, fontSize: 9, fontWeight: 900, textTransform: "uppercase", background: r.state === "MISSING" ? "var(--red-bg)" : "var(--amber-bg)", color: r.state === "MISSING" ? "var(--red)" : "var(--amber)" }}>{r.state}</span>
                         <span className="mono" style={{ fontWeight: 700, fontSize: 14 }}>{r.hu}</span>
                         <span style={{ color: "var(--text-3)", fontSize: 12 }}>{r.material}</span>
@@ -911,13 +908,13 @@ function CycleCounter() {
 
   return (
     <>
-      <GhostModalUI />
-      <ReportModal />
-      {mode === "idle" && <IdleScreen />}
-      {mode === "aisle" && <AisleAuditScreen />}
-      {mode === "product" && <ProductAuditScreen />}
-      {mode === "fresh" && <FreshAuditScreen />}
-      <BottomNav />
+      {renderGhostModal()}
+      {renderReportModal()}
+      {mode === "idle" && renderIdleScreen()}
+      {mode === "aisle" && renderAisleAuditScreen()}
+      {mode === "product" && renderProductAuditScreen()}
+      {mode === "fresh" && renderFreshAuditScreen()}
+      {renderBottomNav()}
     </>
   );
 }
