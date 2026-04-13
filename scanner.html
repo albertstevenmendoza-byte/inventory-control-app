@@ -54,6 +54,11 @@
         .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
         .sync-dot.offline { background: var(--red); animation: pulse 1.5s infinite; }
 
+        /* ===== BIN NAVIGATION ===== */
+        .bin-nav-cluster { display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .nav-arrow { background: var(--surface-3); color: var(--text); width: 36px; height: 36px; border-radius: 8px; font-size: 18px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+        .nav-arrow:disabled { opacity: 0.3; pointer-events: none; }
+
         /* ===== PHASE INDICATOR ===== */
         .phase-bar { display: flex; gap: 2px; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
         .phase-step { flex: 1; height: 4px; border-radius: 2px; background: var(--surface-3); transition: background 0.4s; }
@@ -85,7 +90,7 @@
 
         /* ===== BOTTOM BAR ===== */
         .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 16px calc(env(safe-area-inset-bottom, 16px) + 12px); background: rgba(255,255,255,0.95); backdrop-filter: blur(24px); border-top: 1px solid var(--border); z-index: 50; display: flex; gap: 8px; }
-        .primary-btn { flex: 3; padding: 18px 0; border-radius: var(--radius); font-size: 14px; font-weight: 800; text-transform: uppercase; background: var(--green); color: white; }
+        .primary-btn { flex: 3; padding: 18px 0; border-radius: var(--radius); font-size: 14px; font-weight: 800; text-transform: uppercase; background: var(--green); color: white; transition: background 0.2s; }
         .secondary-btn { flex: 1; padding: 18px 0; border-radius: var(--radius); font-size: 14px; background: var(--surface-3); color: var(--text-2); font-weight: 800; }
 
         /* ===== HUB SPECIFICS ===== */
@@ -138,8 +143,12 @@
 
 <div id="screen-count" class="screen">
     <div class="app-header">
-        <button onclick="switchScreen('setup')" style="background:none; font-weight:700; color:var(--accent)">← EXIT</button>
-        <h1 id="count-title">Bin Audit</h1>
+        <button onclick="switchScreen('setup')" style="background:none; font-weight:700; color:var(--accent); font-size: 13px;">← EXIT</button>
+        <div class="bin-nav-cluster">
+            <button id="btn-prev" class="nav-arrow" onclick="prevBin()">←</button>
+            <h1 id="count-title" class="mono" style="font-size: 16px; width: 65px; text-align: center;"></h1>
+            <button id="btn-next-top" class="nav-arrow" onclick="nextBin()">→</button>
+        </div>
         <div class="sync-dot"></div>
     </div>
     <div class="phase-bar">
@@ -258,8 +267,7 @@
         }
         currentBinIdx = targetBin ? currentBins.indexOf(targetBin) : 0;
         switchScreen('count');
-        renderBinStrip();
-        renderHUList();
+        updateBinView();
     }
 
     /**
@@ -464,7 +472,7 @@
     }
 
     /**
-     * UI UTILS
+     * UI UTILS & NAVIGATION
      */
     function switchScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -480,8 +488,46 @@
             const dot = document.createElement('div');
             dot.className = `strip-dot ${i === currentBinIdx ? 'active' : ''}`;
             dot.innerText = currentBins[i].slice(-3);
-            dot.onclick = () => { currentBinIdx = i; renderHUList(); renderBinStrip(); };
+            dot.onclick = () => { currentBinIdx = i; updateBinView(); };
             strip.appendChild(dot);
+        }
+    }
+
+    function nextBin() { 
+        if(currentBinIdx < currentBins.length - 1) { 
+            currentBinIdx++; 
+            updateBinView(); 
+        } 
+    }
+
+    function prevBin() {
+        if(currentBinIdx > 0) {
+            currentBinIdx--;
+            updateBinView();
+        }
+    }
+
+    function updateBinView() {
+        renderHUList(); 
+        renderBinStrip();
+        
+        const prevBtn = document.getElementById('btn-prev');
+        const nextBtnTop = document.getElementById('btn-next-top');
+        const nextBtnBot = document.getElementById('btn-next'); 
+        
+        // Disable arrows at the boundaries
+        if (prevBtn) prevBtn.disabled = currentBinIdx === 0;
+        if (nextBtnTop) nextBtnTop.disabled = currentBinIdx === currentBins.length - 1;
+        
+        // Visual indicator that the aisle is complete
+        if (nextBtnBot) {
+            if (currentBinIdx === currentBins.length - 1) {
+                nextBtnBot.innerText = "Finish Aisle ✓";
+                nextBtnBot.style.background = "var(--purple)";
+            } else {
+                nextBtnBot.innerText = "Next Bin →";
+                nextBtnBot.style.background = "var(--green)";
+            }
         }
     }
 
@@ -492,8 +538,6 @@
         t.style.display = 'block';
         setTimeout(() => t.style.display = 'none', 2000);
     }
-
-    function nextBin() { if(currentBinIdx < currentBins.length -1) { currentBinIdx++; renderHUList(); renderBinStrip(); } }
 
     async function pullSAPData() {
         try {
