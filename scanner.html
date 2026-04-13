@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Novus Ops — Cycle Counter</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f1117;--surface:#181a23;--surface-2:#1f2230;--surface-3:#2a2d3a;--border:#313546;--text:#eceef4;--text-2:#9ba1b5;--text-3:#6c7189;--accent:#5b9aff;--accent-dim:rgba(91,154,255,.1);--green:#34d399;--green-bg:rgba(52,211,153,.1);--red:#f87171;--red-bg:rgba(248,113,113,.1);--amber:#fbbf24;--amber-bg:rgba(251,191,36,.1);--purple:#a78bfa;--purple-bg:rgba(167,139,250,.1);--radius:16px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);height:100dvh;overflow:hidden}
+.mono{font-family:'JetBrains Mono',monospace}
+button{cursor:pointer;border:none;font-family:inherit;transition:transform .1s}
+button:active{transform:scale(.97)}
+
+/* View Management */
+.view{display:none;flex-direction:column;height:100dvh}
+.view.active{display:flex}
+
+/* Header & Nav */
+.header{padding:16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.header h1{font-size:18px;font-weight:900;letter-spacing:-0.5px}
+
+/* Hub / Aisle Grid */
+.hub-content{flex:1;overflow-y:auto;padding:20px}
+.search-container{position:relative;margin-bottom:24px}
+.search-input{width:100%;padding:16px 16px 16px 48px;border-radius:14px;border:2px solid var(--border);background:var(--surface-2);color:#fff;font-size:16px;outline:none}
+.search-input:focus{border-color:var(--accent)}
+.aisle-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+.aisle-btn{background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:20px 0;text-align:center}
+.aisle-btn .letter{font-size:24px;font-weight:900;color:var(--text);display:block}
+.aisle-btn .label{font-size:9px;color:var(--text-3);font-weight:700;text-transform:uppercase}
+
+/* Audit / Bin Mode */
+.bin-strip{display:flex;gap:6px;overflow-x:auto;padding:12px 16px;background:var(--surface-2);border-bottom:1px solid var(--border);scrollbar-width:none}
+.bin-strip::-webkit-scrollbar{display:none}
+.strip-dot{min-width:50px;height:32px;border-radius:8px;background:var(--surface-3);color:var(--text-2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;font-family:'JetBrains Mono'}
+.strip-dot.active{background:var(--accent);color:#fff}
+
+.audit-main{flex:1;overflow-y:auto;padding:20px}
+.bin-title{font-size:48px;font-weight:900;text-align:center;color:var(--accent);margin-bottom:20px;font-family:'JetBrains Mono'}
+.scan-area{margin-bottom:24px}
+.hu-card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.hu-card.scanned{border-color:var(--green);background:var(--green-bg);opacity:0.6}
+.hu-card.moved{border-color:var(--purple);border-style:dashed}
+
+/* FRESH Mode */
+.fresh-list{display:flex;flex-direction:column;gap:10px}
+.fresh-card{background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:16px;display:flex;justify-content:space-between;align-items:center}
+.fresh-card.active{border-color:var(--amber)}
+.tally-controls{display:flex;align-items:center;gap:15px}
+.tally-btn{width:40px;height:40px;border-radius:10px;background:var(--surface-3);color:#fff;font-size:20px;font-weight:900}
+
+/* Footer */
+.footer{padding:16px;background:var(--surface);border-top:1px solid var(--border);display:flex;gap:10px}
+.footer-btn{flex:1;padding:16px;border-radius:12px;font-size:13px;font-weight:800;text-transform:uppercase}
+.btn-primary{background:var(--green);color:#000}
+.btn-sec{background:var(--surface-3);color:#fff}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
+.modal{background:var(--surface);padding:30px;border-radius:20px;width:100%;max-width:400px;text-align:center;border:2px solid var(--red)}
+
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:12px;background:var(--accent);color:#000;font-weight:800;font-size:13px;z-index:2000;display:none;box-shadow:0 10px 30px rgba(0,0,0,0.5)}
+</style>
+</head>
+<body>
+
+<div id="toast" class="toast"></div>
+
+<!-- VIEW 1: HUB -->
+<div id="view-hub" class="view active">
+    <header class="header">
+        <h1>Novus Ops</h1>
+        <div style="font-size:10px; color:var(--text-3)">PLANT 1730</div>
+    </header>
+    <div class="hub-content">
+        <div class="search-container">
+            <input type="text" id="hub-search" class="search-input" placeholder="Scan SKU or type 'FRESH'...">
+        </div>
+        <h3 style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px">Select Aisle</h3>
+        <div class="aisle-grid" id="aisle-grid">
+            <!-- JS Generated -->
+        </div>
+        <button onclick="startFreshMode()" style="width:100%; margin-top:15px; padding:20px; border-radius:14px; background:linear-gradient(135deg, var(--amber), #d97706); font-weight:900; color:#000">START FRESH AUDIT</button>
+    </div>
+</div>
+
+<!-- VIEW 2: AUDIT (AISLE/BIN) -->
+<div id="view-audit" class="view">
+    <header class="header">
+        <button onclick="showView('hub')" style="background:none; color:var(--accent); font-weight:800">← BACK</button>
+        <h1 id="audit-title">Aisle Audit</h1>
+        <div id="bin-count-tag" style="font-size:10px; background:var(--accent-dim); color:var(--accent); padding:4px 8px; border-radius:10px">0/0</div>
+    </header>
+    <div class="bin-strip" id="bin-strip">
+        <!-- JS Generated -->
+    </div>
+    <main class="audit-main">
+        <div class="bin-title" id="display-bin">W---</div>
+        <div class="scan-area">
+            <input type="text" id="bin-scan-input" class="search-input" style="padding-left:16px; text-align:center; font-family:monospace; font-size:24px; border-color:var(--accent)" placeholder="SCAN HU">
+        </div>
+        <h3 style="font-size:11px; color:var(--text-dim); text-transform:uppercase; margin-bottom:10px">Expected in Bin</h3>
+        <div id="bin-items-list">
+            <!-- JS Generated -->
+        </div>
+    </main>
+    <footer class="footer">
+        <button class="footer-btn btn-sec" onclick="markMissing()">MISSING</button>
+        <button class="footer-btn btn-primary" onclick="nextBin()">NEXT BIN →</button>
+    </footer>
+</div>
+
+<!-- VIEW 3: FRESH TALLY -->
+<div id="view-fresh" class="view">
+    <header class="header">
+        <button onclick="showView('hub')" style="background:none; color:var(--amber); font-weight:800">← EXIT</button>
+        <h1 style="color:var(--amber)">FRESH Tally</h1>
+        <div></div>
+    </header>
+    <div class="hub-content">
+        <div class="search-container">
+            <input type="text" id="fresh-scan-input" class="search-input" style="border-color:var(--amber)" placeholder="Rapid Scan HU or Bin...">
+        </div>
+        <div class="fresh-list" id="fresh-list">
+            <!-- JS Generated -->
+        </div>
+    </div>
+    <footer class="footer">
+        <button class="footer-btn btn-primary" style="background:var(--amber)" onclick="finalizeFresh()">FINALIZE FRESH AUDIT</button>
+    </footer>
+</div>
+
+<!-- GHOST MODAL -->
+<div id="modal-ghost" class="modal-overlay">
+    <div class="modal">
+        <div style="font-size:40px">⚠️</div>
+        <h2 style="margin:10px 0">Ghost Item</h2>
+        <p style="color:var(--text-2); font-size:14px; margin-bottom:20px">HU <span id="ghost-hu" style="color:var(--red); font-weight:800"></span> is not in SAP. Cycle count recommended.</p>
+        <div style="display:flex; gap:10px">
+            <button class="footer-btn btn-sec" onclick="closeModal()">DISMISS</button>
+            <button class="footer-btn btn-primary" style="background:var(--accent)" onclick="closeModal()">LOG & PIVOT</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * NOVOUS OPS - RECONCILIATION ENGINE
+ */
+const FRESH_SKUS = ["3305704","3307506","3307509","3307515","3307518","3307525","3307710","3308356","3309009","3309016","3309017","3309019","3309138","3309139"];
+const AISLE_LETTERS = "ABCDEFGHJKLMNP".split("");
+
+let sapMaster = [];
+let sessionRegistry = new Map(); // Global tracking for the current session (HU -> Status)
+let currentAisle = "";
+let currentBinIdx = 0;
+let currentBins = [];
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    generateAisleGrid();
+    pullSAPData();
+    
+    // Command Bar Listener
+    document.getElementById('hub-search').addEventListener('keypress', (e) => {
+        if(e.key === 'Enter') {
+            const val = e.target.value.toUpperCase();
+            if(val === 'FRESH') startFreshMode();
+            else handleGlobalSearch(val);
+            e.target.value = '';
+        }
+    });
+
+    // Bin Scan Listener
+    document.getElementById('bin-scan-input').addEventListener('keypress', (e) => {
+        if(e.key === 'Enter') {
+            handleAuditScan(e.target.value);
+            e.target.value = '';
+        }
+    });
+});
+
+/**
+ * CORE LOGIC
+ */
+function handleAuditScan(hu) {
+    const bin = currentBins[currentBinIdx];
+    const sapMatch = sapMaster.find(i => i.hu === hu);
+
+    if(!sapMatch) {
+        showGhostModal(hu);
+        return;
+    }
+
+    // Reconciliation logic
+    const status = (sapMatch.sapBin === bin) ? 'OK' : 'MOVEMENT';
+    
+    // Update Registry (The Override Rule)
+    sessionRegistry.set(hu, {
+        ...sapMatch,
+        status: status,
+        foundIn: bin
+    });
+
+    notify(status === 'OK' ? "Verified" : `Moved from ${sapMatch.sapBin}`, status === 'OK' ? 'green' : 'purple');
+    renderBinItems();
+}
+
+function renderBinItems() {
+    const bin = currentBins[currentBinIdx];
+    const expected = sapMaster.filter(i => i.sapBin === bin);
+    const list = document.getElementById('bin-items-list');
+    list.innerHTML = '';
+
+    expected.forEach(item => {
+        const reg = sessionRegistry.get(item.hu);
+        const isFound = reg && (reg.status === 'OK' || reg.status === 'MOVEMENT');
+        const isMovedElsewhere = !isFound && reg && reg.status === 'MOVEMENT';
+
+        const card = document.createElement('div');
+        card.className = `hu-card ${isFound ? 'scanned' : ''} ${isMovedElsewhere ? 'moved' : ''}`;
+        card.innerHTML = `
+            <div>
+                <div class="mono" style="font-weight:800">${item.hu}</div>
+                <div style="font-size:12px; color:var(--text-2)">${item.product}</div>
+            </div>
+            <div style="font-weight:900; color:${isFound ? 'var(--green)' : isMovedElsewhere ? 'var(--purple)' : 'var(--text-3)'}">
+                ${isFound ? '✓' : isMovedElsewhere ? 'FOUND IN ' + reg.foundIn : 'PENDING'}
+            </div>
+        `;
+        list.appendChild(card);
+    });
+}
+
+/**
+ * NAVIGATION
+ */
+function showView(id) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(`view-${id}`).classList.add('active');
+}
+
+function generateAisleGrid() {
+    const grid = document.getElementById('aisle-grid');
+    AISLE_LETTERS.forEach(l => {
+        const btn = document.createElement('div');
+        btn.className = 'aisle-btn';
+        btn.onclick = () => startAisleAudit(l);
+        btn.innerHTML = `<span class="letter">${l}</span><span class="label">Aisle</span>`;
+        grid.appendChild(btn);
+    });
+}
+
+function startAisleAudit(aisle) {
+    currentAisle = aisle;
+    currentBins = [];
+    for(let i=0; i<=38; i++) {
+        const num = String(i).padStart(2, '0');
+        ["A","B","C"].forEach(s => currentBins.push(`W${aisle}${num}${s}`));
+    }
+    currentBinIdx = 0;
+    renderBinStrip();
+    loadBin();
+    showView('audit');
+}
+
+function renderBinStrip() {
+    const strip = document.getElementById('bin-strip');
+    strip.innerHTML = '';
+    currentBins.forEach((b, i) => {
+        const dot = document.createElement('div');
+        dot.className = `strip-dot ${i === currentBinIdx ? 'active' : ''}`;
+        dot.innerText = b.slice(-3);
+        dot.onclick = () => { currentBinIdx = i; loadBin(); };
+        strip.appendChild(dot);
+    });
+}
+
+function loadBin() {
+    const bin = currentBins[currentBinIdx];
+    document.getElementById('display-bin').innerText = bin;
+    document.getElementById('bin-count-tag').innerText = `${currentBinIdx + 1} / ${currentBins.length}`;
+    renderBinStrip();
+    renderBinItems();
+    document.getElementById('bin-scan-input').focus();
+}
+
+function nextBin() {
+    if(currentBinIdx < currentBins.length - 1) {
+        currentBinIdx++;
+        loadBin();
+    } else {
+        notify("Aisle Complete", "green");
+        showView('hub');
+    }
+}
+
+/**
+ * FRESH MODE
+ */
+let freshTallies = {};
+function startFreshMode() {
+    freshTallies = {};
+    FRESH_SKUS.forEach(sku => freshTallies[sku] = 0);
+    renderFreshList();
+    showView('fresh');
+}
+
+function renderFreshList() {
+    const list = document.getElementById('fresh-list');
+    list.innerHTML = '';
+    FRESH_SKUS.forEach(sku => {
+        const card = document.createElement('div');
+        card.className = 'fresh-card';
+        card.innerHTML = `
+            <div>
+                <div style="font-size:10px; color:var(--text-3)">SKU</div>
+                <div style="font-weight:800; font-size:16px">${sku}</div>
+            </div>
+            <div class="tally-controls">
+                <button class="tally-btn" onclick="updateTally('${sku}', -1)">-</button>
+                <div class="mono" style="font-size:24px; font-weight:900; width:40px; text-align:center">${freshTallies[sku]}</div>
+                <button class="tally-btn" style="background:var(--amber); color:#000" onclick="updateTally('${sku}', 1)">+</button>
+            </div>
+        `;
+        list.appendChild(card);
+    });
+}
+
+function updateTally(sku, delta) {
+    freshTallies[sku] = Math.max(0, freshTallies[sku] + delta);
+    renderFreshList();
+}
+
+/**
+ * UI HELPERS
+ */
+function notify(msg, color) {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.style.background = `var(--${color})`;
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 2500);
+}
+
+function showGhostModal(hu) {
+    document.getElementById('ghost-hu').innerText = hu;
+    document.getElementById('modal-ghost').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('modal-ghost').style.display = 'none';
+}
+
+async function pullSAPData() {
+    try {
+        const res = await fetch('https://script.google.com/macros/s/AKfycbwZ1Dhmf6cK_hWV2xLKYmwEImUvifIRCPqVm0Fz4E7gjvfcpyzoqhAFIgvgwrjBretc/exec?type=sapdata');
+        const data = await res.json();
+        sapMaster = data.sapData;
+        notify("SAP Master Loaded", "accent");
+    } catch(e) {
+        notify("Offline Mode", "amber");
+    }
+}
+</script>
+</body>
+</html>
