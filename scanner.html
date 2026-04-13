@@ -62,7 +62,15 @@ button:active{transform:scale(.97)}
 /* Bin Strip */
 .bin-strip{display:flex;gap:6px;overflow-x:auto;padding:12px 16px;background:var(--surface-2);border-bottom:1px solid var(--border);scrollbar-width:none}
 .strip-dot{min-width:50px;height:32px;border-radius:8px;background:var(--surface-3);color:var(--text-2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800}
-.strip-dot.active{background:var(--accent);color:#fff}
+.strip-dot.active{background:var(--accent);color:#fff; border: 2px solid #fff}
+.strip-dot.done{color:var(--green); border: 1px solid var(--green)}
+.strip-dot.has-miss{color:var(--red); border: 1px solid var(--red)}
+
+/* Footer */
+.footer{padding:16px;background:var(--surface);border-top:1px solid var(--border);display:flex;gap:10px}
+.footer-btn{padding:16px;border-radius:12px;font-size:13px;font-weight:800;text-transform:uppercase}
+.btn-primary{background:var(--green);color:#000}
+.btn-sec{background:var(--surface-3);color:#fff}
 
 /* Toast & Modals */
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:12px;background:var(--accent);color:#000;font-weight:800;z-index:9999;display:none}
@@ -92,17 +100,18 @@ button:active{transform:scale(.97)}
     </div>
 </div>
 
-<!-- AUDIT VIEW (Aisle & Product) -->
+<!-- AUDIT VIEW -->
 <div id="view-audit" class="view">
     <header class="header">
         <button onclick="showView('hub')" style="background:none; color:var(--accent); font-weight:800">← EXIT</button>
-        <h1 id="audit-title">Audit</h1>
+        <h1 id="audit-title" onclick="manualJumpPrompt()" style="cursor:pointer; text-decoration: underline dotted var(--text-3)">Audit</h1>
         <div id="audit-meta" style="font-size:10px; background:var(--accent-dim); color:var(--accent); padding:4px 8px; border-radius:10px"></div>
     </header>
     <div class="bin-strip" id="bin-strip"></div>
     <main class="audit-scroll" id="audit-list"></main>
     <footer class="footer" id="audit-footer">
-        <button class="footer-btn btn-primary" style="width:100%; background:var(--accent); color:#000" onclick="finalizeAuditStep()">FINALIZE & NEXT →</button>
+        <button class="footer-btn btn-sec" onclick="prevBin()" style="flex:1">← PREV</button>
+        <button class="footer-btn btn-primary" style="flex:3; background:var(--accent); color:#000" onclick="nextBin()">NEXT BIN →</button>
     </footer>
 </div>
 
@@ -111,7 +120,7 @@ button:active{transform:scale(.97)}
     <header class="header">
         <button onclick="showView('hub')" style="background:none; color:var(--amber); font-weight:800">← EXIT</button>
         <h1 style="color:var(--amber)">FRESH Tally</h1>
-        <div style="font-size:10px; color:var(--text-3)">SKU-CENTRIC MODE</div>
+        <div style="font-size:10px; color:var(--text-3)">SKU-CENTRIC</div>
     </header>
     <div class="search-container" style="margin-top:15px">
         <input type="text" id="fresh-scan-input" class="search-input" style="border-color:var(--amber)" placeholder="Scan any FRESH Pallet...">
@@ -138,8 +147,8 @@ button:active{transform:scale(.97)}
 <script>
 const FRESH_SKUS = ["3305704","3307506","3307509","3307515","3307518","3307525","3307710","3308356","3309009","3309016","3309017","3309019","3309138","3309139"];
 let sapMaster = [];
-let sessionRegistry = new Map(); // HU -> Record Object
-let currentMode = 'HUB'; // HUB, AISLE, PRODUCT, FRESH
+let sessionRegistry = new Map(); 
+let currentMode = 'HUB'; 
 let currentAisle = "";
 let currentBinIdx = 0;
 let currentBins = [];
@@ -149,7 +158,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initAisleGrid();
     pullSAPData();
     
-    // Command Bar
     document.getElementById('hub-search').addEventListener('keypress', (e) => {
         if(e.key === 'Enter') {
             const val = e.target.value.trim().toUpperCase();
@@ -159,7 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Fresh Scanner
     document.getElementById('fresh-scan-input').addEventListener('keypress', (e) => {
         if(e.key === 'Enter') {
             handleFreshScan(e.target.value.trim());
@@ -169,59 +176,28 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * CORE RECONCILIATION ENGINE
+ * RECONCILIATION ENGINE
  */
 function handleGlobalSearch(input) {
-    // Check if it's an HU
     const huMatch = sapMaster.find(i => i.hu === input);
     if (huMatch) {
         initProductAudit(huMatch.product);
         return;
     }
-
-    // Check if it's a SKU
     const skuMatch = sapMaster.filter(i => i.product === input);
     if (skuMatch.length > 0) {
         initProductAudit(input);
         return;
     }
-
-    // Check if it's a Bin
     if (input.match(/^W[A-P][0-9]{2}[A-C]$/)) {
         startAisleAudit(input.charAt(1), input);
         return;
     }
-
     showToast("No SAP Match Found", "red");
 }
 
-function processScan(hu, bin) {
-    const sapMatch = sapMaster.find(i => i.hu === hu);
-    
-    if (!sapMatch) {
-        activeGhostHU = hu;
-        showGhostModal(hu);
-        return;
-    }
-
-    const isOk = sapMatch.sapBin === bin;
-    const status = isOk ? 'OK' : 'MOVEMENT';
-
-    // THE OVERRIDE RULE: Save to Registry
-    sessionRegistry.set(hu, {
-        ...sapMatch,
-        status: status,
-        scanQty: sapMatch.sapQty,
-        foundIn: bin,
-        note: status === 'MOVEMENT' ? `Found in ${bin} (Expected ${sapMatch.sapBin})` : ''
-    });
-
-    notify(status === 'OK' ? "Verified" : "Movement Logged", status === 'OK' ? 'green' : 'purple');
-    renderAuditList();
-}
-
 /**
- * AISLE AUDIT LOGIC
+ * NAVIGATION LOGIC
  */
 function startAisleAudit(aisle, targetBin = null) {
     currentMode = 'AISLE';
@@ -233,102 +209,95 @@ function startAisleAudit(aisle, targetBin = null) {
     }
     currentBinIdx = targetBin ? currentBins.indexOf(targetBin) : 0;
     showView('audit');
-    renderBinStrip();
     renderAuditList();
+    renderBinStrip();
 }
 
-/**
- * PRODUCT AUDIT LOGIC
- */
-function initProductAudit(sku) {
-    currentMode = 'PRODUCT';
-    currentAisle = `SKU: ${sku}`;
-    currentBins = ["GLOBAL"]; // Product audit doesn't use bin-by-bin navigation
-    showView('audit');
-    document.getElementById('bin-strip').innerHTML = '';
-    renderAuditList(sku);
-}
-
-/**
- * FRESH MODE (HYPER-OPTIMIZED)
- */
-function initFreshMode() {
-    currentMode = 'FRESH';
-    const list = document.getElementById('fresh-list');
-    list.innerHTML = '';
-    
-    FRESH_SKUS.forEach(sku => {
-        const card = document.createElement('div');
-        card.className = 'fresh-sku-card';
-        card.id = `fresh-card-${sku}`;
-        card.innerHTML = `
-            <div>
-                <div style="font-size:10px; color:var(--text-3)">ITEM NUMBER</div>
-                <div style="font-weight:800; font-size:18px; color:var(--accent)">${sku}</div>
-            </div>
-            <div class="tally-display">
-                <div class="tally-count" id="tally-${sku}">0</div>
-                <div style="font-size:9px; font-weight:700; color:var(--text-3)">PALLETS FOUND</div>
-            </div>
-        `;
-        list.appendChild(card);
-    });
-    showView('fresh');
-}
-
-function handleFreshScan(input) {
-    const sapMatch = sapMaster.find(i => i.hu === input || i.product === input);
-    if (sapMatch && FRESH_SKUS.includes(sapMatch.product)) {
-        const sku = sapMatch.product;
-        const reg = sessionRegistry.get(input) || { scanQty: 0 };
-        
-        // Increment
-        const newQty = reg.scanQty + 1;
-        sessionRegistry.set(input, { ...sapMatch, status: 'OK', scanQty: newQty });
-        
-        // Update UI Card
-        const skuTotal = Array.from(sessionRegistry.values())
-            .filter(i => i.product === sku)
-            .reduce((sum, i) => sum + i.scanQty, 0);
-            
-        document.getElementById(`tally-${sku}`).innerText = skuTotal;
-        document.getElementById(`fresh-card-${sku}`).classList.add('active');
-        setTimeout(() => document.getElementById(`fresh-card-${sku}`).classList.remove('active'), 500);
-        notify(`Added ${sku}`, 'amber');
+function nextBin() {
+    if (currentBinIdx < currentBins.length - 1) {
+        currentBinIdx++;
+        renderAuditList();
+        renderBinStrip();
     } else {
-        showToast("Not a valid FRESH item", "red");
+        showToast("Aisle Audit Complete!", "green");
+    }
+}
+
+function prevBin() {
+    if (currentBinIdx > 0) {
+        currentBinIdx--;
+        renderAuditList();
+        renderBinStrip();
+    }
+}
+
+function manualJumpPrompt() {
+    const target = prompt("Jump to Bin (e.g. WA05B):").toUpperCase();
+    if (currentBins.includes(target)) {
+        currentBinIdx = currentBins.indexOf(target);
+        renderAuditList();
+        renderBinStrip();
+    } else {
+        showToast("Bin not in current aisle", "red");
     }
 }
 
 /**
- * AUDIT LIST RENDERING (The "Card" Interface)
+ * UI RENDERING
  */
+function renderBinStrip() {
+    const strip = document.getElementById('bin-strip');
+    strip.innerHTML = '';
+    
+    // Show a window of 10 bins around the current one
+    const start = Math.max(0, currentBinIdx - 4);
+    const end = Math.min(currentBins.length, start + 10);
+    
+    for(let i=start; i<end; i++) {
+        const bin = currentBins[i];
+        const dot = document.createElement('div');
+        
+        // Status Check for colors
+        const expected = sapMaster.filter(item => item.sapBin === bin);
+        const confirmedCount = expected.filter(item => {
+            const reg = sessionRegistry.get(item.hu);
+            return reg && reg.status === 'OK';
+        }).length;
+        const missCount = expected.filter(item => {
+            const reg = sessionRegistry.get(item.hu);
+            return reg && reg.status === 'MISSING';
+        }).length;
+
+        let statusClass = '';
+        if (i === currentBinIdx) statusClass = 'active';
+        else if (expected.length > 0 && confirmedCount === expected.length) statusClass = 'done';
+        else if (missCount > 0) statusClass = 'has-miss';
+
+        dot.className = `strip-dot ${statusClass}`;
+        dot.innerText = bin.slice(-3);
+        dot.onclick = () => { currentBinIdx = i; renderAuditList(); renderBinStrip(); };
+        strip.appendChild(dot);
+    }
+    // Auto-scroll
+    strip.scrollTo({ left: (currentBinIdx - start) * 50, behavior: 'smooth' });
+}
+
 function renderAuditList(filterSku = null) {
     const list = document.getElementById('audit-list');
     const bin = currentBins[currentBinIdx];
     list.innerHTML = '';
 
-    document.getElementById('audit-title').innerText = currentMode === 'AISLE' ? bin : `Product: ${filterSku}`;
+    document.getElementById('audit-title').innerText = currentMode === 'AISLE' ? bin : `SKU: ${filterSku}`;
+    document.getElementById('audit-meta').innerText = currentMode === 'AISLE' ? `Bin ${currentBinIdx+1}/${currentBins.length}` : 'Global Audit';
     
-    // 1. Get items expected in this bin (from SAP)
-    let displayItems = [];
-    if (currentMode === 'AISLE') {
-        displayItems = sapMaster.filter(i => i.sapBin === bin);
-    } else {
-        displayItems = sapMaster.filter(i => i.product === filterSku);
-    }
-
-    // 2. Add any "Movements" found here that aren't expected here
+    let displayItems = (currentMode === 'AISLE') ? sapMaster.filter(i => i.sapBin === bin) : sapMaster.filter(i => i.product === filterSku);
     const movements = Array.from(sessionRegistry.values()).filter(i => i.foundIn === bin && i.sapBin !== bin);
     
-    // 3. Render Cards
     const allToRender = [...displayItems];
     movements.forEach(m => { if(!allToRender.find(i => i.hu === m.hu)) allToRender.push(m); });
 
     allToRender.forEach(item => {
         const reg = sessionRegistry.get(item.hu);
-        
-        // CONFLICT RESOLUTION: If item was found elsewhere, mark it "Moved" instead of "Missing"
         const isMovedElsewhere = !reg && Array.from(sessionRegistry.values()).find(r => r.hu === item.hu && r.status === 'MOVEMENT');
         
         const card = document.createElement('div');
@@ -337,7 +306,7 @@ function renderAuditList(filterSku = null) {
             <div class="card-top">
                 <div class="hu-info">
                     <div class="hu-num">${item.hu}</div>
-                    <div class="sku-num">SKU: ${item.product}</div>
+                    <div class="sku-num">${item.product}</div>
                     ${isMovedElsewhere ? `<div style="color:var(--purple); font-size:10px; font-weight:800">FOUND IN ${isMovedElsewhere.foundIn}</div>` : ''}
                 </div>
                 <div class="qty-control">
@@ -351,60 +320,38 @@ function renderAuditList(filterSku = null) {
                 <button class="act-btn btn-miss" onclick="missItem('${item.hu}')">Missing</button>
                 <button class="act-btn btn-note" onclick="addNote('${item.hu}')">Note</button>
             </div>
-            ${reg && reg.note ? `<div style="font-size:10px; color:var(--amber)">Note: ${reg.note}</div>` : ''}
         `;
         list.appendChild(card);
     });
 }
 
 /**
- * CARD ACTIONS
+ * HELPERS
  */
-function confirmItem(hu) {
-    const item = sapMaster.find(i => i.hu === hu);
-    const bin = currentBins[currentBinIdx];
-    const status = item.sapBin === bin ? 'OK' : 'MOVEMENT';
-    
-    sessionRegistry.set(hu, {
-        ...item,
-        status: status,
-        scanQty: item.sapQty,
-        foundIn: bin
-    });
-    renderAuditList();
-}
-
-function missItem(hu) {
-    const item = sapMaster.find(i => i.hu === hu);
-    sessionRegistry.set(hu, {
-        ...item,
-        status: 'MISSING',
-        scanQty: 0
-    });
-    renderAuditList();
-}
-
 function adjQty(hu, delta) {
-    const reg = sessionRegistry.get(hu) || { ...sapMaster.find(i => i.hu === hu), scanQty: sapMaster.find(i => i.hu === hu).sapQty };
+    const item = sapMaster.find(i => i.hu === hu);
+    const reg = sessionRegistry.get(hu) || { ...item, scanQty: item.sapQty };
     reg.scanQty = Math.max(0, reg.scanQty + delta);
     reg.status = (reg.scanQty === 0) ? 'MISSING' : (reg.sapBin === currentBins[currentBinIdx] ? 'OK' : 'MOVEMENT');
     sessionRegistry.set(hu, reg);
     renderAuditList();
+    renderBinStrip();
 }
 
-function addNote(hu) {
-    const note = prompt("Add note / movement info:");
-    if (note) {
-        const reg = sessionRegistry.get(hu) || { ...sapMaster.find(i => i.hu === hu), scanQty: sapMaster.find(i => i.hu === hu).sapQty };
-        reg.note = note;
-        sessionRegistry.set(hu, reg);
-        renderAuditList();
-    }
+function confirmItem(hu) {
+    const item = sapMaster.find(i => i.hu === hu);
+    sessionRegistry.set(hu, { ...item, status: (item.sapBin === currentBins[currentBinIdx] ? 'OK' : 'MOVEMENT'), scanQty: item.sapQty, foundIn: currentBins[currentBinIdx] });
+    renderAuditList();
+    renderBinStrip();
 }
 
-/**
- * NAVIGATION & UI
- */
+function missItem(hu) {
+    const item = sapMaster.find(i => i.hu === hu);
+    sessionRegistry.set(hu, { ...item, status: 'MISSING', scanQty: 0 });
+    renderAuditList();
+    renderBinStrip();
+}
+
 function showView(id) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById(`view-${id}`).classList.add('active');
@@ -421,53 +368,13 @@ function initAisleGrid() {
     });
 }
 
-function renderBinStrip() {
-    const strip = document.getElementById('bin-strip');
-    strip.innerHTML = '';
-    const start = Math.max(0, currentBinIdx - 2);
-    const end = Math.min(currentBins.length, start + 10);
-    
-    for(let i=start; i<end; i++) {
-        const dot = document.createElement('div');
-        dot.className = `strip-dot ${i === currentBinIdx ? 'active' : ''}`;
-        dot.innerText = currentBins[i].slice(-3);
-        dot.onclick = () => { currentBinIdx = i; renderAuditList(); renderBinStrip(); };
-        strip.appendChild(dot);
-    }
-}
-
-function finalizeAuditStep() {
-    if (currentBinIdx < currentBins.length - 1) {
-        currentBinIdx++;
-        renderAuditList();
-        renderBinStrip();
-    } else {
-        showView('hub');
-        showToast("Audit Complete", "green");
-    }
-}
-
-function pivotToProductAudit() {
-    closeModal();
-    const match = sapMaster.find(i => i.hu === activeGhostHU);
-    initProductAudit(match ? match.product : "UNKNOWN");
-}
-
-function showGhostModal(hu) {
-    document.getElementById('ghost-hu').innerText = hu;
-    document.getElementById('modal-ghost').style.display = 'flex';
-}
-
-function closeModal() { document.getElementById('modal-ghost').style.display = 'none'; }
-
-function showToast(msg, type) {
+function showToast(msg, color="accent") {
     const t = document.getElementById('toast');
     t.innerText = msg;
+    t.style.background = `var(--${color})`;
     t.style.display = 'block';
-    setTimeout(() => t.style.display = 'none', 3000);
+    setTimeout(() => t.style.display = 'none', 2500);
 }
-
-function notify(msg) { showToast(msg); }
 
 async function pullSAPData() {
     try {
@@ -476,6 +383,8 @@ async function pullSAPData() {
         sapMaster = data.sapData;
     } catch(e) { showToast("Offline Mode", "amber"); }
 }
+
+function closeModal() { document.getElementById('modal-ghost').style.display = 'none'; }
 </script>
 </body>
 </html>
