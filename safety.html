@@ -1,122 +1,163 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Safety Reporter — Novus Ops</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
-<style>
-:root{--bg:#0f1117;--surface:#181a23;--surface-2:#1f2230;--surface-3:#2a2d3a;--border:#313546;--text:#eceef4;--text-2:#9ba1b5;--text-3:#6c7189;--accent:#5b9aff;--accent-dim:rgba(91,154,255,.1);--green:#34d399;--green-bg:rgba(52,211,153,.1);--red:#f87171;--red-bg:rgba(248,113,113,.1);--amber:#fbbf24;--amber-bg:rgba(251,191,36,.1);--radius:14px}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh}
-button{font-family:inherit;border:none;cursor:pointer}
-button:active{transform:scale(.96)}
-.screen{display:none;flex-direction:column;min-height:100dvh}
-.screen.active{display:flex}
-.header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
-.header h1{font-size:16px;font-weight:800}
-.hdr-btn{background:var(--surface-2);color:var(--text-2);padding:8px 14px;border-radius:10px;font-size:11px;font-weight:700;text-decoration:none}
-.report-btn{background:var(--red);color:#fff;padding:10px 18px;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase}
-.content{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch}
-.content::-webkit-scrollbar{display:none}
-.field-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);display:block;margin:18px 0 6px}
-.field-label:first-child{margin-top:0}
-.field{width:100%;padding:14px 16px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;font-size:15px;font-weight:600;color:var(--text);outline:none;font-family:inherit}
-.field:focus{border-color:var(--accent)}
-.field::placeholder{color:var(--text-3)}
-textarea.field{resize:none;line-height:1.5}
-.sev-row{display:flex;gap:6px}
-.sev-pill{flex:1;padding:16px 0;border-radius:12px;text-align:center;font-size:10px;font-weight:800;text-transform:uppercase;background:var(--surface-2);color:var(--text-3);border:2px solid transparent;min-height:52px;display:flex;align-items:center;justify-content:center;transition:all .15s}
-.sev-pill.active{border-color:var(--sc);color:var(--sc);background:var(--sb)}
-.photo-row{display:flex;gap:8px;margin-bottom:8px}
-.photo-btn{flex:1;padding:20px 0;border-radius:12px;text-align:center;font-size:11px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;min-height:60px;justify-content:center}
-.photo-btn.cam{background:var(--accent-dim);border:1.5px dashed rgba(91,154,255,.25);color:var(--accent)}
-.photo-btn.gal{background:var(--surface-2);border:1.5px dashed var(--border);color:var(--text-3)}
-.preview-wrap{position:relative;margin-bottom:8px}
-.preview-img{width:100%;border-radius:12px;border:1px solid var(--border);max-height:200px;object-fit:contain;background:var(--surface-2)}
-.preview-remove{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.7);color:#fff;width:30px;height:30px;border-radius:50%;font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center}
-.submit-btn{width:100%;margin-top:24px;padding:20px;border-radius:var(--radius);background:var(--red);color:#fff;font-size:14px;font-weight:800;text-transform:uppercase;min-height:60px}
-.submit-btn:disabled{opacity:.5;pointer-events:none}
-.inc-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px}
-.inc-top{display:flex;justify-content:space-between;margin-bottom:6px}
-.inc-sev,.inc-status{font-size:8px;font-weight:800;text-transform:uppercase;padding:3px 10px;border-radius:6px}
-.inc-sev.low{background:var(--green-bg);color:var(--green)}.inc-sev.medium{background:var(--amber-bg);color:var(--amber)}
-.inc-sev.high{background:var(--red-bg);color:var(--red)}.inc-sev.critical{background:var(--red-bg);color:#7c2d12;font-weight:900}
-.inc-status.open{background:var(--red-bg);color:var(--red)}.inc-status.resolved{background:var(--green-bg);color:var(--green)}
-.inc-loc{font-size:12px;font-weight:700;margin-bottom:3px}
-.inc-desc{font-size:11px;color:var(--text-2);line-height:1.4}
-.inc-footer{display:flex;justify-content:space-between;margin-top:8px;font-size:9px;color:var(--text-3);font-weight:600}
-.empty{text-align:center;padding:60px 24px;color:var(--text-3)}
-.empty-icon{font-size:42px;display:block;margin-bottom:10px}
-.success{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px}
-.success-icon{font-size:60px;margin-bottom:16px}
-.success h2{font-size:22px;font-weight:900;margin-bottom:6px}
-.success p{color:var(--text-2);font-size:13px}
-.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:12px;font-size:12px;font-weight:700;z-index:999;pointer-events:none;opacity:0;transition:opacity .3s}
-.toast.show{opacity:1}
-.toast.green{background:var(--green-bg);color:var(--green);border:1px solid rgba(52,211,153,.25)}
-.toast.red{background:var(--red-bg);color:var(--red);border:1px solid rgba(248,113,113,.25)}
-.toast.amber{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(251,191,36,.25)}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cycle Counter — Novus Ops</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Base Ecosystem Variables (overridden by NovusSettings) */
+        :root {
+            --bg: #0f1117; --surface: #181a23; --surface-2: #1f2230; --surface-3: #2a2d3a;
+            --border: #313546; --text: #eceef4; --text-2: #9ba1b5; --text-3: #6c7189;
+            --accent: #5b9aff; --accent-glow: rgba(91,154,255,0.1);
+            --green: #34d399; --green-bg: rgba(52,211,153,0.1); --green-border: rgba(52,211,153,0.25);
+            --red: #f87171; --red-bg: rgba(248,113,113,0.1); --red-border: rgba(248,113,113,0.25);
+            --amber: #fbbf24; --amber-bg: rgba(251,191,36,0.1); --amber-border: rgba(251,191,36,0.25);
+            --purple: #a78bfa; --purple-bg: rgba(167,139,250,0.1); --purple-border: rgba(167,139,250,0.25);
+            --cyan: #22d3ee; --cyan-bg: rgba(34,211,238,0.1); --cyan-border: rgba(34,211,238,0.25);
+            --radius: 14px; --radius-sm: 10px;
+            --shadow-sm: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); overscroll-behavior: none; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        button { font-family: inherit; border: none; cursor: pointer; -webkit-user-select: none; user-select: none; transition: transform 0.1s; }
+        button:active { transform: scale(0.96); }
+        input { font-family: inherit; }
+
+        /* ===== SCREENS ===== */
+        .screen { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+        .screen.active { display: flex; }
+
+        /* ===== HEADER ===== */
+        .app-header { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-shrink: 0; background: var(--surface); box-shadow: var(--shadow-sm); }
+        .app-header h1 { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; }
+        .hdr-btn { background: var(--surface-2); color: var(--text-2); padding: 8px 14px; border-radius: 10px; font-size: 11px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; }
+        .header-right { display: flex; align-items: center; gap: 8px; }
+        .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+        .sync-dot.offline { background: var(--red); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 50% { opacity: 0.3; } }
+
+        /* ===== BIN NAVIGATION ===== */
+        .bin-nav-cluster { display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .nav-arrow { background: var(--surface-3); color: var(--text); width: 36px; height: 36px; border-radius: 8px; font-size: 18px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+        .nav-arrow:disabled { opacity: 0.3; pointer-events: none; }
+
+        /* ===== HU CARDS ===== */
+        .scroll-area { flex: 1; overflow-y: auto; padding: 16px 16px 200px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .hu-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 10px; transition: all 0.25s; box-shadow: var(--shadow-sm); }
+        .hu-card.ok { border-color: var(--green-border); background: var(--green-bg); }
+        .hu-card.missing { border-color: var(--red-border); background: var(--red-bg); opacity: 0.65; }
+        .hu-card.movement { border-color: var(--purple-border); background: var(--purple-bg); }
+        .hu-card.adjusted { border-color: var(--amber-border); background: var(--amber-bg); }
+
+        .hu-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .hu-id { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: var(--accent); background: var(--accent-glow); padding: 4px 10px; border-radius: 6px; }
+        .hu-status { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; padding: 4px 10px; border-radius: 6px; }
+        
+        .hu-meta { display: flex; gap: 16px; margin-bottom: 12px; }
+        .hu-meta-label { font-size: 8px; font-weight: 700; text-transform: uppercase; color: var(--text-3); }
+        .hu-meta-value { font-size: 14px; font-weight: 700; color: var(--text); }
+
+        /* ===== QTY STEPPER ===== */
+        .qty-row { display: flex; align-items: center; gap: 6px; background: var(--surface-2); border-radius: var(--radius-sm); padding: 8px; margin-bottom: 10px; }
+        .qty-stepper { width: 44px; height: 44px; border-radius: var(--radius-sm); background: var(--surface-3); color: var(--text); font-size: 20px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+        .qty-input { flex: 1; background: transparent; border: none; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; color: var(--accent); outline: none; }
+
+        /* ===== BOTTOM BAR ===== */
+        .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 16px calc(env(safe-area-inset-bottom, 16px) + 12px); background: rgba(15,17,23,0.95); backdrop-filter: blur(24px); border-top: 1px solid var(--border); z-index: 50; display: flex; gap: 8px; }
+        .primary-btn { flex: 3; padding: 18px 0; border-radius: var(--radius); font-size: 14px; font-weight: 800; text-transform: uppercase; background: var(--green); color: white; transition: background 0.2s; }
+        .secondary-btn { flex: 1; padding: 18px 0; border-radius: var(--radius); font-size: 14px; background: var(--surface-3); color: var(--text-2); font-weight: 800; }
+
+        /* ===== HUB SPECIFICS ===== */
+        .aisle-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 16px; }
+        .aisle-btn { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 20px 0; text-align: center; font-size: 24px; font-weight: 900; }
+        .search-container { padding: 16px; position: relative; }
+        .search-field { width: 100%; padding: 16px 16px 16px 44px; border-radius: var(--radius); border: 1.5px solid var(--border); background: var(--surface); color: var(--text); font-size: 16px; outline: none; }
+        .search-icon { position: absolute; left: 30px; top: 34px; color: var(--text-3); }
+        .bin-strip { display: flex; gap: 6px; overflow-x: auto; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); scrollbar-width: none; }
+        .strip-dot { min-width: 50px; height: 32px; border-radius: 8px; background: var(--surface-2); color: var(--text-2); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; }
+        .strip-dot.active { background: var(--accent); color: white; }
+
+        /* ===== TOAST ===== */
+        .toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); padding: 10px 20px; border-radius: 12px; font-size: 12px; font-weight: 700; z-index: 999; pointer-events: none; opacity: 0; transition: opacity .3s; }
+        .toast.show { opacity: 1; }
+        .toast.green { background: var(--green-bg); color: var(--green); border: 1px solid rgba(52,211,153,.25); }
+        .toast.amber { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(251,191,36,.25); }
+        .toast.red { background: var(--red-bg); color: var(--red); border: 1px solid rgba(248,113,113,.25); }
+        .toast.blue { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(91,154,255,.25); }
+    </style>
 </head>
 <body>
 
 <div id="toast" class="toast"><span id="toast-text"></span></div>
 
-<div id="screen-list" class="screen active">
-  <div class="header">
-    <a href="index.html" class="hdr-btn">← Home</a>
-    <h1>Safety Reports</h1>
-    <div style="display:flex;gap:8px">
-      <button class="hdr-btn" style="font-size:14px;padding:8px 10px" onclick="NovusSettings.openModal()">⚙</button>
-      <button class="report-btn" onclick="showForm()">+ Report</button>
+<div id="screen-setup" class="screen active">
+    <div class="app-header">
+        <a href="index.html" class="hdr-btn">← Home</a>
+        <h1>Cycle Counter</h1>
+        <div class="header-right">
+            <div id="sync-dot" class="sync-dot"></div>
+            <button class="hdr-btn" style="font-size:14px; padding:6px 10px;" onclick="NovusSettings.openModal()">⚙</button>
+        </div>
     </div>
-  </div>
-  <div class="content" id="incident-list"></div>
+    <div class="scroll-area">
+        
+        <div style="padding: 16px 16px 0; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <div style="font-size:10px; font-weight:700; color:var(--text-3); text-transform:uppercase;">Auditor</div>
+                <div id="name-display" style="font-weight:800; color:var(--accent);">Operator</div>
+            </div>
+            <button onclick="syncToServer()" style="background:var(--accent); color:white; padding:8px 16px; border-radius:8px; font-size:11px; font-weight:800;">⬆ Sync Counts</button>
+        </div>
+
+        <div class="search-container">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="hub-search" class="search-field" placeholder="Scan SKU, Bin, or type 'FRESH'...">
+        </div>
+        
+        <div class="section-title" style="padding: 0 16px; font-size: 10px; font-weight: 800; color: var(--text-3); text-transform: uppercase;">Aisle Audit</div>
+        <div class="aisle-grid" id="aisle-grid"></div>
+
+        <div style="padding: 0 16px">
+            <button onclick="initFreshMode()" style="width:100%; padding:20px; border-radius:var(--radius); background:linear-gradient(135deg, var(--amber), #b45309); color:white; font-weight:900; font-size:15px">START FRESH AUDIT</button>
+        </div>
+    </div>
 </div>
 
-<div id="screen-form" class="screen">
-  <div class="header">
-    <button class="hdr-btn" onclick="showList()">← Back</button>
-    <h1>Report Incident</h1>
-    <div></div>
-  </div>
-  <div class="content">
-    <label class="field-label">Your Name *</label>
-    <input type="text" class="field" id="f-name" placeholder="Your name">
-    <label class="field-label">Location *</label>
-    <input type="text" class="field" id="f-location" placeholder="e.g. Aisle F, near bin WF12A">
-    <label class="field-label">Photo Evidence</label>
-    <div id="photo-area">
-      <div class="photo-row">
-        <input type="file" accept="image/*" capture="environment" id="cam-input" hidden onchange="handlePhoto(event)">
-        <label for="cam-input" class="photo-btn cam">📷 Camera</label>
-        <input type="file" accept="image/*" id="gal-input" hidden onchange="handlePhoto(event)">
-        <label for="gal-input" class="photo-btn gal">🖼️ Gallery</label>
-      </div>
+<div id="screen-count" class="screen">
+    <div class="app-header">
+        <button onclick="switchScreen('setup')" class="hdr-btn">← Back</button>
+        <div class="bin-nav-cluster">
+            <button id="btn-prev" class="nav-arrow" onclick="prevBin()">←</button>
+            <h1 id="count-title" class="mono" style="font-size: 16px; width: 65px; text-align: center;"></h1>
+            <button id="btn-next-top" class="nav-arrow" onclick="nextBin()">→</button>
+        </div>
+        <div class="sync-dot"></div>
     </div>
-    <div id="photo-preview"></div>
-    <label class="field-label">Description *</label>
-    <textarea class="field" id="f-desc" rows="4" placeholder="Describe the hazard or incident..."></textarea>
-    <label class="field-label">Severity</label>
-    <div class="sev-row" id="sev-row">
-      <button class="sev-pill" data-sev="low" style="--sc:var(--green);--sb:var(--green-bg)" onclick="setSev('low',this)">Low</button>
-      <button class="sev-pill active" data-sev="medium" style="--sc:var(--amber);--sb:var(--amber-bg)" onclick="setSev('medium',this)">Medium</button>
-      <button class="sev-pill" data-sev="high" style="--sc:var(--red);--sb:var(--red-bg)" onclick="setSev('high',this)">High</button>
-      <button class="sev-pill" data-sev="critical" style="--sc:#991b1b;--sb:var(--red-bg)" onclick="setSev('critical',this)">Critical</button>
+    <div class="bin-strip" id="bin-strip"></div>
+    <div class="scroll-area" id="hu-list">
+        </div>
+    <div class="bottom-bar">
+        <button class="secondary-btn" onclick="syncToServer()">Sync ⬆</button>
+        <button class="primary-btn" id="btn-next" onclick="nextBin()">Next Bin →</button>
     </div>
-    <label class="field-label">Resolution *</label>
-    <textarea class="field" id="f-resolution" rows="3" placeholder="Describe what action was taken..."></textarea>
-    <button class="submit-btn" id="submit-btn" onclick="submitIncident()">Submit Report</button>
-  </div>
 </div>
 
-<div id="screen-success" class="screen">
-  <div class="success">
-    <span class="success-icon">✅</span>
-    <h2>Report Submitted</h2>
-    <p>Your safety report has been logged</p>
-  </div>
+<div id="screen-fresh" class="screen">
+    <div class="app-header">
+        <button onclick="switchScreen('setup')" class="hdr-btn">← Back</button>
+        <h1 id="fresh-title" style="color:var(--amber)">FRESH Tally</h1>
+        <div class="sync-dot"></div>
+    </div>
+    <div class="search-container">
+        <input type="text" id="fresh-scan-input" class="search-field" style="border-color:var(--amber)" placeholder="Scan any pallet...">
+    </div>
+    <div class="scroll-area" id="fresh-list"></div>
+    <div class="bottom-bar">
+        <button class="primary-btn" style="background:var(--amber)" onclick="syncToServer()">Submit Fresh Audit</button>
+    </div>
 </div>
 
 <script>
@@ -128,22 +169,22 @@ const NovusSettings = (() => {
     '--bg': '#f8f9fb', '--surface': '#ffffff', '--surface-2': '#f1f3f5', '--surface-3': '#e5e7eb',
     '--border': '#d1d5dc', '--text': '#111827', '--text-2': '#374151', '--text-3': '#6b7280',
     '--accent': '#2563eb', '--accent-dim': 'rgba(37,99,235,.07)',
-    '--green': '#059669', '--green-bg': 'rgba(5,150,105,.08)',
-    '--red': '#dc2626', '--red-bg': 'rgba(220,38,38,.07)',
-    '--amber': '#b45309', '--amber-bg': 'rgba(180,83,9,.07)',
-    '--purple': '#7c3aed', '--purple-bg': 'rgba(124,58,237,.07)',
-    '--cyan': '#0e7490', '--cyan-bg': 'rgba(14,116,144,.07)'
+    '--green': '#059669', '--green-bg': 'rgba(5,150,105,.08)', '--green-border': 'rgba(5,150,105,.25)',
+    '--red': '#dc2626', '--red-bg': 'rgba(220,38,38,.07)', '--red-border': 'rgba(220,38,38,.25)',
+    '--amber': '#b45309', '--amber-bg': 'rgba(180,83,9,.07)', '--amber-border': 'rgba(180,83,9,.25)',
+    '--purple': '#7c3aed', '--purple-bg': 'rgba(124,58,237,.07)', '--purple-border': 'rgba(124,58,237,.25)',
+    '--cyan': '#0e7490', '--cyan-bg': 'rgba(14,116,144,.07)', '--cyan-border': 'rgba(14,116,144,.25)'
   };
 
   const DARK_VARS = {
     '--bg': '#0f1117', '--surface': '#181a23', '--surface-2': '#1f2230', '--surface-3': '#2a2d3a',
     '--border': '#313546', '--text': '#eceef4', '--text-2': '#9ba1b5', '--text-3': '#6c7189',
     '--accent': '#5b9aff', '--accent-dim': 'rgba(91,154,255,.1)',
-    '--green': '#34d399', '--green-bg': 'rgba(52,211,153,.1)',
-    '--red': '#f87171', '--red-bg': 'rgba(248,113,113,.1)',
-    '--amber': '#fbbf24', '--amber-bg': 'rgba(251,191,36,.1)',
-    '--purple': '#a78bfa', '--purple-bg': 'rgba(167,139,250,.1)',
-    '--cyan': '#22d3ee', '--cyan-bg': 'rgba(34,211,238,.1)'
+    '--green': '#34d399', '--green-bg': 'rgba(52,211,153,.1)', '--green-border': 'rgba(52,211,153,.25)',
+    '--red': '#f87171', '--red-bg': 'rgba(248,113,113,.1)', '--red-border': 'rgba(248,113,113,.25)',
+    '--amber': '#fbbf24', '--amber-bg': 'rgba(251,191,36,.1)', '--amber-border': 'rgba(251,191,36,.25)',
+    '--purple': '#a78bfa', '--purple-bg': 'rgba(167,139,250,.1)', '--purple-border': 'rgba(167,139,250,.25)',
+    '--cyan': '#22d3ee', '--cyan-bg': 'rgba(34,211,238,.1)', '--cyan-border': 'rgba(34,211,238,.25)'
   };
 
   function loadAll() {
@@ -159,14 +200,22 @@ const NovusSettings = (() => {
   function get(key) { return _cache[key] !== undefined ? _cache[key] : DEFAULTS[key]; }
   function set(key, val) {
     _cache[key] = val; saveAll(_cache);
-    if (key === 'userName') localStorage.setItem('novus_name', val);
+    if (key === 'userName') {
+        localStorage.setItem('novus_name', val);
+        const disp = document.getElementById('name-display');
+        if(disp) disp.innerText = val || 'Operator';
+    }
     if (key === 'theme') applyTheme();
   }
-  function getUser() { return get('userName') || ''; }
+  function getUser() { return get('userName') || 'Operator'; }
   function applyTheme() {
     const vars = get('theme') === 'light' ? LIGHT_VARS : DARK_VARS;
     Object.entries(vars).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
     document.body.setAttribute('data-theme', get('theme'));
+    
+    // Adjust bottom bar blur color based on theme
+    const bb = document.querySelector('.bottom-bar');
+    if (bb) bb.style.background = get('theme') === 'light' ? 'rgba(255,255,255,0.95)' : 'rgba(15,17,23,0.95)';
   }
 
   let _modalInjected = false;
@@ -189,14 +238,6 @@ const NovusSettings = (() => {
                 <span class="ns-switch-option" data-val="dark">🌙 Dark</span>
                 <span class="ns-switch-option" data-val="light">☀️ Light</span>
                 <div class="ns-switch-slider" id="ns-switch-slider"></div></div></div></div>
-          <div class="ns-section"><div class="ns-section-title">Preferences</div>
-            <div class="ns-toggle-row"><div><div class="ns-toggle-label">Haptic Feedback</div><div class="ns-hint" style="margin-top:2px">Vibrate on taps (mobile)</div></div>
-              <label class="ns-checkbox"><input type="checkbox" id="ns-haptic" onchange="NovusSettings.set('hapticFeedback',this.checked)"><span class="ns-check-slider"></span></label></div>
-            <div class="ns-toggle-row" style="margin-top:10px"><div><div class="ns-toggle-label">Compact Mode</div><div class="ns-hint" style="margin-top:2px">Smaller spacing</div></div>
-              <label class="ns-checkbox"><input type="checkbox" id="ns-compact" onchange="NovusSettings.set('compactMode',this.checked)"><span class="ns-check-slider"></span></label></div></div>
-          <div class="ns-section"><div class="ns-section-title">Data</div>
-            <button class="ns-danger-btn" onclick="if(confirm('Clear all local data?')){localStorage.removeItem('novus_sap');localStorage.removeItem('novus_done');localStorage.removeItem('novus_queue');NovusSettings._toast('Cache cleared');}">🗑 Clear Local Cache</button>
-            <div class="ns-hint" style="margin-top:6px">App v2.2 · Plant 1730</div></div>
         </div>
         <div class="ns-footer"><button class="ns-save-btn" onclick="NovusSettings._save()">Save & Close</button></div>
       </div>`;
@@ -223,13 +264,6 @@ const NovusSettings = (() => {
       .ns-switch-option.active{color:#fff}
       .ns-switch-slider{position:absolute;top:2px;left:2px;width:calc(50% - 2px);height:calc(100% - 4px);background:var(--accent);border-radius:6px;transition:transform .2s ease;z-index:1}
       .ns-switch-slider.right{transform:translateX(100%)}
-      .ns-checkbox{position:relative;width:44px;height:24px;flex-shrink:0}
-      .ns-checkbox input{opacity:0;width:0;height:0}
-      .ns-check-slider{position:absolute;inset:0;background:var(--surface-3);border-radius:12px;cursor:pointer;transition:background .2s}
-      .ns-check-slider::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform .2s}
-      .ns-checkbox input:checked+.ns-check-slider{background:var(--accent)}
-      .ns-checkbox input:checked+.ns-check-slider::after{transform:translateX(20px)}
-      .ns-danger-btn{width:100%;padding:10px;background:var(--red-bg);color:var(--red);border:1px solid rgba(248,113,113,.25);border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit}
       .ns-footer{padding:12px 20px;border-top:1px solid var(--border)}
       .ns-save-btn{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit}`;
     document.body.appendChild(style);
@@ -239,8 +273,6 @@ const NovusSettings = (() => {
     _injectModal();
     document.getElementById('novus-settings-overlay').classList.add('open');
     document.getElementById('ns-username').value = get('userName');
-    document.getElementById('ns-haptic').checked = get('hapticFeedback');
-    document.getElementById('ns-compact').checked = get('compactMode');
     _updateThemeSwitch();
   }
   function closeModal() { const o = document.getElementById('novus-settings-overlay'); if (o) o.classList.remove('open'); }
@@ -252,138 +284,284 @@ const NovusSettings = (() => {
   function _toggleTheme() { set('theme', get('theme') === 'dark' ? 'light' : 'dark'); _updateThemeSwitch(); }
   function _save() {
     set('userName', document.getElementById('ns-username').value.trim());
-    closeModal(); _toast('Settings saved');
-    window.dispatchEvent(new CustomEvent('novus-settings-changed'));
-  }
-  function _toast(msg) {
-    if (typeof window.toast === 'function') { window.toast(msg, 'green'); return; }
-    const t = document.getElementById('toast');
-    if (t) { const x = document.getElementById('toast-text'); if (x) x.textContent = msg; t.className = 'toast green show'; setTimeout(() => t.classList.remove('show'), 2000); }
+    closeModal(); 
+    if(typeof showToast === 'function') showToast('Settings saved', 'green');
   }
 
   applyTheme();
-  return { get, set, getUser, applyTheme, openModal, closeModal, _toggleTheme, _save, _toast };
+  return { get, set, getUser, applyTheme, openModal, closeModal, _toggleTheme, _save };
 })();
 </script>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbwZ1Dhmf6cK_hWV2xLKYmwEImUvifIRCPqVm0Fz4E7gjvfcpyzoqhAFIgvgwrjBretc/exec';
-let incidents = [];
-let severity = 'medium';
-let photoBase64 = null;
+    const FRESH_SKUS = ["3305704","3307506","3307509","3307515","3307518","3307525","3307710","3308356","3309009","3309016","3309017","3309019","3309138","3309139"];
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwZ1Dhmf6cK_hWV2xLKYmwEImUvifIRCPqVm0Fz4E7gjvfcpyzoqhAFIgvgwrjBretc/exec';
+    
+    // Generate a unique session ID for idempotency checks on the backend
+    const SESSION_ID = 'sess_' + Math.random().toString(36).substr(2, 9);
+    
+    let sapMaster = [];
+    let sessionRegistry = new Map(); 
+    let currentAisle = "";
+    let currentBinIdx = 0;
+    let currentBins = [];
 
-loadIncidents();
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('name-display').innerText = NovusSettings.getUser();
+        renderAisleGrid();
+        pullSAPData();
 
-async function loadIncidents() {
-  try {
-    const res = await fetch(API_URL + '?type=safety');
-    const data = await res.json();
-    incidents = data.incidents || [];
-  } catch { incidents = []; }
-  renderList();
-}
-
-function renderList() {
-  const list = document.getElementById('incident-list');
-  if (incidents.length === 0) {
-    list.innerHTML = '<div class="empty"><span class="empty-icon">🦺</span><p>No incidents reported</p></div>';
-    return;
-  }
-  list.innerHTML = incidents.map(i => `
-    <div class="inc-card">
-      <div class="inc-top">
-        <span class="inc-sev ${i.severity || 'low'}">${i.severity || 'low'}</span>
-        <span class="inc-status ${i.status || 'open'}">${i.status || 'open'}</span>
-      </div>
-      <div class="inc-loc">📍 ${i.location}</div>
-      <div class="inc-desc">${i.description}</div>
-      <div class="inc-footer">
-        <span>👤 ${i.reportedBy}</span>
-        <span>${new Date(i.timestamp).toLocaleDateString()}</span>
-      </div>
-    </div>
-  `).join('');
-}
-
-function showForm() {
-  switchScreen('form');
-  document.getElementById('f-name').value = NovusSettings.getUser();
-}
-
-function showList() { switchScreen('list'); loadIncidents(); }
-
-function setSev(val, el) {
-  severity = val;
-  document.querySelectorAll('.sev-pill').forEach(p => p.classList.remove('active'));
-  el.classList.add('active');
-}
-
-function handlePhoto(e) {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    photoBase64 = ev.target.result;
-    document.getElementById('photo-preview').innerHTML = `
-      <div class="preview-wrap">
-        <img src="${photoBase64}" class="preview-img">
-        <button class="preview-remove" onclick="removePhoto()">✕</button>
-      </div>`;
-  };
-  reader.readAsDataURL(file);
-  e.target.value = '';
-}
-
-function removePhoto() {
-  photoBase64 = null;
-  document.getElementById('photo-preview').innerHTML = '';
-}
-
-async function submitIncident() {
-  const name = document.getElementById('f-name').value.trim();
-  const location = document.getElementById('f-location').value.trim();
-  const description = document.getElementById('f-desc').value.trim();
-  const resolution = document.getElementById('f-resolution').value.trim();
-
-  if (!name || !location || !description || !resolution) { 
-    toast('Please fill out all required fields', 'amber'); 
-    return; 
-  }
-
-  const btn = document.getElementById('submit-btn');
-  btn.disabled = true; btn.textContent = 'Submitting...';
-
-  try {
-    await fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({
-        action: 'logSafety',
-        reportedBy: name,
-        location, description, severity,
-        resolution,
-        photoUrl: photoBase64 || '',
-      }),
+        document.getElementById('hub-search').addEventListener('keypress', e => {
+            if(e.key === 'Enter') { handleGateway(e.target.value.trim().toUpperCase()); e.target.value = ''; }
+        });
+        document.getElementById('fresh-scan-input').addEventListener('keypress', e => {
+            if(e.key === 'Enter') { processFreshScan(e.target.value.trim().toUpperCase()); e.target.value = ''; }
+        });
     });
-    switchScreen('success');
-    setTimeout(() => { showList(); }, 2000);
-  } catch (err) { toast('Failed to submit: ' + err.message, 'red'); }
-  
-  btn.disabled = false; btn.textContent = 'Submit Report';
-}
 
-function switchScreen(name) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('screen-' + name).classList.add('active');
-}
+    function handleGateway(input) {
+        if (!input) return;
+        if (input === 'FRESH') return initFreshMode();
+        if (input.match(/^W[A-P][0-9]{2}[A-C]$/)) return startAisleAudit(input.charAt(1), input);
+        showToast("Use Aisle Grid for structured counts", "amber");
+    }
 
-function toast(msg, color) {
-  const t = document.getElementById('toast');
-  document.getElementById('toast-text').textContent = msg;
-  t.className = `toast ${color} show`;
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
-window.toast = toast;
+    function startAisleAudit(aisle, targetBin = null) {
+        currentAisle = aisle;
+        currentBins = [];
+        const max = (aisle === 'B' || aisle === 'C') ? 25 : 38;
+        for(let i=0; i<=max; i++) {
+            const num = String(i).padStart(2, '0');
+            ["A","B","C"].forEach(s => currentBins.push(`W${aisle}${num}${s}`));
+        }
+        currentBinIdx = targetBin ? currentBins.indexOf(targetBin) : 0;
+        switchScreen('count');
+        updateBinView();
+    }
+
+    function renderHUList() {
+        const container = document.getElementById('hu-list');
+        const bin = currentBins[currentBinIdx];
+        container.innerHTML = '';
+        document.getElementById('count-title').innerText = bin;
+
+        const expected = sapMaster.filter(i => i.sapBin === bin);
+        const movementsHere = Array.from(sessionRegistry.values()).filter(i => i.foundIn === bin && i.sapBin !== bin);
+
+        const allItems = [...expected];
+        movementsHere.forEach(m => { if(!allItems.find(i => i.hu === m.hu)) allItems.push(m); });
+
+        allItems.forEach(item => {
+            const reg = sessionRegistry.get(item.hu);
+            const movedElsewhere = !reg && Array.from(sessionRegistry.values()).find(r => r.hu === item.hu && r.status === 'MOVEMENT');
+
+            const card = document.createElement('div');
+            card.className = `hu-card ${reg ? reg.status.toLowerCase() : ''}`;
+            const statusLabel = reg ? reg.status : (movedElsewhere ? 'MOVED' : 'PENDING');
+            const statusClass = reg ? reg.status.toLowerCase() : (movedElsewhere ? 'move' : 'pending');
+            const currentQty = reg ? reg.scanQty : item.sapQty;
+            const isAdj = currentQty !== item.sapQty;
+
+            card.innerHTML = `
+                <div class="hu-header">
+                    <span class="hu-id">${item.hu}</span>
+                    <span class="hu-status ${statusClass}">${statusLabel}</span>
+                </div>
+                <div class="hu-meta">
+                    <div style="flex:2"><div class="hu-meta-label">Product</div><div class="hu-meta-value">${item.product}</div></div>
+                    <div style="flex:1"><div class="hu-meta-label">SAP Qty</div><div class="hu-meta-value mono">${item.sapQty}</div></div>
+                </div>
+                ${movedElsewhere ? `<div style="font-size:11px; color:var(--purple); font-weight:700; margin-bottom:12px">📍 Found earlier in ${movedElsewhere.foundIn}</div>` : ''}
+                ${reg && reg.note ? `<div style="font-size:12px; padding:8px; background:var(--surface-3); border-radius:6px; margin-bottom:12px; font-style:italic;">💬 ${reg.note}</div>` : ''}
+                <div class="qty-row">
+                    <button class="qty-stepper" onclick="adjQty('${item.hu}', -1)">−</button>
+                    <input type="number" class="qty-input" id="qty-${item.hu}" value="${currentQty}" onchange="setQty('${item.hu}', this.value)">
+                    <button class="qty-stepper" onclick="adjQty('${item.hu}', 1)">+</button>
+                </div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <button class="primary-btn" style="flex:2; padding:12px; font-size:13px; background:${isAdj ? 'var(--amber)' : 'var(--green)'}" onclick="confirmItem('${item.hu}')">
+                        ${isAdj ? 'Confirm Adj' : 'Confirm'}
+                    </button>
+                    <button class="secondary-btn" style="flex:1; padding:12px; font-size:12px; color:var(--purple)" onclick="initiateMovement('${item.hu}')">Move</button>
+                    <button class="secondary-btn" style="flex:1; padding:12px; font-size:12px" onclick="addNote('${item.hu}')">Note</button>
+                    <button class="secondary-btn" style="flex:1; padding:12px; font-size:12px; color:var(--red)" onclick="markMissing('${item.hu}')">Miss</button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function saveToRegistry(hu, updates) {
+        const sap = sapMaster.find(i => i.hu === hu);
+        const currentBin = currentBins[currentBinIdx];
+        const current = sessionRegistry.get(hu) || { ...sap, scanQty: sap.sapQty, scanBin: currentBin, foundIn: currentBin, note: '', type: 'ok', status: 'PENDING' };
+        const merged = { ...current, ...updates };
+        
+        if (merged.status === 'MISSING' || merged.scanQty === 0) {
+            merged.type = 'miss'; merged.status = 'MISSING'; merged.scanQty = 0;
+        } else {
+            const isMoved = merged.scanBin !== merged.sapBin;
+            const isAdj = merged.scanQty !== merged.sapQty;
+            if (isMoved && isAdj) { merged.type = 'move_adj'; merged.status = 'MOVEMENT'; }
+            else if (isMoved) { merged.type = 'move'; merged.status = 'MOVEMENT'; }
+            else if (isAdj) { merged.type = 'adj'; merged.status = 'ADJUSTED'; }
+            else { merged.type = 'ok'; merged.status = 'OK'; }
+        }
+        sessionRegistry.set(hu, merged);
+        renderHUList();
+    }
+
+    function confirmItem(hu) { saveToRegistry(hu, { scanQty: parseInt(document.getElementById(`qty-${hu}`).value, 10) || 0, scanBin: currentBins[currentBinIdx] }); }
+    function adjQty(hu, delta) { const cur = sessionRegistry.get(hu); saveToRegistry(hu, { scanQty: Math.max(0, (cur ? cur.scanQty : sapMaster.find(i=>i.hu===hu).sapQty) + delta) }); }
+    function setQty(hu, val) { saveToRegistry(hu, { scanQty: parseInt(val, 10) || 0 }); }
+    function markMissing(hu) { saveToRegistry(hu, { status: 'MISSING' }); }
+    function addNote(hu) { const note = prompt("Enter note:", sessionRegistry.get(hu)?.note || ''); if (note !== null) saveToRegistry(hu, { note: note.trim() }); }
+    function initiateMovement(hu) {
+        const sap = sapMaster.find(i => i.hu === hu);
+        const dest = prompt(`Transfer HU ${hu}\nExpected: ${sap.sapBin}\nEnter new bin:`, sessionRegistry.get(hu)?.scanBin || sap.sapBin);
+        if (dest && dest.trim() !== '') { saveToRegistry(hu, { scanBin: dest.trim().toUpperCase() }); showToast(`Routed to ${dest.trim().toUpperCase()}`, "purple"); }
+    }
+
+    function initFreshMode() {
+        const list = document.getElementById('fresh-list');
+        list.innerHTML = '';
+        FRESH_SKUS.forEach(sku => {
+            const card = document.createElement('div');
+            card.className = 'hu-card'; card.id = `fresh-${sku}`;
+            card.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center"><div><div class="hu-meta-label">SKU</div><div style="font-size:20px; font-weight:900">${sku}</div></div><div style="text-align:right"><div id="tally-${sku}" style="font-size:32px; font-weight:900; color:var(--amber)">0</div><div class="hu-meta-label">Total Found</div></div></div>`;
+            list.appendChild(card);
+        });
+        switchScreen('fresh');
+    }
+
+    function processFreshScan(input) {
+        const sap = sapMaster.find(i => i.hu === input || i.product === input);
+        if (sap && FRESH_SKUS.includes(sap.product)) {
+            const sku = sap.product;
+            const reg = sessionRegistry.get(input) || { scanQty: 0 };
+            sessionRegistry.set(input, { ...sap, scanQty: reg.scanQty + 1, status: 'OK' });
+            document.getElementById(`tally-${sku}`).innerText = Array.from(sessionRegistry.values()).filter(i => i.product === sku).reduce((s,i) => s+i.scanQty, 0);
+            document.getElementById(`fresh-${sku}`).style.borderColor = 'var(--amber)';
+            if(NovusSettings.get('hapticFeedback') && navigator.vibrate) navigator.vibrate(50);
+            showToast(`Added ${sku}`, "amber");
+        } else { showToast("Invalid Item", "red"); if(navigator.vibrate) navigator.vibrate([100,50,100]); }
+    }
+
+    function switchScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(`screen-${id}`).classList.add('active'); }
+    function renderBinStrip() {
+        const strip = document.getElementById('bin-strip');
+        strip.innerHTML = '';
+        const start = Math.max(0, currentBinIdx - 2);
+        const end = Math.min(currentBins.length, start + 10);
+        for(let i=start; i<end; i++) {
+            const dot = document.createElement('div');
+            dot.className = `strip-dot ${i === currentBinIdx ? 'active' : ''}`;
+            dot.innerText = currentBins[i].slice(-3);
+            dot.onclick = () => { currentBinIdx = i; updateBinView(); };
+            strip.appendChild(dot);
+        }
+    }
+    function nextBin() { if(currentBinIdx < currentBins.length - 1) { currentBinIdx++; updateBinView(); } }
+    function prevBin() { if(currentBinIdx > 0) { currentBinIdx--; updateBinView(); } }
+    function updateBinView() {
+        renderHUList(); renderBinStrip();
+        const pBtn = document.getElementById('btn-prev'), nTop = document.getElementById('btn-next-top'), nBot = document.getElementById('btn-next');
+        if(pBtn) pBtn.disabled = currentBinIdx === 0;
+        if(nTop) nTop.disabled = currentBinIdx === currentBins.length - 1;
+        if(nBot) {
+            if (currentBinIdx === currentBins.length - 1) { nBot.innerText = "Finish Aisle ✓"; nBot.style.background = "var(--purple)"; } 
+            else { nBot.innerText = "Next Bin →"; nBot.style.background = "var(--green)"; }
+        }
+    }
+
+    function showToast(msg, color) {
+        const t = document.getElementById('toast');
+        document.getElementById('toast-text').innerText = msg;
+        t.className = `toast ${color} show`;
+        setTimeout(() => t.classList.remove('show'), 2000);
+    }
+    window.toast = showToast; // Expose for Settings Modal
+
+    async function pullSAPData() {
+        try {
+            const res = await fetch(API_URL + '?type=sapdata');
+            const data = await res.json();
+            sapMaster = data.sapData;
+            document.querySelectorAll('.sync-dot').forEach(d => d.classList.remove('offline'));
+        } catch(e) { document.querySelectorAll('.sync-dot').forEach(d => d.classList.add('offline')); }
+    }
+
+    function renderAisleGrid() {
+        const grid = document.getElementById('aisle-grid');
+        "ABCDEFGHJKLMNP".split("").forEach(l => {
+            const btn = document.createElement('div');
+            btn.className = 'aisle-btn'; btn.innerText = l;
+            btn.onclick = () => startAisleAudit(l);
+            grid.appendChild(btn);
+        });
+    }
+
+    // ==========================================
+    // 3. THE API POST LOOP
+    // ==========================================
+    async function syncToServer() {
+        if (sessionRegistry.size === 0) {
+            showToast("No counts to sync", "amber");
+            return;
+        }
+
+        showToast("Syncing to server...", "blue");
+
+        // Format the Map into the array structure the backend expects
+        const itemsToLog = Array.from(sessionRegistry.values()).map(record => ({
+            hu: record.hu,
+            product: record.product,
+            desc: record.desc,
+            batch: record.batch,
+            sapBin: record.sapBin,
+            sapQty: record.sapQty,
+            countQty: record.scanQty,
+            type: record.type,     // Contains the calculated state (ok, adj, move, miss)
+            note: record.note
+        }));
+
+        // Send the payload
+        try {
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                redirect: 'follow',
+                body: JSON.stringify({
+                    action: 'logAudit',
+                    user: NovusSettings.getUser(),
+                    bin: currentBins[currentBinIdx] || "FRESH", // Fallback for Fresh Audit
+                    sessionId: SESSION_ID,
+                    items: itemsToLog
+                })
+            });
+            
+            const result = await res.json();
+            
+            if (result.success) {
+                showToast(`Successfully synced ${result.logged || itemsToLog.length} items!`, "green");
+                sessionRegistry.clear(); // Clear the local registry upon success
+                
+                // Return to hub based on where they synced from
+                if(document.getElementById('screen-fresh').classList.contains('active') || 
+                   document.getElementById('btn-next')?.innerText.includes("Finish")) {
+                    switchScreen('setup');
+                } else {
+                    renderHUList(); // Re-render if they sync mid-aisle
+                }
+            } else if (result.skipped) {
+                showToast("Already synced (Idempotency check)", "blue");
+            } else {
+                showToast("Server error: " + (result.error || "Unknown"), "red");
+            }
+        } catch (err) {
+            showToast("Network Error: Could not reach server", "red");
+        }
+    }
 </script>
-
 </body>
 </html>
