@@ -443,7 +443,7 @@ const NovusSettings = (() => {
             <div class="ns-toggle-row" style="margin-top:10px"><div><div class="ns-toggle-label">Compact Mode</div><div class="ns-hint" style="margin-top:2px">Smaller spacing</div></div>
               <label class="ns-checkbox"><input type="checkbox" id="ns-compact" onchange="NovusSettings.set('compactMode',this.checked)"><span class="ns-check-slider"></span></label></div></div>
           <div class="ns-section"><div class="ns-section-title">Data</div>
-            <button class="ns-danger-btn" onclick="if(confirm('Clear all local data?')){localStorage.removeItem('novus_sap');localStorage.removeItem('novus_done');localStorage.removeItem('novus_queue');NovusSettings._toast('Cache cleared');}">🗑 Clear Local Cache</button>
+            <button class="ns-danger-btn" onclick="if(confirm('Clear all local data and reload?')){ localStorage.removeItem('novus_sap'); localStorage.removeItem('novus_done'); localStorage.removeItem('novus_queue'); if(typeof sessionRegistry !== 'undefined') sessionRegistry.clear(); window.location.reload(); }">🗑 Clear Local Data & Reload</button>
             <div class="ns-hint" style="margin-top:6px">App v2.2 · Plant 1730</div></div>
         </div>
         <div class="ns-footer"><button class="ns-save-btn" onclick="NovusSettings._save()">Save & Close</button></div>
@@ -516,7 +516,6 @@ const NovusSettings = (() => {
 
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbwZ1Dhmf6cK_hWV2xLKYmwEImUvifIRCPqVm0Fz4E7gjvfcpyzoqhAFIgvgwrjBretc/exec';
-const AISLE_ROWS = 'ABCDEFGHJKLMNP'.split('');
 let sapMeta = null, report = [], assignments = [];
 let assignAisles = new Set();
 let currentStatusFilter = 'all';
@@ -554,7 +553,7 @@ async function fetchFullDashboard() {
   badge.textContent = '📋 Connecting to API...';
 
   try {
-    const res = await fetch(API_URL, { redirect: 'follow' });
+    const res = await fetch(API_URL + '?t=' + Date.now(), { redirect: 'follow' });
     const text = await res.text();
     let data;
     try { data = JSON.parse(text); } catch (parseErr) {
@@ -586,7 +585,7 @@ async function fetchFullDashboard() {
 let _pollFailCount = 0;
 async function pollLightweight() {
   try {
-    const res = await fetch(API_URL + '?type=poll', { redirect: 'follow' });
+    const res = await fetch(API_URL + '?type=poll&t=' + Date.now(), { redirect: 'follow' });
     const text = await res.text();
     let data;
     try { data = JSON.parse(text); } catch {
@@ -611,7 +610,7 @@ async function pollLightweight() {
   
   // Poll for safety data so the dashboard stays live
   try {
-    const sRes = await fetch(API_URL + '?type=safety', { redirect: 'follow' });
+    const sRes = await fetch(API_URL + '?type=safety&t=' + Date.now(), { redirect: 'follow' });
     const sData = await sRes.json();
     safetyData = sData.incidents || [];
     updateSafetySummary();
@@ -977,7 +976,7 @@ function toggleTrainingView() {
 
 async function loadTrainingData() {
   try {
-    const res = await fetch(API_URL + '?type=training', { redirect: 'follow' });
+    const res = await fetch(API_URL + '?type=training&t=' + Date.now(), { redirect: 'follow' });
     const text = await res.text();
     let data;
     try { data = JSON.parse(text); } catch { return; }
@@ -1210,7 +1209,7 @@ function updateSafetySummary() {
 
 (async function initSafetySummary() {
   try {
-    const res = await fetch(API_URL + '?type=safety', { redirect: 'follow' });
+    const res = await fetch(API_URL + '?type=safety&t=' + Date.now(), { redirect: 'follow' });
     const data = await res.json();
     safetyData = data.incidents || [];
     updateSafetySummary();
