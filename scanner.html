@@ -302,6 +302,7 @@ const NovusSettings = (() => {
     let sapMaster = [];
     let sessionRegistry = new Map(); 
     let countedBins = new Set(); // Tracks bins that have been successfully synced to the backend
+    let countedFreshProducts = new Set(); // Tracks Fresh SKUs that have already been audited in this cycle
     
     let currentAisle = "";
     let currentBinIdx = 0;
@@ -339,6 +340,9 @@ const NovusSettings = (() => {
             // Extract all bins that have already been audited
             countedBins = new Set(report.map(r => r.scanBin).filter(Boolean));
             
+            // Extract Fresh SKUs that have already been audited
+            countedFreshProducts = new Set(report.map(r => r.prod).filter(p => FRESH_PRODUCTS.includes(p)));
+            
             document.querySelectorAll('.sync-dot').forEach(d => d.classList.remove('offline'));
             
             // Re-render if they are currently on the count screen
@@ -355,6 +359,7 @@ const NovusSettings = (() => {
             const report = data.report || [];
             
             countedBins = new Set(report.map(r => r.scanBin).filter(Boolean));
+            countedFreshProducts = new Set(report.map(r => r.prod).filter(p => FRESH_PRODUCTS.includes(p)));
             
             if (document.getElementById('screen-count').classList.contains('active')) {
                 renderBinStrip(); 
@@ -570,7 +575,19 @@ const NovusSettings = (() => {
         const overview = document.getElementById('fresh-overview');
         let htmlStr = '';
         
-        FRESH_PRODUCTS.forEach(prod => {
+        const productsToShow = FRESH_PRODUCTS.filter(prod => !countedFreshProducts.has(prod));
+        
+        if (productsToShow.length === 0) {
+            overview.innerHTML = `
+                <div style="text-align:center; padding:60px 20px; color:var(--text-3);">
+                    <span style="font-size:42px; display:block; margin-bottom:12px;">🎉</span>
+                    <div style="font-size:18px; font-weight:800; color:var(--text); margin-bottom:4px;">All Fresh Counts Complete</div>
+                    <div>No pending fresh products detected in this cycle.</div>
+                </div>`;
+            return;
+        }
+        
+        productsToShow.forEach(prod => {
             const sapItem = sapMaster.find(i => i.product === prod);
             const desc = sapItem ? sapItem.desc : "Product description unavailable";
             const expectedHUs = sapMaster.filter(i => i.product === prod);
@@ -637,6 +654,12 @@ const NovusSettings = (() => {
     function processFreshScan(input) {
         const sap = sapMaster.find(i => i.hu === input);
         if (sap && FRESH_PRODUCTS.includes(sap.product)) {
+            
+            if (countedFreshProducts.has(sap.product)) {
+                showToast("Product already audited in this cycle", "amber");
+                if(navigator.vibrate) navigator.vibrate([100,50,100]);
+                return;
+            }
             
             // Auto-confirm the scanned pallet in its expected bin
             sessionRegistry.set(input, { 
@@ -781,6 +804,12 @@ const NovusSettings = (() => {
             
             if (result.success || result.skipped) {
                 if (isFresh) {
+                    // Locally mark these specific fresh products as counted so they disappear instantly
+                    Array.from(sessionRegistry.values()).forEach(reg => {
+                        if (FRESH_PRODUCTS.includes(reg.product)) {
+                            countedFreshProducts.add(reg.product);
+                        }
+                    });
                     sessionRegistry.clear();
                 } else {
                     countedBins.add(binName); // Immediately mark as counted locally
