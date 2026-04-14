@@ -443,12 +443,12 @@ const NovusSettings = (() => {
             <div class="ns-toggle-row" style="margin-top:10px"><div><div class="ns-toggle-label">Compact Mode</div><div class="ns-hint" style="margin-top:2px">Smaller spacing</div></div>
               <label class="ns-checkbox"><input type="checkbox" id="ns-compact" onchange="NovusSettings.set('compactMode',this.checked)"><span class="ns-check-slider"></span></label></div></div>
           <div class="ns-section"><div class="ns-section-title">Data</div>
-            <button class="ns-danger-btn" onclick="if(confirm('Clear all local data?')){localStorage.removeItem('novus_sap');localStorage.removeItem('novus_done');localStorage.removeItem('novus_queue');NovusSettings._toast('Cache cleared');}">🗑 Clear Local Cache</button>
+            <button class="ns-danger-btn" onclick="if(confirm('Clear all local data and reload?')){ localStorage.removeItem('novus_sap'); localStorage.removeItem('novus_done'); localStorage.removeItem('novus_queue'); if(typeof sessionRegistry !== 'undefined') sessionRegistry.clear(); window.location.reload(); }">🗑 Clear Local Data & Reload</button>
             <div class="ns-hint" style="margin-top:6px">App v2.2 · Plant 1730</div></div>
         </div>
         <div class="ns-footer"><button class="ns-save-btn" onclick="NovusSettings._save()">Save & Close</button></div>
       </div>`;
-    document.body.appendChild(overlay);
+    document.body.appendChild(style);
     const style = document.createElement('style');
     style.textContent = `
       #novus-settings-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;padding:20px}
@@ -554,7 +554,7 @@ async function fetchFullDashboard() {
   badge.textContent = '📋 Connecting to API...';
 
   try {
-    const res = await fetch(API_URL, { redirect: 'follow' });
+    const res = await fetch(API_URL + '?t=' + Date.now(), { redirect: 'follow' });
     const text = await res.text();
     let data;
     try { data = JSON.parse(text); } catch (parseErr) {
@@ -586,7 +586,7 @@ async function fetchFullDashboard() {
 let _pollFailCount = 0;
 async function pollLightweight() {
   try {
-    const res = await fetch(API_URL + '?type=poll', { redirect: 'follow' });
+    const res = await fetch(API_URL + '?type=poll&t=' + Date.now(), { redirect: 'follow' });
     const text = await res.text();
     let data;
     try { data = JSON.parse(text); } catch {
@@ -611,7 +611,7 @@ async function pollLightweight() {
   
   // Poll for safety data so the dashboard stays live
   try {
-    const sRes = await fetch(API_URL + '?type=safety', { redirect: 'follow' });
+    const sRes = await fetch(API_URL + '?type=safety&t=' + Date.now(), { redirect: 'follow' });
     const sData = await sRes.json();
     safetyData = sData.incidents || [];
     updateSafetySummary();
@@ -633,35 +633,82 @@ document.getElementById('file-input').addEventListener('change', async (e) => {
     const data = await file.arrayBuffer();
     const wb = XLSX.read(new Uint8Array(data), { type: 'array' });
     const sheet = wb.Sheets[wb.SheetNames[0]];
-    const json = XLSX.utils.sheet_to_json(sheet);
+    
+    // 1. Read as an array of arrays to completely bypass SAP's empty metadata rows
+    const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
 
-    if (json.length === 0) throw new Error('Sheet is empty or has no data rows');
+    if (rawData.length === 0) throw new Error('Sheet is empty');
 
-    const rows = json.map(r => {
-      const bin  = findCol(r, ['Storage Bin','Bin','storage_bin','Stge Bin','StorageBin','Stor. Bin','SBin']);
-      const hu   = findCol(r, ['Handling Unit','HU','handling_unit','HandlingUnit','Hndlg Unit','HndlgUnit']);
-      const prod = findCol(r, ['Product','Material','SKU','product','Matl','Material Number','MaterialNumber']);
-      const batch= findCol(r, ['Batch','batch','Btch']);
-      const desc = findCol(r, ['Product Short Description','Description','desc','Material Description','MaterialDescription','Matl Desc','Short Text']);
-      const qty  = findCol(r, ['Quantity','Qty','quantity','Available stock','Avail. Stock','Total Stock','TotalStock','Unrestricted']);
-      const unit = findCol(r, ['Unit','UOM','Base Unit','BaseUnit','Unit of Measure','BUn']);
-      const stype= findCol(r, ['Stock Type','stock_type','Stock Typ','StockType','StkType']);
-      const grdt = findCol(r, ['Goods Receipt Date','GR Date','gr_date','GRDate','Goods Rcpt Date']);
-      const sled = findCol(r, ['Shelf Life Expiration Date','SLED','Expiration','ShelfLifeExpDate','SLED/BBD']);
+    // 2. Find the actual Header Row using Density Scoring
+    let headerRowIdx = 0;
+    let maxScore = 0;
+    const targetKeywords = ['bin', 'storage', 'hu', 'handling', 'unit', 'material', 'product', 'batch', 'qty', 'quantity', 'description'];
 
-      return [
-        String(bin  ?? '').trim().toUpperCase(),
-        String(hu   ?? '').trim(),
-        String(prod ?? '').trim(),
-        String(batch?? '').trim(),
-        String(desc ?? '').trim(),
-        parseFloat(qty) || 0,
-        String(unit ?? 'LB').trim(),
-        String(stype?? 'F2').trim(),
-        String(grdt ?? ''),
-        String(sled ?? ''),
-      ];
-    }).filter(r => r[0] && r[1]);
+    for (let i = 0; i < Math.min(30, rawData.length); i++) {
+        let score = 0;
+        const rowString = rawData[i].join(' ').toLowerCase();
+        targetKeywords.forEach(kw => {
+            if (rowString.includes(kw)) score++;
+        });
+        if (score > maxScore) {
+            maxScore = score;
+            headerRowIdx = i;
+        }
+    }
+
+    const headers = rawData[headerRowIdx];
+    const dataRows = rawData.slice(headerRowIdx + 1);
+
+    console.log("SAP Importer: Target Header Row Detected at Index", headerRowIdx);
+    console.log("SAP Importer: Headers", headers);
+
+    // 3. Map actual columns by dynamically finding indices
+    const getColIdx = (aliases) => {
+        const normAliases = aliases.map(a => a.toLowerCase().replace(/[\s_.\-\/]/g, ''));
+        // Try exact match first
+        for (let i = 0; i < headers.length; i++) {
+            if (!headers[i]) continue;
+            const h = String(headers[i]).toLowerCase().replace(/[\s_.\-\/]/g, '');
+            if (normAliases.includes(h)) return i;
+        }
+        // Try partial match (safe fallback)
+        for (let i = 0; i < headers.length; i++) {
+            if (!headers[i]) continue;
+            const h = String(headers[i]).toLowerCase().replace(/[\s_.\-\/]/g, '');
+            if (normAliases.some(a => a.length >= 3 && h.includes(a))) return i;
+        }
+        return -1;
+    };
+
+    const idx = {
+        bin: getColIdx(['Storage Bin','Bin','storage_bin','Stge Bin','StorageBin','Stor. Bin','SBin']),
+        hu: getColIdx(['Handling Unit','HU','handling_unit','HandlingUnit','Hndlg Unit','HndlgUnit']),
+        prod: getColIdx(['Product','Material','SKU','product','Matl','Material Number','MaterialNumber']),
+        batch: getColIdx(['Batch','batch','Btch']),
+        desc: getColIdx(['Product Short Description','Description','desc','Material Description','MaterialDescription','Matl Desc','Short Text']),
+        qty: getColIdx(['Quantity','Qty','quantity','Available stock','Avail. Stock','Total Stock','TotalStock','Unrestricted']),
+        unit: getColIdx(['Unit','UOM','Base Unit','BaseUnit','Unit of Measure','BUn']),
+        stype: getColIdx(['Stock Type','stock_type','Stock Typ','StockType','StkType']),
+        grdt: getColIdx(['Goods Receipt Date','GR Date','gr_date','GRDate','Goods Rcpt Date']),
+        sled: getColIdx(['Shelf Life Expiration Date','SLED','Expiration','ShelfLifeExpDate','SLED/BBD'])
+    };
+
+    console.log("SAP Importer: Column Mapping", idx);
+
+    const rows = dataRows.map(r => {
+        return [
+            idx.bin > -1 ? String(r[idx.bin] || '').trim().toUpperCase() : '',
+            idx.hu > -1 ? String(r[idx.hu] || '').trim() : '',
+            idx.prod > -1 ? String(r[idx.prod] || '').trim() : '',
+            idx.batch > -1 ? String(r[idx.batch] || '').trim() : '',
+            idx.desc > -1 ? String(r[idx.desc] || '').trim() : '',
+            idx.qty > -1 ? parseFloat(r[idx.qty]) || 0 : 0,
+            idx.unit > -1 ? String(r[idx.unit] || 'LB').trim() : 'LB',
+            idx.stype > -1 ? String(r[idx.stype] || 'F2').trim() : 'F2',
+            idx.grdt > -1 ? String(r[idx.grdt] || '').trim() : '',
+            idx.sled > -1 ? String(r[idx.sled] || '').trim() : '',
+        ];
+    }).filter(r => String(r[0]).trim().length > 0 && String(r[1]).trim().length > 0);
 
     if (rows.length === 0) {
       zone.classList.remove('uploading');
@@ -674,12 +721,16 @@ document.getElementById('file-input').addEventListener('change', async (e) => {
     }
 
     document.getElementById('uz-label').textContent = `Uploading ${rows.length} rows...`;
-    const res = await fetch(API_URL, {
+    
+    console.log(`SAP Importer: Executing POST with ${rows.length} rows`);
+    
+    const res = await fetch(API_URL + '?t=' + Date.now(), {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
       redirect: 'follow',
       body: JSON.stringify({ action: 'uploadSAPData', rows, uploader: NovusSettings.getUser() || 'Control Center', filename: file.name }),
     });
+    
     const resText = await res.text();
     let result;
     try { result = JSON.parse(resText); } catch { throw new Error('Server returned invalid response'); }
@@ -711,25 +762,6 @@ function resetUploadZone() {
   zone.classList.remove('success', 'uploading', 'error');
   document.getElementById('uz-icon').textContent = '📂';
   document.getElementById('uz-label').textContent = 'Drop SAP Export (.xlsx)';
-}
-
-function findCol(row, aliases) {
-  for (const name of aliases) { if (row[name] !== undefined) return row[name]; }
-  const keys = Object.keys(row);
-  const normalize = s => s.toLowerCase().replace(/[\s_.\-\/]/g, '');
-  const normalizedAliases = aliases.map(normalize);
-
-  for (const key of keys) {
-    const nk = normalize(key);
-    if (normalizedAliases.includes(nk)) return row[key];
-  }
-  for (const key of keys) {
-    const nk = normalize(key);
-    for (const na of normalizedAliases) {
-      if (na.length >= 3 && nk.includes(na)) return row[key];
-    }
-  }
-  return null;
 }
 
 function updateFreshness() {
@@ -842,6 +874,7 @@ function renderTable() {
   };
 
   const rowsHTML = pageItems.map(r => {
+    if (r.type === 'bin_finalized') return ''; // Hide background markers
     const variance = (r.scanQty || 0) - (r.sapQty || 0);
     const vClass = variance < 0 ? 'red' : variance > 0 ? 'amber' : '';
     let timeStr = '—';
@@ -977,7 +1010,7 @@ function toggleTrainingView() {
 
 async function loadTrainingData() {
   try {
-    const res = await fetch(API_URL + '?type=training', { redirect: 'follow' });
+    const res = await fetch(API_URL + '?type=training&t=' + Date.now(), { redirect: 'follow' });
     const text = await res.text();
     let data;
     try { data = JSON.parse(text); } catch { return; }
@@ -1210,7 +1243,7 @@ function updateSafetySummary() {
 
 (async function initSafetySummary() {
   try {
-    const res = await fetch(API_URL + '?type=safety', { redirect: 'follow' });
+    const res = await fetch(API_URL + '?type=safety&t=' + Date.now(), { redirect: 'follow' });
     const data = await res.json();
     safetyData = data.incidents || [];
     updateSafetySummary();
