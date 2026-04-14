@@ -3,1289 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cycle Counter — Novus Ops</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    <title>Cycle Counter 2.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg: #f5f5f7;
-            --surface: #ffffff;
-            --surface-2: #f0f0f3;
-            --surface-3: #e8e8ec;
-            --border: #dcdce2;
-            --text: #1a1a1f;
-            --text-2: #6b6b78;
-            --text-3: #9898a6;
-            --accent: #3b6cf5;
-            --accent-glow: rgba(59,108,245,0.08);
-            --green: #16a34a;
-            --green-bg: #f0fdf4;
-            --green-border: #bbf7d0;
-            --red: #dc2626;
-            --red-bg: #fef2f2;
-            --red-border: #fecaca;
-            --amber: #d97706;
-            --amber-bg: #fffbeb;
-            --amber-border: #fde68a;
-            --purple: #7c3aed;
-            --purple-bg: #f5f3ff;
-            --purple-border: #ddd6fe;
-            --cyan: #0891b2;
-            --cyan-bg: #ecfeff;
-            --cyan-border: #a5f3fc;
-            --radius: 16px;
-            --radius-sm: 10px;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
-        }
+        :root { --bg: #f5f5f7; --surface: #ffffff; --surface-2: #f0f0f3; --border: #dcdce2; --text: #1a1a1f; --accent: #3b6cf5; --green: #16a34a; --red: #dc2626; --amber: #d97706; --radius: 16px; }
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); overscroll-behavior: none; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
         .mono { font-family: 'IBM Plex Mono', monospace; }
-        button { font-family: inherit; border: none; cursor: pointer; -webkit-user-select: none; user-select: none; }
-        button:active { transform: scale(0.96); }
-        input { font-family: inherit; }
-
-        /* ===== SCREENS ===== */
         .screen { display: none; flex-direction: column; flex: 1; overflow: hidden; }
         .screen.active { display: flex; }
-
-        /* ===== HEADER ===== */
-        .app-header { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-shrink: 0; background: var(--surface); box-shadow: var(--shadow-sm); }
-        .app-header h1 { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; }
-        .hdr-btn { background: var(--surface-2); color: var(--text-2); padding: 8px 14px; border-radius: 10px; font-size: 11px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        .header-right { display: flex; align-items: center; gap: 8px; }
-        .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
-        .sync-dot.offline { background: var(--red); animation: pulse 1.5s infinite; }
-        .sync-dot.queued { background: var(--amber); animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        .name-btn { background: var(--surface-2); color: var(--text-2); padding: 8px 14px; border-radius: var(--radius-sm); font-size: 11px; font-weight: 700; }
-
-        /* ===== BIN NAVIGATION ===== */
-        .bin-nav-cluster { display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .nav-arrow { background: var(--surface-3); color: var(--text); width: 36px; height: 36px; border-radius: 8px; font-size: 18px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
-        .nav-arrow:disabled { opacity: 0.3; pointer-events: none; }
-
-        /* ===== PHASE INDICATOR ===== */
-        .phase-bar { display: flex; gap: 2px; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
-        .phase-step { flex: 1; height: 4px; border-radius: 2px; background: var(--surface-3); transition: background 0.4s; }
-        .phase-step.done { background: var(--green); }
-        .phase-step.active { background: var(--accent); animation: phase-glow 1.5s ease infinite; }
-        @keyframes phase-glow { 0%,100%{ box-shadow: 0 0 0 0 var(--accent-glow); } 50%{ box-shadow: 0 0 8px 4px var(--accent-glow); } }
-        .phase-label { display: flex; justify-content: space-between; padding: 0 16px 8px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-3); }
-        .phase-label span.active { color: var(--accent); }
-        .phase-label span.done { color: var(--green); }
-
-        /* ===== SCROLLABLE CONTENT ===== */
-        .scroll-area { flex: 1; overflow-y: auto; padding: 16px 16px 240px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
-        .scroll-area::-webkit-scrollbar { display: none; }
-
-        /* ===== HU CARDS ===== */
-        .hu-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 10px; transition: all 0.25s; box-shadow: var(--shadow-sm); }
-        .hu-card.confirmed { border-color: var(--green-border); background: var(--green-bg); }
-        .hu-card.missing { border-color: var(--red-border); background: var(--red-bg); opacity: 0.65; }
-        .hu-card.adjusted { border-color: var(--amber-border); background: var(--amber-bg); }
-        .hu-card.movement { border-color: var(--purple-border); background: var(--purple-bg); }
-        .hu-card.extra { border-color: var(--cyan-border, rgba(34,211,238,0.25)); background: var(--cyan-bg, #ecfeff); }
-        .hu-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-        .hu-id { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700; color: var(--accent); background: var(--accent-glow); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(59,108,245,0.15); }
-        .hu-status { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; padding: 4px 10px; border-radius: 6px; }
-        .hu-status.ok { color: var(--green); background: var(--green-bg); }
-        .hu-status.miss { color: var(--red); background: var(--red-bg); }
-        .hu-status.adj { color: var(--amber); background: var(--amber-bg); }
-        .hu-status.move { color: var(--purple); background: var(--purple-bg); }
-        .hu-status.ext { color: var(--cyan); background: var(--cyan-bg, #ecfeff); }
-        .hu-status.pending { color: var(--text-2); background: var(--surface-2); }
-        .hu-meta { display: flex; gap: 16px; margin-bottom: 12px; }
-        .hu-meta-label { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-3); }
-        .hu-meta-value { font-size: 14px; font-weight: 700; color: var(--text); margin-top: 1px; }
-        .hu-meta-value.mono { font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
-        .hu-actions { display: flex; gap: 8px; }
-        .hu-btn { flex: 1; padding: 16px 0; border-radius: var(--radius-sm); font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.15s; text-align: center; min-height: 52px; }
-        .hu-btn.confirm { background: var(--green); color: white; }
-        .hu-btn.miss-btn { background: var(--surface-3); color: var(--red); border: 1.5px solid var(--red-border); }
-        .hu-btn.miss-btn.active { background: var(--red); color: white; }
-
-        /* ===== QTY STEPPER ===== */
-        .qty-row { display: flex; align-items: center; gap: 6px; background: var(--surface-2); border-radius: var(--radius-sm); padding: 8px; margin-bottom: 10px; }
-        .qty-stepper { width: 60px; height: 60px; border-radius: var(--radius-sm); background: var(--surface-3); color: var(--text); font-size: 26px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .qty-input { flex: 1; background: transparent; border: none; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 36px; font-weight: 700; color: var(--accent); outline: none; min-width: 0; }
-        .qty-input::placeholder { color: var(--text-3); }
-        .sap-qty-badge { font-size: 10px; font-weight: 700; color: var(--text-3); text-align: center; padding: 4px; }
-        .sap-qty-badge strong { color: var(--text-2); }
-
-        /* ===== BOTTOM BAR ===== */
-        .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 16px calc(env(safe-area-inset-bottom, 16px) + 12px); background: rgba(255,255,255,0.95); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border-top: 1px solid var(--border); z-index: 50; box-shadow: 0 -4px 20px rgba(0,0,0,0.06); }
-        .primary-btn { width: 100%; padding: 20px 0; border-radius: var(--radius); font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 58px; }
+        .app-header { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: var(--surface); }
+        .scroll-area { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 200px; }
+        .hu-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .hu-card.confirmed { border-color: #bbf7d0; background: #f0fdf4; }
+        .hu-card.missing { border-color: #fecaca; background: #fef2f2; opacity: 0.7; }
+        .qty-row { display: flex; align-items: center; gap: 8px; margin: 12px 0; }
+        .qty-stepper { width: 50px; height: 50px; background: var(--surface-2); border-radius: 10px; font-size: 24px; font-weight: 900; display: flex; align-items: center; justify-content: center; border: none; }
+        .qty-input { flex: 1; text-align: center; font-size: 32px; font-weight: 700; border: none; background: transparent; color: var(--accent); width: 60px; }
+        .primary-btn { width: 100%; padding: 18px; border-radius: var(--radius); font-size: 15px; font-weight: 800; text-transform: uppercase; border: none; cursor: pointer; }
         .primary-btn.blue { background: var(--accent); color: white; }
         .primary-btn.green { background: var(--green); color: white; }
-        .primary-btn.disabled { background: var(--surface-3); color: var(--text-3); pointer-events: none; }
-        .secondary-row { display: flex; gap: 8px; margin-bottom: 10px; }
-        .secondary-btn { flex: 1; padding: 16px 0; border-radius: var(--radius-sm); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; background: var(--surface-2); color: var(--text-2); border: 1.5px solid var(--border); text-align: center; min-height: 50px; }
-        .secondary-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
-
-        /* ===== HUB SPECIFICS ===== */
-        .aisle-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 0 16px 20px; }
-        .aisle-btn { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 24px 0; text-align: center; font-size: 24px; font-weight: 900; color: var(--text); position: relative; overflow: hidden; transition: all 0.2s; box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.04)); }
-        .aisle-btn .aisle-fill { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(79,125,249,0.12), transparent); transition: height 0.5s; }
-        .aisle-btn .aisle-count { position: absolute; top: 6px; right: 8px; font-size: 9px; font-weight: 700; color: var(--text-3); }
-        .section-title { padding: 20px 16px 10px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-3); }
-        .search-container { padding: 16px; position: relative; }
-        .search-field { width: 100%; padding: 16px 16px 16px 44px; border-radius: var(--radius); border: 1.5px solid var(--border); background: var(--surface); color: var(--text); font-size: 16px; outline: none; }
-        .search-icon { position: absolute; left: 30px; top: 34px; color: var(--text-3); }
-        .bin-strip { display: flex; gap: 6px; overflow-x: auto; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); scrollbar-width: none; }
-        .strip-dot { min-width: 50px; height: 32px; border-radius: 8px; background: var(--surface-2); color: var(--text-2); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; border: 1px solid transparent; transition: all 0.2s;}
-        .strip-dot.active { background: var(--accent); color: white; }
-
-        /* ===== MODALS ===== */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 200; display: flex; align-items: flex-end; justify-content: center; padding: 0; }
-        .modal-sheet { background: var(--surface); border-radius: var(--radius) var(--radius) 0 0; width: 100%; max-height: 85vh; overflow-y: auto; padding: 24px 20px calc(env(safe-area-inset-bottom, 8px) + 24px); animation: sheet-up 0.35s cubic-bezier(0.16,1,0.3,1); }
-        @keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .modal-handle { width: 36px; height: 4px; background: var(--surface-3); border-radius: 2px; margin: 0 auto 20px; }
-        .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
-        .modal-sub { font-size: 12px; color: var(--text-2); font-weight: 500; margin-bottom: 20px; }
-
-        /* ===== TOAST ===== */
-        .toast { position: fixed; top: env(safe-area-inset-top, 12px); left: 50%; transform: translateX(-50%) translateY(-120%); z-index: 999; padding: 12px 20px; border-radius: var(--radius); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); pointer-events: none; opacity: 0; transition: all 0.4s cubic-bezier(0.16,1,0.3,1); }
-        .toast.show { transform: translateX(-50%) translateY(12px); opacity: 1; }
-        .toast.green { background: var(--green); color: white; }
-        .toast.red { background: var(--red); color: white; }
-        .toast.blue { background: var(--accent); color: white; }
-        .toast.amber { background: var(--amber); color: white; }
-        .toast.cyan { background: var(--cyan); color: white; }
+        .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 16px; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-top: 1px solid var(--border); }
+        .aisle-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .aisle-btn { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 20px 0; text-align: center; font-size: 20px; font-weight: 800; }
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 12px; color: white; font-weight: 700; opacity: 0; transition: 0.3s; z-index: 999; }
+        .toast.show { opacity: 1; }
     </style>
 </head>
 <body>
 
-<div id="toast" class="toast green"><span id="toast-text"></span></div>
-
-<div class="modal-overlay" id="ghost-modal" style="display: none; align-items:center; padding:20px;">
-  <div style="background:var(--surface); border-radius:var(--radius); width:100%; max-width:400px; padding:24px 20px; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
-    <div style="text-align:center; padding-bottom: 16px; border-bottom:1px solid var(--border); margin-bottom:16px;">
-        <h3 style="font-size:18px; font-weight:800; color:var(--red);">⚠️ Unexpected Item</h3>
-        <p style="font-size:13px; color:var(--text-2); margin-top:4px;">Not found in active SAP extract.</p>
-    </div>
-    
-    <div style="text-align:center; margin-bottom: 24px;">
-        <div style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--text-3); letter-spacing:1px;">HU Scanned</div>
-        <div id="ghost-hu" class="mono" style="font-size:24px; font-weight:900; color:var(--accent); margin-top:4px;"></div>
-    </div>
-
-    <p style="font-size:12px; color:var(--text-2); text-align:center; margin-bottom:16px; line-height:1.5;">
-        Cycle count recommended. Enter the <strong>Product Number</strong> for this pallet to begin a global audit across all bins.
-    </p>
-    
-    <input type="text" id="ghost-prod-input" placeholder="Enter Product #..." style="width:100%; background:var(--surface-2); border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:14px 16px; font-size:16px; font-family:'IBM Plex Mono', monospace; text-align:center; outline:none; margin-bottom:24px;">
-
-    <div style="display:flex; gap:10px">
-        <button class="secondary-btn" style="flex:1; padding:16px 0;" onclick="closeGhostModal()">Dismiss</button>
-        <button class="primary-btn" style="flex:2; background:var(--cyan)" onclick="pivotToProductAudit()">Start Product Audit</button>
-    </div>
-  </div>
-</div>
+<div id="toast" class="toast"></div>
 
 <div id="screen-setup" class="screen active">
-    <div class="app-header">
-        <a href="index.html" class="hdr-btn">← Home</a>
-        <h1>Cycle Counter</h1>
-        <div class="header-right">
-            <div id="sync-dot" class="sync-dot"></div>
-            <button class="hdr-btn" style="font-size:14px; padding:6px 10px;" onclick="NovusSettings.openModal()">⚙</button>
-        </div>
-    </div>
+    <div class="app-header"><h1>Novus Ops</h1><button onclick="refreshData()" style="padding:8px 12px; border-radius:8px; border:1px solid var(--border)">↻ Sync</button></div>
     <div class="scroll-area">
-        
-        <div style="padding: 16px 16px 0; display:flex; justify-content:space-between; align-items:center;">
-            <div>
-                <div style="font-size:10px; font-weight:700; color:var(--text-3); text-transform:uppercase;">Auditor</div>
-                <div id="name-display" style="font-weight:800; color:var(--accent);">Operator</div>
-            </div>
-            <button onclick="refreshData()" class="hdr-btn" style="font-size:11px; padding:8px 12px;">↻ Refresh SAP</button>
-        </div>
-
-        <div class="search-container">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="hub-search" class="search-field" placeholder="Scan Product, Bin, or type 'FRESH'...">
-        </div>
-        
-        <div class="section-title" style="padding: 0 16px; font-size: 10px; font-weight: 800; color: var(--text-3); text-transform: uppercase;">Aisle Audit</div>
+        <h2 style="margin-bottom:16px; font-size:14px; text-transform:uppercase; color:#666">Select Aisle</h2>
         <div class="aisle-grid" id="aisle-grid"></div>
-
-        <div style="padding: 0 16px">
-            <button onclick="initFreshMode()" style="width:100%; padding:20px; border-radius:var(--radius); background:linear-gradient(135deg, var(--amber), #b45309); color:white; font-weight:900; font-size:15px; letter-spacing:1px; border:none; box-shadow:var(--shadow-sm);">START FRESH AUDIT</button>
-        </div>
     </div>
 </div>
 
 <div id="screen-count" class="screen">
-    <div class="app-header">
-        <button onclick="switchScreen('setup')" class="hdr-btn">← Back</button>
-        <div class="bin-nav-cluster">
-            <button id="btn-prev" class="nav-arrow" onclick="prevBin()">←</button>
-            <h1 id="count-title" class="mono" style="font-size: 16px; width: 85px; text-align: center; display:flex; align-items:center; justify-content:center; gap:4px;"></h1>
-            <button id="btn-next-top" class="nav-arrow" onclick="skipBin()">→</button>
-        </div>
-        <div class="sync-dot"></div>
-    </div>
-    
-    <div>
-        <div class="phase-bar">
-            <div id="phase-1" class="phase-step active"></div>
-            <div id="phase-2" class="phase-step"></div>
-            <div id="phase-3" class="phase-step"></div>
-        </div>
-        <div class="phase-label">
-            <span id="phase-1-label" class="active">Verify HUs</span>
-            <span id="phase-2-label">Review</span>
-            <span id="phase-3-label">Finalize</span>
-        </div>
-    </div>
-
-    <div class="bin-strip" id="bin-strip"></div>
-    
-    <div style="padding: 12px 16px 0; flex-shrink:0;">
-        <div style="position: relative;">
-            <span class="search-icon" style="top: 14px; left: 16px; font-size: 14px; color:var(--purple);">➕</span>
-            <input type="text" id="bin-scan-input" class="search-field" placeholder="Scan unexpected HU..." style="border-color: var(--purple); padding-left: 40px; padding-top: 12px; padding-bottom: 12px; font-size: 14px;">
-        </div>
-    </div>
-
-    <div class="scroll-area" id="hu-list" style="padding-top: 12px;">
-        </div>
+    <div class="app-header"><button onclick="switchScreen('setup')">← Back</button><h1 id="count-title" class="mono"></h1><div></div></div>
+    <div class="scroll-area" id="hu-list"></div>
     <div class="bottom-bar">
-        <div style="display:flex; gap:8px; width:100%;">
-            <button class="secondary-btn" style="flex: 1;" onclick="skipBin()">Skip</button>
-            <button class="primary-btn" id="btn-next" style="flex: 2;" onclick="finalizeAisleBin()">Finalize & Next →</button>
-        </div>
-    </div>
-</div>
-
-<div id="screen-product" class="screen">
-    <div class="app-header">
-        <button onclick="switchScreen('setup')" class="hdr-btn">← Back</button>
-        <h1 style="color:var(--cyan)">Product Audit</h1>
-        <div class="sync-dot"></div>
-    </div>
-    <div style="padding: 16px 16px 0; font-size: 12px; color: var(--text-2); text-align:center;">
-        Global system reconciliation for <strong id="product-display" style="color:var(--text)"></strong>
-    </div>
-    
-    <div style="padding: 12px 16px 0; flex-shrink:0;">
-        <div style="position: relative;">
-            <span class="search-icon" style="top: 14px; left: 16px; font-size: 14px; color:var(--cyan);">➕</span>
-            <input type="text" id="product-scan-input" class="search-field" placeholder="Scan HU to add to audit..." style="border-color: var(--cyan); padding-left: 40px; padding-top: 12px; padding-bottom: 12px; font-size: 14px;">
-        </div>
-    </div>
-
-    <div class="scroll-area" id="product-list" style="padding-top: 12px;">
-        </div>
-    <div class="bottom-bar">
-        <button class="primary-btn" style="background:var(--cyan)" onclick="submitProductAudit()">Finalize Product Audit</button>
-    </div>
-</div>
-
-<div id="screen-fresh" class="screen">
-    <div class="app-header">
-        <button onclick="handleFreshBack()" class="hdr-btn">← Back</button>
-        <h1 id="fresh-title" style="color:var(--amber)">FRESH Tally</h1>
-        <div class="sync-dot"></div>
-    </div>
-    <div class="search-container" id="fresh-search-bar">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="fresh-scan-input" class="search-field" style="border-color:var(--amber)" placeholder="Scan any pallet...">
-    </div>
-    <div class="scroll-area" id="fresh-list" style="padding-top:0;">
-        <div id="fresh-overview" style="padding-top:16px;"></div>
-        <div id="fresh-detail" style="display:none; padding-top:16px;"></div>
-    </div>
-    <div class="bottom-bar">
-        <button class="primary-btn" style="background:var(--amber)" onclick="submitFreshAudit()">Submit Fresh Audit</button>
+        <button id="btn-finalize" class="primary-btn green" onclick="finalizeBin()">Finalize Bin →</button>
     </div>
 </div>
 
 <script>
-const NovusSettings = (() => {
-  const STORAGE_KEY = 'novus_settings';
-  const DEFAULTS = { userName: '', theme: 'dark', pollInterval: 10, hapticFeedback: true, compactMode: false };
+const API_URL = 'https://script.google.com/macros/s/AKfycbwZ1Dhmf6cK_hWV2xLKYmwEImUvifIRCPqVm0Fz4E7gjvfcpyzoqhAFIgvgwrjBretc/exec';
+let sapMaster = JSON.parse(localStorage.getItem('sap2') || '[]');
+let currentBin = '', currentItems = [];
 
-  const LIGHT_VARS = {
-    '--bg': '#f8f9fb', '--surface': '#ffffff', '--surface-2': '#f1f3f5', '--surface-3': '#e5e7eb',
-    '--border': '#d1d5dc', '--text': '#111827', '--text-2': '#374151', '--text-3': '#6b7280',
-    '--accent': '#2563eb', '--accent-dim': 'rgba(37,99,235,.07)',
-    '--green': '#059669', '--green-bg': 'rgba(5,150,105,.08)', '--green-border': 'rgba(5,150,105,.25)',
-    '--red': '#dc2626', '--red-bg': 'rgba(220,38,38,.07)', '--red-border': 'rgba(220,38,38,.25)',
-    '--amber': '#b45309', '--amber-bg': 'rgba(180,83,9,.07)', '--amber-border': 'rgba(180,83,9,.25)',
-    '--purple': '#7c3aed', '--purple-bg': 'rgba(124,58,237,.07)', '--purple-border': 'rgba(124,58,237,.25)',
-    '--cyan': '#0e7490', '--cyan-bg': 'rgba(14,116,144,.07)', '--cyan-border': 'rgba(14,116,144,.25)'
-  };
+function toast(msg, color) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.style.background = color === 'red' ? 'var(--red)' : 'var(--green)';
+    t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000);
+}
 
-  const DARK_VARS = {
-    '--bg': '#0f1117', '--surface': '#181a23', '--surface-2': '#1f2230', '--surface-3': '#2a2d3a',
-    '--border': '#313546', '--text': '#eceef4', '--text-2': '#9ba1b5', '--text-3': '#6c7189',
-    '--accent': '#5b9aff', '--accent-dim': 'rgba(91,154,255,.1)',
-    '--green': '#34d399', '--green-bg': 'rgba(52,211,153,.1)', '--green-border': 'rgba(52,211,153,.25)',
-    '--red': '#f87171', '--red-bg': 'rgba(248,113,113,.1)', '--red-border': 'rgba(248,113,113,.25)',
-    '--amber': '#fbbf24', '--amber-bg': 'rgba(251,191,36,.1)', '--amber-border': 'rgba(251,191,36,.25)',
-    '--purple': '#a78bfa', '--purple-bg': 'rgba(167,139,250,.1)', '--purple-border': 'rgba(167,139,250,.25)',
-    '--cyan': '#22d3ee', '--cyan-bg': 'rgba(34,211,238,.1)', '--cyan-border': 'rgba(34,211,238,.25)'
-  };
+function switchScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + id).classList.add('active');
+}
 
-  function loadAll() {
-    try { const r = localStorage.getItem(STORAGE_KEY); return r ? { ...DEFAULTS, ...JSON.parse(r) } : { ...DEFAULTS }; }
-    catch { return { ...DEFAULTS }; }
-  }
-  function saveAll(s) { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
+async function refreshData() {
+    toast('Syncing...', 'green');
+    const res = await fetch(API_URL + '?type=sapdata');
+    const data = await res.json();
+    sapMaster = data.sapData || [];
+    localStorage.setItem('sap2', JSON.stringify(sapMaster));
+    renderAisleGrid();
+}
 
-  let _cache = loadAll();
-  const legacyName = localStorage.getItem('novus_name');
-  if (legacyName && !_cache.userName) { _cache.userName = legacyName; saveAll(_cache); }
-
-  function get(key) { return _cache[key] !== undefined ? _cache[key] : DEFAULTS[key]; }
-  function set(key, val) {
-    _cache[key] = val; saveAll(_cache);
-    if (key === 'userName') {
-        localStorage.setItem('novus_name', val);
-        const disp = document.getElementById('name-display');
-        if(disp) disp.innerText = val || 'Operator';
-    }
-    if (key === 'theme') applyTheme();
-  }
-  function getUser() { return get('userName') || 'Operator'; }
-  function applyTheme() {
-    const vars = get('theme') === 'light' ? LIGHT_VARS : DARK_VARS;
-    Object.entries(vars).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
-    document.body.setAttribute('data-theme', get('theme'));
-    
-    document.querySelectorAll('.bottom-bar').forEach(bb => {
-        bb.style.background = get('theme') === 'light' ? 'rgba(255,255,255,0.95)' : 'rgba(15,17,23,0.95)';
+function renderAisleGrid() {
+    const grid = document.getElementById('aisle-grid');
+    grid.innerHTML = '';
+    "ABCDEFGHJKLMNP".split("").forEach(row => {
+        const btn = document.createElement('button');
+        btn.className = 'aisle-btn'; btn.textContent = row;
+        btn.onclick = () => startAisle(row);
+        grid.appendChild(btn);
     });
-  }
+}
 
-  let _modalInjected = false;
-  function _injectModal() {
-    if (_modalInjected) return;
-    _modalInjected = true;
-    const overlay = document.createElement('div');
-    overlay.id = 'novus-settings-overlay';
-    overlay.innerHTML = `
-      <div class="ns-modal">
-        <div class="ns-header"><h3 style="margin:0; font-size:16px;">⚙ Settings</h3><button class="ns-close" onclick="NovusSettings.closeModal()" style="background:none; border:none; font-size:18px; cursor:pointer; color:var(--text-3);">✕</button></div>
-        <div class="ns-body" style="padding:16px 20px;">
-          <div style="margin-bottom:20px;">
-            <label style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--text-3); display:block; margin-bottom:8px;">Your Name / ID</label>
-            <input type="text" id="ns-username" placeholder="Enter your name..." style="width:100%; padding:14px; background:var(--surface-2); border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; outline:none; color:var(--text);">
-          </div>
-          <div style="margin-bottom:20px;">
-            <label style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--text-3); display:block; margin-bottom:8px;">Theme</label>
-            <div style="display:flex; gap:10px;">
-                <button onclick="NovusSettings.set('theme', 'light'); NovusSettings._updateThemeSwitch();" id="btn-theme-light" style="flex:1; padding:14px; background:var(--surface-2); border:1.5px solid var(--border); border-radius:var(--radius-sm); font-weight:700; color:var(--text);">Light</button>
-                <button onclick="NovusSettings.set('theme', 'dark'); NovusSettings._updateThemeSwitch();" id="btn-theme-dark" style="flex:1; padding:14px; background:var(--surface-2); border:1.5px solid var(--border); border-radius:var(--radius-sm); font-weight:700; color:var(--text);">Dark</button>
+function startAisle(letter) {
+    currentBin = `W${letter}00A`; // Simplified start
+    loadBin(currentBin);
+    switchScreen('count');
+}
+
+function loadBin(bin) {
+    currentBin = bin;
+    document.getElementById('count-title').textContent = bin;
+    const items = sapMaster.filter(i => i.sapBin === bin);
+    currentItems = items.map(i => ({ ...i, countQty: i.sapQty, status: 'pending' }));
+    renderHUList();
+}
+
+function renderHUList() {
+    const container = document.getElementById('hu-list');
+    container.innerHTML = currentItems.map((item, idx) => `
+        <div class="hu-card ${item.status === 'confirmed' ? 'confirmed' : (item.status === 'missing' ? 'missing' : '')}">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px">
+                <span class="mono" style="font-weight:800; color:var(--accent)">HU ${item.hu}</span>
+                <span style="font-size:11px; font-weight:700; color:#888">${item.product}</span>
             </div>
-          </div>
-          <div style="margin-bottom:20px;">
-            <button onclick="if(confirm('Clear local data and reload?')){ localStorage.removeItem('sap2'); localStorage.removeItem('doneBins2'); if(typeof sessionRegistry !== 'undefined') sessionRegistry.clear(); window.location.reload(); }" style="width:100%; padding:14px; background:var(--red-bg); color:var(--red); border:1px solid var(--red-border); border-radius:var(--radius-sm); font-weight:800; font-size:12px; text-transform:uppercase;">🗑 Clear Local Data</button>
-          </div>
-          <button onclick="NovusSettings._save()" style="width:100%; padding:16px; background:var(--accent); color:white; border:none; border-radius:var(--radius); font-weight:800; font-size:14px; text-transform:uppercase;">Save Settings</button>
+            <div style="font-size:12px; margin-bottom:10px">${item.desc}</div>
+            <div class="qty-row">
+                <button class="qty-stepper" onclick="updateQty(${idx}, -1)">−</button>
+                <input class="qty-input" type="number" value="${item.countQty}" readonly>
+                <button class="qty-stepper" onclick="updateQty(${idx}, 1)">+</button>
+            </div>
+            <div style="display:flex; gap:8px">
+                <button class="primary-btn green" style="padding:12px; font-size:12px" onclick="confirmHU(${idx})">Confirm</button>
+                <button class="primary-btn" style="padding:12px; font-size:12px; background:#eee; color:#666" onclick="missHU(${idx})">Missing</button>
+            </div>
         </div>
-      </div>`;
-    document.body.appendChild(overlay);
-    
-    const style = document.createElement('style');
-    style.textContent = `
-      #novus-settings-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:9999;align-items:flex-end;justify-content:center;}
-      #novus-settings-overlay.open{display:flex}
-      .ns-modal{background:var(--surface);width:100%;border-radius:24px 24px 0 0;display:flex;flex-direction:column;max-height:90vh;overflow-y:auto; padding-bottom:env(safe-area-inset-bottom, 20px);}
-      .ns-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
-    `;
-    document.body.appendChild(style);
-  }
+    `).join('');
+}
 
-  function openModal() {
-    _injectModal();
-    document.getElementById('novus-settings-overlay').classList.add('open');
-    document.getElementById('ns-username').value = get('userName');
-    _updateThemeSwitch();
-  }
-  function closeModal() { const o = document.getElementById('novus-settings-overlay'); if (o) o.classList.remove('open'); }
-  function _updateThemeSwitch() {
-    const t = get('theme');
-    const l = document.getElementById('btn-theme-light');
-    const d = document.getElementById('btn-theme-dark');
-    if (l && d) {
-        l.style.borderColor = t === 'light' ? 'var(--accent)' : 'var(--border)';
-        l.style.color = t === 'light' ? 'var(--accent)' : 'var(--text)';
-        d.style.borderColor = t === 'dark' ? 'var(--accent)' : 'var(--border)';
-        d.style.color = t === 'dark' ? 'var(--accent)' : 'var(--text)';
-    }
-  }
-  function _save() {
-    set('userName', document.getElementById('ns-username').value.trim());
-    closeModal(); 
-    if(typeof showToast === 'function') showToast('Settings saved', 'green');
-  }
+function updateQty(idx, delta) {
+    currentItems[idx].countQty = Math.max(0, currentItems[idx].countQty + delta);
+    renderHUList();
+}
 
-  applyTheme();
-  return { get, set, getUser, applyTheme, openModal, closeModal, _updateThemeSwitch, _save };
-})();
-</script>
+function confirmHU(idx) { currentItems[idx].status = 'confirmed'; renderHUList(); }
+function missHU(idx) { currentItems[idx].status = 'missing'; currentItems[idx].countQty = 0; renderHUList(); }
 
-<script>
-    const FRESH_PRODUCTS = ["3305704","3307506","3307509","3307515","3307518","3307525","3307710","3308356","3309009","3309016","3309017","3309019","3309138","3309139"];
-    const API_URL = 'https://script.google.com/macros/s/AKfycbwZ1Dhmf6cK_hWV2xLKYmwEImUvifIRCPqVm0Fz4E7gjvfcpyzoqhAFIgvgwrjBretc/exec';
-    
-    const SESSION_ID = 'sess_' + Math.random().toString(36).substr(2, 9);
-    
-    let sapMaster = JSON.parse(localStorage.getItem('sap2') || '[]');
-    let sessionRegistry = new Map(); 
-    let countedBins = new Set(JSON.parse(localStorage.getItem('doneBins2') || '[]')); 
-    let countedFreshProducts = new Set(); 
-    
-    let activeAuditMode = 'hub'; // 'hub', 'aisle', 'fresh', 'product'
-    let currentAisle = "";
-    let currentBinIdx = 0;
-    let currentBins = [];
-    let currentPhase = 1;
-    let activeFreshProduct = null;
-    let activeGhostHU = ""; 
-    let activeProductAudit = ""; 
-
-    document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('name-display').innerText = NovusSettings.getUser();
-        renderAisleGrid();
-        refreshData(); // Initial pull
-
-        setInterval(pollLightweight, 15000);
-
-        document.getElementById('hub-search').addEventListener('keypress', e => {
-            if(e.key === 'Enter') { handleGateway(e.target.value.trim().toUpperCase()); e.target.value = ''; }
-        });
-        document.getElementById('fresh-scan-input').addEventListener('keypress', e => {
-            if(e.key === 'Enter') { processFreshScan(e.target.value.trim().toUpperCase()); e.target.value = ''; }
-        });
-        document.getElementById('bin-scan-input').addEventListener('keypress', e => {
-            if(e.key === 'Enter') { processBinScan(e.target.value.trim().toUpperCase()); e.target.value = ''; }
-        });
-        document.getElementById('product-scan-input').addEventListener('keypress', e => {
-            if(e.key === 'Enter') { processProductScan(e.target.value.trim().toUpperCase()); e.target.value = ''; }
-        });
+async function finalizeBin() {
+    const items = currentItems.map(i => ({
+        hu: i.hu, product: i.product, desc: i.desc, scannedBin: currentBin,
+        sapQty: i.sapQty, countQty: i.countQty,
+        type: i.status === 'missing' ? 'miss' : (i.countQty != i.sapQty ? 'adj' : 'ok')
+    }));
+    toast('Saving...', 'green');
+    await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'logAudit', user: 'Scanner', bin: currentBin, items })
     });
+    toast('Saved!', 'green');
+    switchScreen('setup');
+}
 
-    // ==========================================
-    // BACKEND SYNC & POLLING
-    // ==========================================
-    async function refreshData() {
-        try {
-            showToast("Syncing SAP...", "blue");
-            
-            const res = await fetch(API_URL + '?t=' + Date.now(), { redirect: 'follow' });
-            const text = await res.text();
-            
-            let data;
-            try {
-                data = JSON.parse(text);
-            } catch(e) {
-                document.querySelectorAll('.sync-dot').forEach(d => d.classList.add('offline'));
-                showToast("API Error - Contact Admin", "red");
-                return;
-            }
-            
-            sapMaster = data.sapData || [];
-            localStorage.setItem('sap2', JSON.stringify(sapMaster));
-            
-            const report = data.report || [];
-            
-            countedBins = new Set(report.filter(r => r.type === 'bin_finalized').map(r => r.scanBin).filter(Boolean));
-            localStorage.setItem('doneBins2', JSON.stringify([...countedBins]));
-            
-            countedFreshProducts = new Set(report.map(r => r.prod).filter(p => FRESH_PRODUCTS.includes(p)));
-            
-            document.querySelectorAll('.sync-dot').forEach(d => d.classList.remove('offline'));
-            showToast(`Loaded ${sapMaster.length} SAP records`, "green");
-            
-            if (activeAuditMode === 'aisle') {
-                updateBinView();
-            } else if (activeAuditMode === 'fresh') {
-                updateFreshOverview();
-            } else if (activeAuditMode === 'hub') {
-                renderAisleGrid();
-            }
-        } catch(e) { 
-            document.querySelectorAll('.sync-dot').forEach(d => d.classList.add('offline'));
-            showToast("Offline Mode", "amber");
-        }
-    }
-
-    async function pollLightweight() {
-        try {
-            const res = await fetch(API_URL + '?type=poll&t=' + Date.now(), { redirect: 'follow' });
-            const text = await res.text();
-            const data = JSON.parse(text);
-            const report = data.report || [];
-            
-            countedBins = new Set(report.filter(r => r.type === 'bin_finalized').map(r => r.scanBin).filter(Boolean));
-            countedFreshProducts = new Set(report.map(r => r.prod).filter(p => FRESH_PRODUCTS.includes(p)));
-            localStorage.setItem('doneBins2', JSON.stringify([...countedBins]));
-            
-            if (activeAuditMode === 'aisle') {
-                renderBinStrip(); 
-                const currentBin = currentBins[currentBinIdx];
-                const titleEl = document.getElementById('count-title');
-                titleEl.innerHTML = `${currentBin} ${countedBins.has(currentBin) ? '<span style="color:var(--green); font-size:14px; margin-left:4px">✓</span>' : ''}`;
-            } else if (activeAuditMode === 'hub') {
-                renderAisleGrid();
-            }
-        } catch(e) {} 
-    }
-
-    // ==========================================
-    // GATEWAY ROUTING
-    // ==========================================
-    function handleGateway(input) {
-        if (!input) return;
-        if (input === 'FRESH') return initFreshMode();
-        
-        if (input.match(/^W[A-P][0-9]{2}[A-C]$/)) {
-            startAisleAudit(input.charAt(1), input);
-            return;
-        }
-        
-        const skuMatch = sapMaster.filter(i => String(i.product).trim() === input);
-        if (skuMatch.length > 0) return initProductAudit(input);
-        
-        const huMatch = sapMaster.find(i => i.hu === input);
-        if (huMatch) return initProductAudit(huMatch.product);
-
-        showToast("No SAP Match Found", "amber");
-    }
-
-    // ==========================================
-    // UNEXPECTED HU (GHOST ITEM) LOGIC
-    // ==========================================
-    function processBinScan(input) {
-        if(!input) return;
-        const currentBin = currentBins[currentBinIdx];
-        
-        const existingReg = sessionRegistry.get(input);
-        if (existingReg && existingReg.foundIn === currentBin) {
-            showToast("HU already scanned in this bin", "blue");
-            return;
-        }
-
-        const sap = sapMaster.find(i => i.hu === input);
-        if (sap) {
-            saveToRegistry(input, { 
-                scanBin: currentBin, 
-                foundIn: currentBin, 
-                scanQty: sap.sapQty, 
-                status: 'MOVEMENT'
-            });
-            showToast(`Moved ${input} to ${currentBin}`, "purple");
-            if(navigator.vibrate) navigator.vibrate(50);
-        } else {
-            activeGhostHU = input;
-            document.getElementById('ghost-hu').innerText = input;
-            document.getElementById('ghost-modal').style.display = 'flex';
-            document.getElementById('ghost-prod-input').value = ''; 
-            if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
-        }
-    }
-
-    function closeGhostModal() {
-        document.getElementById('ghost-modal').style.display = 'none';
-        activeGhostHU = "";
-    }
-
-    function pivotToProductAudit() {
-        const prod = document.getElementById('ghost-prod-input').value.trim().toUpperCase();
-        if(!prod) return showToast("Enter a valid Product Number", "red");
-        
-        sapMaster.push({
-            hu: activeGhostHU,
-            product: prod,
-            desc: 'Ghost Item - Manually Added',
-            batch: '',
-            sapBin: 'NONE',
-            sapQty: 0
-        }); 
-        
-        const foundLoc = (activeAuditMode === 'aisle') ? currentBins[currentBinIdx] : 'NONE';
-        
-        saveToRegistry(activeGhostHU, { 
-            scanQty: 1, 
-            scanBin: foundLoc, 
-            foundIn: foundLoc,
-            status: 'confirmed'
-        });
-        
-        closeGhostModal();
-        showToast(`Ghost HU assigned to Product ${prod}`, "cyan");
-        
-        initProductAudit(prod);
-    }
-
-    // ==========================================
-    // CENTRALIZED CARD TEMPLATE
-    // ==========================================
-    function createHUCardHTML(item) {
-        const reg = sessionRegistry.get(item.hu);
-        const movedElsewhere = !reg && Array.from(sessionRegistry.values()).find(r => r.hu === item.hu && r.status === 'MOVEMENT');
-        const statusLabel = reg ? reg.status : (movedElsewhere ? 'MOVED' : 'PENDING');
-        const statusClass = reg ? reg.status.toLowerCase() : (movedElsewhere ? 'move' : 'pending');
-        const currentQty = reg ? reg.scanQty : item.sapQty;
-        const isAdj = currentQty !== item.sapQty;
-
-        const showBin = activeAuditMode === 'fresh' || activeAuditMode === 'product';
-
-        return `
-            <div class="hu-card ${statusClass}" id="hu-card-${item.hu}">
-                <div class="hu-header">
-                    <span class="hu-id">HU ${item.hu}</span>
-                    <span class="hu-status ${statusClass}">${statusLabel}</span>
-                </div>
-                <div class="hu-meta">
-                    <div style="flex:2">
-                        <div class="hu-meta-label">Product</div>
-                        <div class="hu-meta-value">${item.product}</div>
-                        <div style="font-size:10px; color:var(--text-2); margin-top:2px; line-height:1.3;">${item.desc || ''}</div>
-                    </div>
-                    ${showBin ? `
-                    <div style="flex:1">
-                        <div class="hu-meta-label">Expected Bin</div>
-                        <div class="hu-meta-value mono" style="font-size:14px; color:var(--accent)">${item.sapBin}</div>
-                    </div>` : `
-                    <div style="flex:1">
-                        <div class="hu-meta-label">SAP Qty</div>
-                        <div class="hu-meta-value mono">${item.sapQty}</div>
-                    </div>`}
-                </div>
-                ${movedElsewhere ? `<div style="font-size:11px; color:var(--purple); font-weight:700; margin-bottom:12px; background:var(--purple-bg); padding:6px 10px; border-radius:6px; border:1px solid var(--purple-border);">📍 Found earlier in ${movedElsewhere.foundIn}</div>` : ''}
-                ${(reg && reg.scanBin && reg.scanBin !== item.sapBin && showBin) ? `<div style="font-size:11px; color:var(--purple); font-weight:700; margin-bottom:12px; background:var(--purple-bg); padding:6px 10px; border-radius:6px; border:1px solid var(--purple-border);">📍 Scanned in ${reg.scanBin}</div>` : ''}
-                
-                <div class="qty-row">
-                    <button class="qty-stepper" onclick="adjQty('${item.hu}', -1)">−</button>
-                    <input type="number" class="qty-input qty-val-${item.hu}" value="${currentQty}" onchange="setQty('${item.hu}', this.value)">
-                    <button class="qty-stepper" onclick="adjQty('${item.hu}', 1)">+</button>
-                </div>
-                <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                    <button class="primary-btn" style="flex:2; padding:12px; font-size:13px; min-height:48px; background:${isAdj ? 'var(--amber)' : 'var(--green)'}" onclick="confirmItem('${item.hu}')">
-                        ${isAdj ? 'Confirm Adj' : 'Confirm'}
-                    </button>
-                    <button class="secondary-btn" style="flex:1; padding:12px; font-size:12px; min-height:48px; color:var(--purple)" onclick="initiateMovement('${item.hu}')">Move</button>
-                    <button class="secondary-btn" style="flex:1; padding:12px; font-size:12px; min-height:48px; color:var(--red)" onclick="markMissing('${item.hu}')">Miss</button>
-                </div>
-            </div>
-        `;
-    }
-
-    // ==========================================
-    // DATA CONTROLLER LOGIC (TARGETED UPDATES)
-    // ==========================================
-    function saveToRegistry(hu, updates) {
-        const sap = sapMaster.find(i => i.hu === hu);
-        
-        let defaultBin = sap.sapBin;
-        if (activeAuditMode === 'aisle') defaultBin = currentBins[currentBinIdx];
-        
-        const current = sessionRegistry.get(hu) || { 
-            ...sap, scanQty: sap.sapQty, scanBin: defaultBin, foundIn: defaultBin, note: '', type: 'ok', status: 'PENDING' 
-        };
-        
-        const merged = { ...current, ...updates };
-        
-        if (merged.status === 'MISSING' || merged.scanQty === 0) {
-            merged.type = 'miss'; merged.status = 'MISSING'; merged.scanQty = 0;
-        } else if (sap.sapBin === 'NONE' && merged.scanBin === 'NONE') {
-            merged.type = 'unexpected'; merged.status = 'UNEXPECTED'; 
-        } else {
-            const isMoved = merged.scanBin !== merged.sapBin;
-            const isAdj = merged.scanQty !== merged.sapQty;
-            if (isMoved && isAdj) { merged.type = 'move_adj'; merged.status = 'MOVEMENT'; }
-            else if (isMoved) { merged.type = 'move'; merged.status = 'MOVEMENT'; }
-            else if (isAdj) { merged.type = 'adj'; merged.status = 'ADJUSTED'; }
-            else { merged.type = 'ok'; merged.status = 'OK'; }
-        }
-        
-        sessionRegistry.set(hu, merged);
-        
-        const cardEl = document.getElementById(`hu-card-${hu}`);
-        
-        if (activeAuditMode === 'fresh') {
-            if (activeFreshProduct) {
-                if (cardEl) cardEl.outerHTML = createHUCardHTML(merged);
-                else showFreshDetail(activeFreshProduct);
-            }
-            updateFreshOverview();
-        } else if (activeAuditMode === 'product') {
-            if (cardEl) cardEl.outerHTML = createHUCardHTML(merged);
-            else renderProductList(); 
-        } else {
-            if (cardEl) {
-                cardEl.outerHTML = createHUCardHTML(merged);
-                updatePhase();
-            } else {
-                renderAisleHUList(); 
-            }
-        }
-    }
-
-    function confirmItem(hu) { 
-        const val = parseInt(document.querySelector(`.qty-val-${hu}`).value, 10) || 0;
-        const sap = sapMaster.find(i => i.hu === hu);
-        let scanBin = sap.sapBin;
-        if (activeAuditMode === 'aisle') scanBin = currentBins[currentBinIdx];
-        if (sap.sapBin === 'NONE') scanBin = prompt("Enter bin location for this item:", "") || 'NONE'; 
-        
-        saveToRegistry(hu, { scanQty: val, scanBin: scanBin }); 
-        if(navigator.vibrate) navigator.vibrate(25);
-    }
-    
-    function adjQty(hu, delta) { 
-        const cur = sessionRegistry.get(hu); 
-        const sap = sapMaster.find(i => i.hu === hu);
-        saveToRegistry(hu, { scanQty: Math.max(0, (cur ? cur.scanQty : sap.sapQty) + delta) }); 
-        if(navigator.vibrate) navigator.vibrate(25);
-    }
-    
-    function setQty(hu, val) { 
-        saveToRegistry(hu, { scanQty: parseInt(val, 10) || 0 }); 
-    }
-    
-    function markMissing(hu) { 
-        saveToRegistry(hu, { status: 'MISSING' }); 
-        if(navigator.vibrate) navigator.vibrate(25);
-    }
-    
-    function initiateMovement(hu) {
-        const sap = sapMaster.find(i => i.hu === hu);
-        const dest = prompt(`Transfer HU ${hu}\nExpected: ${sap.sapBin}\nEnter new bin:`, sessionRegistry.get(hu)?.scanBin || sap.sapBin);
-        if (dest && dest.trim() !== '') { 
-            saveToRegistry(hu, { scanBin: dest.trim().toUpperCase(), foundIn: dest.trim().toUpperCase() }); 
-            showToast(`Routed to ${dest.trim().toUpperCase()}`, "purple"); 
-        }
-    }
-
-    // ==========================================
-    // AISLE AUDIT RENDERING
-    // ==========================================
-    function startAisleAudit(aisle, targetBin = null) {
-        activeAuditMode = 'aisle';
-        currentAisle = aisle;
-        currentBins = [];
-        const max = (aisle === 'B' || aisle === 'C') ? 25 : 38;
-        for(let i=0; i<=max; i++) {
-            const num = String(i).padStart(2, '0');
-            ["A","B","C"].forEach(s => currentBins.push(`W${aisle}${num}${s}`));
-        }
-        currentBinIdx = targetBin ? currentBins.indexOf(targetBin) : 0;
-        switchScreen('count');
-        updateBinView();
-    }
-
-    function renderAisleHUList() {
-        const container = document.getElementById('hu-list');
-        const bin = currentBins[currentBinIdx];
-        
-        const isCounted = countedBins.has(bin);
-        document.getElementById('count-title').innerHTML = `${bin} ${isCounted ? '<span style="color:var(--green); font-size:14px; margin-left:4px">✓</span>' : ''}`;
-
-        const expected = sapMaster.filter(i => i.sapBin === bin);
-        const movementsHere = Array.from(sessionRegistry.values()).filter(i => i.foundIn === bin && i.sapBin !== bin);
-
-        const allItems = [...expected];
-        movementsHere.forEach(m => { if(!allItems.find(i => i.hu === m.hu)) allItems.push(m); });
-
-        let htmlStr = '';
-
-        if (isCounted) {
-            htmlStr += `
-                <div style="background:var(--green-bg);border:1.5px solid var(--green-border);border-radius:var(--radius);padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">
-                    <span style="font-size:20px;">✅</span>
-                    <div>
-                        <div style="font-size:12px;font-weight:800;color:var(--green);">Already Counted</div>
-                        <div style="font-size:10px;color:var(--text-2);font-weight:600;">This bin was finalized earlier.</div>
-                    </div>
-                </div>`;
-        }
-
-        if (allItems.length === 0) {
-            htmlStr += `
-                <div class="empty-state" style="padding: 32px 16px;">
-                    <div class="es-icon" style="font-size:32px;">📭</div>
-                    <p>SAP shows this bin as empty.</p>
-                </div>`;
-        } else {
-            const expectArr = allItems.filter(i => i.sapBin === bin);
-            const extraArr = allItems.filter(i => i.sapBin !== bin);
-
-            if (expectArr.length > 0) {
-                htmlStr += `<div class="section-title" style="padding: 10px 0 6px;">Expected in bin</div>`;
-                expectArr.forEach(item => { htmlStr += createHUCardHTML(item); });
-            }
-
-            if (extraArr.length > 0) {
-                htmlStr += `<div class="section-title" style="padding: 16px 0 6px; color:var(--cyan);">🔍 Extras Found Here</div>`;
-                extraArr.forEach(item => { htmlStr += createHUCardHTML(item); });
-            }
-        }
-
-        container.innerHTML = htmlStr;
-        updatePhase();
-    }
-    
-    function renderBinStrip() {
-        const strip = document.getElementById('bin-strip');
-        strip.innerHTML = '';
-        const start = Math.max(0, currentBinIdx - 2);
-        const end = Math.min(currentBins.length, start + 10);
-        
-        for(let i=start; i<end; i++) {
-            const bin = currentBins[i];
-            const isCounted = countedBins.has(bin);
-            
-            const dot = document.createElement('div');
-            dot.className = `strip-dot ${i === currentBinIdx ? 'active' : ''}`;
-            
-            if (isCounted && i !== currentBinIdx) {
-                dot.style.background = 'var(--green-bg)';
-                dot.style.color = 'var(--green)';
-                dot.style.border = '1px solid var(--green-border)';
-            }
-            
-            dot.innerHTML = `${bin.slice(-3)}${isCounted ? '<span style="font-size:9px; margin-left:3px">✓</span>' : ''}`;
-            dot.onclick = () => { currentBinIdx = i; updateBinView(); };
-            strip.appendChild(dot);
-        }
-    }
-
-    function prevBin() { if(currentBinIdx > 0) { currentBinIdx--; updateBinView(); } }
-    
-    function skipBin() {
-        if(currentBinIdx < currentBins.length - 1) { 
-            currentBinIdx++; 
-            updateBinView(); 
-        } else {
-            showToast("End of Aisle", "blue");
-        }
-    }
-
-    function updateBinView() {
-        renderAisleHUList(); renderBinStrip();
-        const pBtn = document.getElementById('btn-prev');
-        if(pBtn) pBtn.disabled = currentBinIdx === 0;
-    }
-
-    function updatePhase() {
-        const bin = currentBins[currentBinIdx];
-        const expected = sapMaster.filter(i => i.sapBin === bin);
-        const movementsHere = Array.from(sessionRegistry.values()).filter(i => i.foundIn === bin && i.sapBin !== bin);
-        const allItems = [...expected];
-        movementsHere.forEach(m => { if(!allItems.find(i => i.hu === m.hu)) allItems.push(m); });
-
-        const pendingCount = allItems.filter(i => {
-            const reg = sessionRegistry.get(i.hu);
-            return !reg || reg.status === 'PENDING';
-        }).length;
-
-        currentPhase = pendingCount === 0 ? 3 : 1;
-
-        [1, 2, 3].forEach(p => {
-            const el = document.getElementById(`phase-${p}`);
-            const label = document.getElementById(`phase-${p}-label`);
-            el.className = 'phase-step';
-            label.className = '';
-            if (p < currentPhase) { el.classList.add('done'); label.classList.add('done'); }
-            else if (p === currentPhase) { el.classList.add('active'); label.classList.add('active'); }
-        });
-
-        const btn = document.getElementById('btn-next');
-        if (currentPhase === 3) {
-            btn.style.background = 'var(--green)';
-            btn.style.pointerEvents = 'auto';
-            btn.style.opacity = '1';
-            btn.innerText = currentBinIdx === currentBins.length - 1 ? 'Finalize Aisle ✓' : 'Finalize & Next →';
-        } else {
-            btn.style.background = 'var(--surface-3)';
-            btn.style.pointerEvents = 'none';
-            btn.style.opacity = '0.7';
-            btn.innerText = `${pendingCount} item${pendingCount > 1 ? 's' : ''} pending`;
-        }
-    }
-
-    // ==========================================
-    // PRODUCT AUDIT RENDERING
-    // ==========================================
-    function initProductAudit(product) {
-        activeAuditMode = 'product';
-        activeProductAudit = product;
-        document.getElementById('product-display').innerText = product;
-        
-        // Populate items in registry if they aren't there
-        const expected = sapMaster.filter(i => i.product === activeProductAudit);
-        expected.forEach(sap => {
-            if (!sessionRegistry.has(sap.hu)) {
-                sessionRegistry.set(sap.hu, { ...sap, scanQty: sap.sapQty, scanBin: sap.sapBin, foundIn: sap.sapBin, note: '', type: 'ok', status: 'PENDING' });
-            }
-        });
-        
-        renderProductList();
-        switchScreen('product');
-    }
-
-    function renderProductList() {
-        const container = document.getElementById('product-list');
-        const expected = sapMaster.filter(i => i.product === activeProductAudit);
-        const extra = Array.from(sessionRegistry.values()).filter(i => i.product === activeProductAudit && !expected.find(e => e.hu === i.hu));
-        const allItems = [...expected, ...extra];
-        
-        let htmlStr = '';
-        allItems.forEach(item => { htmlStr += createHUCardHTML(item); });
-        container.innerHTML = htmlStr || '<div class="empty-state"><div class="es-icon">📭</div><p>No pallets found for this product.</p></div>';
-    }
-
-    function processProductScan(input) {
-        const sap = sapMaster.find(i => i.hu === input);
-        if (sap && sap.product === activeProductAudit) {
-            saveToRegistry(input, { scanQty: sap.sapQty, status: 'OK', type: 'ok' });
-            showToast(`Verified Pallet ${input}`, "green");
-            if(navigator.vibrate) navigator.vibrate(50);
-        } else if (sap) {
-            showToast(`HU belongs to different Product: ${sap.product}`, "red");
-            if(navigator.vibrate) navigator.vibrate([100,50,100]); 
-        } else {
-            activeGhostHU = input;
-            document.getElementById('ghost-hu').innerText = input;
-            document.getElementById('ghost-modal').style.display = 'flex';
-            document.getElementById('ghost-prod-input').value = activeProductAudit; 
-            if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
-        }
-    }
-
-    // ==========================================
-    // FRESH AUDIT RENDERING & LOGIC
-    // ==========================================
-    function handleFreshBack() {
-        if (activeFreshProduct) hideFreshDetail();
-        else switchScreen('setup');
-    }
-
-    function initFreshMode() {
-        activeAuditMode = 'fresh';
-        hideFreshDetail();
-        updateFreshOverview();
-        
-        // Hide the top search bar, show the bottom one in the setup screen
-        document.getElementById('fresh-search-bar').style.display = 'block';
-        
-        switchScreen('fresh');
-    }
-
-    function hideFreshDetail() {
-        activeFreshProduct = null;
-        document.getElementById('fresh-detail').style.display = 'none';
-        document.getElementById('fresh-overview').style.display = 'block';
-        document.getElementById('fresh-search-bar').style.display = 'block';
-    }
-
-    function updateFreshOverview() {
-        const overview = document.getElementById('fresh-overview');
-        let htmlStr = '';
-        const productsToShow = FRESH_SKUS.filter(prod => !countedFreshProducts.has(prod));
-        
-        if (productsToShow.length === 0) {
-            overview.innerHTML = `
-                <div style="text-align:center; padding:60px 20px; color:var(--text-3);">
-                    <span style="font-size:42px; display:block; margin-bottom:12px;">🎉</span>
-                    <div style="font-size:18px; font-weight:800; color:var(--text); margin-bottom:4px;">All Fresh Counts Complete</div>
-                    <div>No pending fresh products detected in this cycle.</div>
-                </div>`;
-            return;
-        }
-        
-        productsToShow.forEach(prod => {
-            const sapItem = sapMaster.find(i => i.product === prod);
-            const desc = sapItem ? sapItem.desc : "Product description unavailable";
-            const expectedHUs = sapMaster.filter(i => i.product === prod);
-            
-            let totalFound = 0;
-            expectedHUs.forEach(huItem => {
-                const reg = sessionRegistry.get(huItem.hu);
-                if (reg && reg.scanQty > 0) totalFound++;
-            });
-
-            let borderColor = 'var(--border)';
-            if (totalFound === expectedHUs.length && expectedHUs.length > 0) borderColor = 'var(--green)';
-            else if (totalFound > 0) borderColor = 'var(--amber)';
-
-            htmlStr += `
-                <div class="hu-card" style="cursor:pointer; border-color:${borderColor};" onclick="showFreshDetail('${prod}')">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start">
-                        <div style="flex:1; padding-right:12px;">
-                            <div class="hu-meta-label">Product</div>
-                            <div style="font-size:20px; font-weight:900">${prod}</div>
-                            <div style="font-size:11px; color:var(--text-2); margin-top:4px; line-height:1.3;">${desc}</div>
-                        </div>
-                        <div style="text-align:right">
-                            <div style="font-size:32px; font-weight:900; color:${totalFound === expectedHUs.length && expectedHUs.length > 0 ? 'var(--green)' : 'var(--amber)'}">
-                                ${totalFound} <span style="font-size:16px; color:var(--text-3)">/ ${expectedHUs.length}</span>
-                            </div>
-                            <div class="hu-meta-label">Pallets Found</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-        overview.innerHTML = htmlStr;
-    }
-
-    function showFreshDetail(product) {
-        activeFreshProduct = product;
-        document.getElementById('fresh-overview').style.display = 'none';
-        document.getElementById('fresh-search-bar').style.display = 'none';
-        
-        const detail = document.getElementById('fresh-detail');
-        detail.style.display = 'block';
-        
-        const sapItem = sapMaster.find(i => i.product === product);
-        const desc = sapItem ? sapItem.desc : "";
-        const expectedHUs = sapMaster.filter(i => i.product === product);
-        
-        // Populate missing items into registry as pending if not there
-        expectedHUs.forEach(sap => {
-            if (!sessionRegistry.has(sap.hu)) {
-                sessionRegistry.set(sap.hu, { ...sap, scanQty: sap.sapQty, scanBin: sap.sapBin, foundIn: sap.sapBin, note: '', type: 'ok', status: 'PENDING' });
-            }
-        });
-
-        let html = `
-            <div style="margin-bottom: 16px;">
-                <div style="font-size: 22px; font-weight: 900; color: var(--accent);">${product}</div>
-                <div style="font-size: 13px; color: var(--text-2); margin-top:2px;">${desc}</div>
-                <div style="font-size: 11px; color: var(--text-3); margin-top:6px; font-weight:700;">Expected Pallets: ${expectedHUs.length}</div>
-            </div>
-        `;
-        
-        if(expectedHUs.length === 0) {
-            html += `<div style="text-align:center; padding: 20px; color: var(--text-3);">No pallets expected in SAP for this Product.</div>`;
-        } else {
-            expectedHUs.forEach(item => {
-                html += createHUCardHTML(item);
-            });
-        }
-        detail.innerHTML = html;
-    }
-
-    function processFreshScan(input) {
-        const sap = sapMaster.find(i => i.hu === input);
-        if (sap && FRESH_SKUS.includes(sap.product)) {
-            
-            if (countedFreshProducts.has(sap.product)) {
-                showToast("Product already audited in this cycle", "amber");
-                if(navigator.vibrate) navigator.vibrate([100,50,100]);
-                return;
-            }
-            
-            saveToRegistry(input, { scanQty: sap.sapQty, status: 'OK', type: 'ok', scanBin: sap.sapBin, foundIn: sap.sapBin });
-            showToast(`Found Pallet ${input}`, "green");
-            
-            if (activeFreshProduct !== sap.product) showFreshDetail(sap.product);
-            else showFreshDetail(sap.product); 
-            
-            updateFreshOverview();
-            if(navigator.vibrate) navigator.vibrate(50);
-            
-        } else { 
-            showToast("Scan a specific Pallet (HU) from the FRESH list", "red"); 
-            if(navigator.vibrate) navigator.vibrate([100,50,100]); 
-        }
-    }
-
-    // ==========================================
-    // UTILS
-    // ==========================================
-    function renderAisleGrid() {
-        const grid = document.getElementById('aisle-grid');
-        grid.innerHTML = '';
-        
-        let assigned = new Set();
-        // Assuming cloudAssignments exists, if not just show standard grid
-        if (typeof cloudAssignments !== 'undefined') {
-            cloudAssignments.forEach(a => {
-                if (a.type === 'aisle') {
-                    const letter = (a.value || '').replace('W', '').split(':')[0];
-                    if (letter) assigned.add(letter);
-                }
-            });
-        }
-
-        "ABCDEFGHJKLMNP".split("").forEach(row => {
-            const binCount = Object.keys(binIndex).filter(b => b.includes(`W${row}`)).length;
-            const doneBinsForRow = new Set();
-            countedBins.forEach(b => { if (b.includes(`W${row}`)) doneBinsForRow.add(b); });
-            
-            const doneCount = doneBinsForRow.size;
-            const isAssigned = assigned.has(row);
-            const allDone = binCount > 0 && doneCount >= binCount;
-            const btn = document.createElement('button');
-            btn.className = `aisle-btn ${isAssigned ? 'assigned' : ''}`;
-            if (allDone) btn.style.cssText += 'border-color:var(--green-border);background:var(--green-bg);';
-            const pct = binCount > 0 ? Math.min(100, Math.round((doneCount / binCount) * 100)) : 0;
-            btn.innerHTML = `
-                <div class="aisle-fill" style="height:${pct}%"></div>
-                <span style="position:relative;z-index:1;${allDone ? 'color:var(--green)' : ''}">${row}</span>
-                <span class="aisle-count" style="${doneCount > 0 ? 'color:var(--green);font-weight:800;' : ''}">${doneCount}/${binCount}</span>
-                ${allDone ? '<span style="position:absolute;bottom:4px;left:50%;transform:translateX(-50%);font-size:8px;color:var(--green);font-weight:800;z-index:1;">✓ DONE</span>' : ''}`;
-            btn.onclick = () => startAisleAudit(row);
-            grid.appendChild(btn);
-        });
-    }
-
-    function showToast(msg, color) {
-        const t = document.getElementById('toast');
-        document.getElementById('toast-text').innerText = msg;
-        t.className = `toast ${color} show`;
-        setTimeout(() => t.classList.remove('show'), 2000);
-    }
-    window.toast = showToast; 
-
-    // ==========================================
-    // AUTO-SYNC LOGIC
-    // ==========================================
-    async function executeAuditSync(binName, itemsToLog, isFresh = false) {
-        try {
-            const res = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                redirect: 'follow',
-                body: JSON.stringify({
-                    action: 'logAudit',
-                    user: NovusSettings.getUser(),
-                    bin: binName,
-                    sessionId: SESSION_ID,
-                    items: itemsToLog
-                })
-            });
-            const result = await res.json();
-            
-            if (result.success || result.skipped) {
-                if (isFresh) {
-                    Array.from(sessionRegistry.values()).forEach(reg => {
-                        if (FRESH_SKUS.includes(reg.product)) countedFreshProducts.add(reg.product);
-                    });
-                    sessionRegistry.clear();
-                } else if (activeAuditMode === 'product') {
-                    sessionRegistry.clear(); 
-                } else {
-                    countedBins.add(binName); 
-                    localStorage.setItem('doneBins2', JSON.stringify([...countedBins]));
-                }
-                return true;
-            } else {
-                showToast("Server error: " + (result.error || "Unknown"), "red");
-                return false;
-            }
-        } catch (err) {
-            showToast("Network Error: Could not reach server", "red");
-            return false;
-        }
-    }
-
-    async function finalizeAisleBin() { 
-        const btn = document.getElementById('btn-next');
-        const origText = btn.innerText;
-        const origBg = btn.style.background;
-        
-        btn.disabled = true;
-        btn.innerText = "Syncing...";
-        btn.style.background = "var(--text-3)"; 
-
-        const currentBin = currentBins[currentBinIdx];
-        
-        // Filter out untouched items (we implicitly confirm them on backend, but explicitly in UI for user confidence)
-        const itemsToSync = Array.from(sessionRegistry.values()).filter(r => r.foundIn === currentBin || r.sapBin === currentBin);
-        
-        let itemsToLog = itemsToSync.map(record => ({
-            hu: record.hu, product: record.product, desc: record.desc, batch: record.batch, sapBin: record.sapBin, sapQty: record.sapQty, countQty: record.scanQty, type: record.type, note: record.note
-        }));
-
-        itemsToLog.push({ hu: 'BIN_CLEAR', product: 'SYSTEM', desc: 'Bin Finalized', batch: '', sapBin: currentBin, sapQty: 0, countQty: 0, type: 'bin_finalized', note: `Finalized by ${NovusSettings.getUser()}`});
-
-        const success = await executeAuditSync(currentBin, itemsToLog, false);
-        
-        btn.disabled = false;
-        btn.innerText = origText;
-        btn.style.background = origBg;
-
-        if (success) {
-            if(currentBinIdx < currentBins.length - 1) { 
-                currentBinIdx++; 
-                updateBinView(); 
-            } else {
-                showToast("Aisle Complete ✓", "green");
-                switchScreen('setup');
-                renderAisleGrid();
-            }
-        }
-    }
-
-    async function submitProductAudit() {
-        const btn = document.querySelector('#screen-product .primary-btn');
-        const origText = btn.innerText;
-        
-        btn.disabled = true;
-        btn.innerText = "Syncing...";
-
-        const itemsToSync = Array.from(sessionRegistry.values()).filter(r => r.product === activeProductAudit);
-        
-        if (itemsToSync.length === 0) {
-            btn.disabled = false;
-            btn.innerText = origText;
-            showToast("No counts to submit", "amber");
-            return;
-        }
-
-        const itemsToLog = itemsToSync.map(record => ({
-            hu: record.hu, product: record.product, desc: record.desc, batch: record.batch, sapBin: record.sapBin, sapQty: record.sapQty, countQty: record.scanQty, type: record.type, note: record.note
-        }));
-
-        const success = await executeAuditSync(`PRODUCT: ${activeProductAudit}`, itemsToLog, false);
-        
-        btn.disabled = false;
-        btn.innerText = origText;
-
-        if (success) {
-            showToast("Product Audit Complete", "green");
-            switchScreen('setup');
-        }
-    }
-
-    async function submitFreshAudit() {
-        const btn = document.querySelector('#screen-fresh .primary-btn');
-        const origText = btn.innerText;
-        
-        btn.disabled = true;
-        btn.innerText = "Syncing...";
-
-        const itemsToSync = Array.from(sessionRegistry.values());
-        if (itemsToSync.length === 0) {
-            btn.disabled = false;
-            btn.innerText = origText;
-            showToast("No counts to submit", "amber");
-            return;
-        }
-
-        const itemsToLog = itemsToSync.map(record => ({
-            hu: record.hu, product: record.product, desc: record.desc, batch: record.batch, sapBin: record.sapBin, sapQty: record.sapQty, countQty: record.scanQty, type: record.type, note: record.note
-        }));
-
-        const success = await executeAuditSync("FRESH", itemsToLog, true);
-        
-        btn.disabled = false;
-        btn.innerText = origText;
-
-        if (success) {
-            showToast("Fresh Audit Complete", "green");
-            switchScreen('setup');
-            hideFreshDetail();
-            initFreshMode(); 
-        }
-    }
+renderAisleGrid();
 </script>
 </body>
 </html>
