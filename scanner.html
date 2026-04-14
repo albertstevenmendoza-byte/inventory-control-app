@@ -335,25 +335,33 @@ const NovusSettings = (() => {
         try {
             showToast("Syncing SAP...", "blue");
             
-            // 1. Fetch Heavy SAP Data
-            const resSAP = await fetch(API_URL + '?type=sapdata&t=' + Date.now(), { redirect: 'follow' });
-            const sapJSON = await resSAP.json();
-            sapMaster = sapJSON.sapData || [];
-
-            // 2. Fetch Lightweight Report Data (for tracking what's already counted)
-            const resPoll = await fetch(API_URL + '?type=poll&t=' + Date.now(), { redirect: 'follow' });
-            const pollJSON = await resPoll.json();
-            const report = pollJSON.report || [];
+            // Single bulletproof fetch to pull entire dashboard state safely
+            const res = await fetch(API_URL + '?t=' + Date.now(), { redirect: 'follow' });
+            const text = await res.text();
+            
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch(e) {
+                console.error("API returned non-JSON. Possible execution error.");
+                document.querySelectorAll('.sync-dot').forEach(d => d.classList.add('offline'));
+                showToast("API Error - Contact Admin", "red");
+                return;
+            }
+            
+            sapMaster = data.sapData || [];
+            const report = data.report || [];
             
             countedBins = new Set(report.map(r => r.scanBin).filter(Boolean));
             countedFreshProducts = new Set(report.map(r => r.prod).filter(p => FRESH_PRODUCTS.includes(p)));
             
             document.querySelectorAll('.sync-dot').forEach(d => d.classList.remove('offline'));
-            showToast("System Ready", "green");
+            showToast(`Loaded ${sapMaster.length} SAP records`, "green");
             
-            // Re-render if they are currently on the count screen
             if (document.getElementById('screen-count').classList.contains('active')) {
                 updateBinView();
+            } else if (document.getElementById('screen-fresh').classList.contains('active')) {
+                updateFreshOverview();
             }
         } catch(e) { 
             document.querySelectorAll('.sync-dot').forEach(d => d.classList.add('offline'));
@@ -364,7 +372,8 @@ const NovusSettings = (() => {
     async function pollLightweight() {
         try {
             const res = await fetch(API_URL + '?type=poll&t=' + Date.now(), { redirect: 'follow' });
-            const data = await res.json();
+            const text = await res.text();
+            const data = JSON.parse(text);
             const report = data.report || [];
             
             countedBins = new Set(report.map(r => r.scanBin).filter(Boolean));
@@ -411,7 +420,6 @@ const NovusSettings = (() => {
         const currentQty = reg ? reg.scanQty : item.sapQty;
         const isAdj = currentQty !== item.sapQty;
 
-        // Display Expected Bin prominently in Fresh mode
         const isFresh = document.getElementById('screen-fresh').classList.contains('active');
 
         return `
