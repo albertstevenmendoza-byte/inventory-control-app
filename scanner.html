@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cycle Counter 2.0</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    <title>Cycle Counter — Novus Ops</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #f5f5f7;
@@ -50,13 +50,18 @@
         /* ===== HEADER ===== */
         .app-header { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-shrink: 0; background: var(--surface); box-shadow: var(--shadow-sm); }
         .app-header h1 { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; }
-        .header-right { display: flex; align-items: center; gap: 10px; }
+        .hdr-btn { background: var(--surface-2); color: var(--text-2); padding: 8px 14px; border-radius: 10px; font-size: 11px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .header-right { display: flex; align-items: center; gap: 8px; }
         .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
         .sync-dot.offline { background: var(--red); animation: pulse 1.5s infinite; }
         .sync-dot.queued { background: var(--amber); animation: pulse 1.5s infinite; }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         .name-btn { background: var(--surface-2); color: var(--text-2); padding: 8px 14px; border-radius: var(--radius-sm); font-size: 11px; font-weight: 700; }
-        .hdr-btn { background: var(--surface-2); color: var(--text-2); padding: 8px 14px; border-radius: 10px; font-size: 11px; font-weight: 700; border: none; cursor: pointer;}
+
+        /* ===== BIN NAVIGATION ===== */
+        .bin-nav-cluster { display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .nav-arrow { background: var(--surface-3); color: var(--text); width: 36px; height: 36px; border-radius: 8px; font-size: 18px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+        .nav-arrow:disabled { opacity: 0.3; pointer-events: none; }
 
         /* ===== PHASE INDICATOR ===== */
         .phase-bar { display: flex; gap: 2px; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
@@ -67,15 +72,6 @@
         .phase-label { display: flex; justify-content: space-between; padding: 0 16px 8px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-3); }
         .phase-label span.active { color: var(--accent); }
         .phase-label span.done { color: var(--green); }
-
-        /* ===== TUTORIAL HINTS ===== */
-        .hint { background: var(--accent-glow); border: 1px solid rgba(79,125,249,0.2); border-radius: var(--radius); padding: 14px 18px; margin: 12px 20px 0; display: flex; align-items: flex-start; gap: 12px; animation: hint-in 0.4s cubic-bezier(0.16,1,0.3,1); }
-        .hint-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
-        .hint-body { flex: 1; }
-        .hint-body p { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.5; }
-        .hint-body small { font-size: 10px; color: var(--text-2); font-weight: 600; }
-        .hint-dismiss { color: var(--text-3); font-size: 10px; font-weight: 700; background: none; padding: 4px 8px; white-space: nowrap; }
-        @keyframes hint-in { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
 
         /* ===== SCROLLABLE CONTENT ===== */
         .scroll-area { flex: 1; overflow-y: auto; padding: 16px 16px 240px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
@@ -96,8 +92,8 @@
         .hu-status.adj { color: var(--amber); background: var(--amber-bg); }
         .hu-status.move { color: var(--purple); background: var(--purple-bg); }
         .hu-status.ext { color: var(--cyan); background: var(--cyan-bg, #ecfeff); }
+        .hu-status.pending { color: var(--text-2); background: var(--surface-2); }
         .hu-meta { display: flex; gap: 16px; margin-bottom: 12px; }
-        .hu-meta-item { }
         .hu-meta-label { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-3); }
         .hu-meta-value { font-size: 14px; font-weight: 700; color: var(--text); margin-top: 1px; }
         .hu-meta-value.mono { font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
@@ -125,61 +121,18 @@
         .secondary-btn { flex: 1; padding: 16px 0; border-radius: var(--radius-sm); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; background: var(--surface-2); color: var(--text-2); border: 1.5px solid var(--border); text-align: center; min-height: 50px; }
         .secondary-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
 
-        /* ===== SETUP SCREEN ===== */
-        .setup-hero { text-align: center; padding: 48px 32px; }
-        .setup-hero .icon { font-size: 56px; margin-bottom: 16px; }
-        .setup-hero h2 { font-size: 22px; font-weight: 900; margin-bottom: 6px; }
-        .setup-hero p { font-size: 13px; color: var(--text-2); font-weight: 500; }
+        /* ===== HUB SPECIFICS ===== */
         .aisle-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 0 16px 20px; }
         .aisle-btn { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 24px 0; text-align: center; font-size: 24px; font-weight: 900; color: var(--text); position: relative; overflow: hidden; transition: all 0.2s; box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.04)); }
         .aisle-btn .aisle-fill { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(79,125,249,0.12), transparent); transition: height 0.5s; }
         .aisle-btn .aisle-count { position: absolute; top: 6px; right: 8px; font-size: 9px; font-weight: 700; color: var(--text-3); }
-        .aisle-btn.assigned { border-color: rgba(79,125,249,0.3); }
-        .aisle-btn.assigned::before { content: '●'; position: absolute; top: 6px; left: 8px; font-size: 8px; color: var(--accent); }
         .section-title { padding: 20px 16px 10px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-3); }
-
-        /* ===== SCHEDULE CARDS ===== */
-        .schedule-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); margin: 0 16px 8px; padding: 16px 18px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm); }
-        .schedule-card .sch-left { display: flex; align-items: center; gap: 12px; }
-        .schedule-card .sch-icon { font-size: 22px; }
-        .schedule-card .sch-label { font-size: 12px; font-weight: 700; color: var(--text); }
-        .schedule-card .sch-sub { font-size: 10px; color: var(--text-3); font-weight: 600; }
-        .schedule-card .sch-go { color: var(--accent); font-size: 11px; font-weight: 800; }
-        .schedule-card.fresh { border-color: rgba(34,211,238,0.25); }
-
-        /* ===== BIN HEADER ===== */
-        .bin-header { padding: 14px 16px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
-        .bin-nav { display: flex; gap: 8px; align-items: center; }
-        .bin-nav-btn { width: 52px; height: 52px; border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text-3); font-size: 18px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .bin-input { flex: 1; background: var(--surface-2); border: 2px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 700; color: var(--accent); text-transform: uppercase; text-align: center; outline: none; }
-        .bin-input:focus { border-color: var(--accent); }
-        .bin-progress { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
-        .bin-progress-bar { flex: 1; height: 5px; background: var(--surface-3); border-radius: 3px; overflow: hidden; }
-        .bin-progress-fill { height: 100%; background: var(--green); border-radius: 3px; transition: width 0.5s; }
-        .bin-progress-text { font-size: 11px; font-weight: 700; color: var(--text-3); font-family: 'IBM Plex Mono', monospace; min-width: 50px; text-align: right; }
-
-        /* ===== EXTRA ITEM INPUT ===== */
-        .extra-input-area { background: var(--surface); border: 1.5px dashed var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; }
-        .extra-input-area h3 { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--cyan); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-        .extra-field { width: 100%; background: var(--surface-2); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; font-size: 16px; font-weight: 600; color: var(--text); outline: none; margin-bottom: 8px; }
-        .extra-field:focus { border-color: var(--accent); }
-        .extra-field::placeholder { color: var(--text-3); }
-
-        /* ===== CYCLE COUNT VERIFICATION ===== */
-        .verify-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 10px; }
-        .verify-header { text-align: center; margin-bottom: 16px; }
-        .verify-header .v-icon { font-size: 40px; margin-bottom: 8px; }
-        .verify-header h3 { font-size: 16px; font-weight: 800; }
-        .verify-header p { font-size: 12px; color: var(--text-2); font-weight: 500; margin-top: 4px; }
-        .verify-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 4px; }
-        .verify-row:nth-child(odd) { background: var(--surface-2); }
-        .verify-row .vr-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-3); }
-        .verify-row .vr-value { font-family: 'IBM Plex Mono', monospace; font-size: 16px; font-weight: 700; }
-        .verify-result { text-align: center; padding: 16px; border-radius: var(--radius-sm); margin-top: 12px; }
-        .verify-result.match { background: var(--green-bg); border: 1.5px solid var(--green-border); }
-        .verify-result.mismatch { background: var(--red-bg); border: 1.5px solid var(--red-border); }
-        .verify-result h4 { font-size: 14px; font-weight: 800; text-transform: uppercase; }
-        .verify-result p { font-size: 11px; font-weight: 500; color: var(--text-2); margin-top: 4px; }
+        .search-container { padding: 16px; position: relative; }
+        .search-field { width: 100%; padding: 16px 16px 16px 44px; border-radius: var(--radius); border: 1.5px solid var(--border); background: var(--surface); color: var(--text); font-size: 16px; outline: none; }
+        .search-icon { position: absolute; left: 30px; top: 34px; color: var(--text-3); }
+        .bin-strip { display: flex; gap: 6px; overflow-x: auto; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); scrollbar-width: none; }
+        .strip-dot { min-width: 50px; height: 32px; border-radius: 8px; background: var(--surface-2); color: var(--text-2); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; border: 1px solid transparent; transition: all 0.2s;}
+        .strip-dot.active { background: var(--accent); color: white; }
 
         /* ===== MODALS ===== */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 200; display: flex; align-items: flex-end; justify-content: center; padding: 0; }
@@ -196,100 +149,82 @@
         .toast.red { background: var(--red); color: white; }
         .toast.blue { background: var(--accent); color: white; }
         .toast.amber { background: var(--amber); color: white; }
-
-        /* ===== REPORT VIEW ===== */
-        .report-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .report-stat { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 16px; text-align: center; }
-        .report-stat .val { font-family: 'IBM Plex Mono', monospace; font-size: 28px; font-weight: 700; }
-        .report-stat .label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-3); margin-top: 4px; }
-
-        /* ===== EMPTY STATE ===== */
-        .empty-state { text-align: center; padding: 48px 32px; }
-        .empty-state .es-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
-        .empty-state p { color: var(--text-3); font-size: 13px; font-weight: 600; }
-
-        /* ===== MISC ===== */
-        .divider { height: 1px; background: var(--border); margin: 16px 0; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .spinner { width: 20px; height: 20px; border: 2.5px solid var(--surface-3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
-        .tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 700; }
+        .toast.cyan { background: var(--cyan); color: white; }
     </style>
 </head>
 <body>
 
-<div id="toast" class="toast green"><span id="toast-text">Saved</span></div>
+<div id="toast" class="toast green"><span id="toast-text"></span></div>
+
+<div class="modal-overlay" id="ghost-modal" style="display: none; align-items:center; padding:20px;">
+  <div style="background:var(--surface); border-radius:var(--radius); width:100%; max-width:400px; padding:24px 20px; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+    <div style="text-align:center; padding-bottom: 16px; border-bottom:1px solid var(--border); margin-bottom:16px;">
+        <h3 style="font-size:18px; font-weight:800; color:var(--red);">⚠️ Unexpected Item</h3>
+        <p style="font-size:13px; color:var(--text-2); margin-top:4px;">Not found in active SAP extract.</p>
+    </div>
+    
+    <div style="text-align:center; margin-bottom: 24px;">
+        <div style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--text-3); letter-spacing:1px;">HU Scanned</div>
+        <div id="ghost-hu" class="mono" style="font-size:24px; font-weight:900; color:var(--accent); margin-top:4px;"></div>
+    </div>
+
+    <p style="font-size:12px; color:var(--text-2); text-align:center; margin-bottom:16px; line-height:1.5;">
+        Cycle count recommended. Enter the <strong>Product Number</strong> for this pallet to begin a global audit across all bins.
+    </p>
+    
+    <input type="text" id="ghost-prod-input" placeholder="Enter Product #..." style="width:100%; background:var(--surface-2); border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:14px 16px; font-size:16px; font-family:'IBM Plex Mono', monospace; text-align:center; outline:none; margin-bottom:24px;">
+
+    <div style="display:flex; gap:10px">
+        <button class="secondary-btn" style="flex:1; padding:16px 0;" onclick="closeGhostModal()">Dismiss</button>
+        <button class="primary-btn" style="flex:2; background:var(--cyan)" onclick="pivotToProductAudit()">Start Product Audit</button>
+    </div>
+  </div>
+</div>
 
 <div id="screen-setup" class="screen active">
     <div class="app-header">
+        <a href="index.html" class="hdr-btn">← Home</a>
         <h1>Cycle Counter</h1>
         <div class="header-right">
-            <button id="refresh-btn" onclick="refreshAll()" style="background:var(--surface-2);color:var(--text-2);padding:8px 12px;border-radius:var(--radius-sm);font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px;">
-                <span id="refresh-icon" style="display:inline-block;transition:transform 0.3s;">↻</span> Refresh
-            </button>
             <div id="sync-dot" class="sync-dot"></div>
-            <button class="name-btn" onclick="showNameModal()">👤 <span id="name-display">Set Name</span></button>
+            <button class="hdr-btn" style="font-size:14px; padding:6px 10px;" onclick="NovusSettings.openModal()">⚙</button>
         </div>
     </div>
-
     <div class="scroll-area">
-        <div id="setup-loading" class="setup-hero">
-            <div class="icon">📡</div>
-            <h2>Connecting...</h2>
-            <p>Pulling SAP data from cloud</p>
-            <div class="spinner" style="margin: 24px auto 0;"></div>
+        
+        <div style="padding: 16px 16px 0; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <div style="font-size:10px; font-weight:700; color:var(--text-3); text-transform:uppercase;">Auditor</div>
+                <div id="name-display" style="font-weight:800; color:var(--accent);">Operator</div>
+            </div>
+            <button onclick="refreshData()" class="hdr-btn" style="font-size:11px; padding:8px 12px;">↻ Refresh SAP</button>
         </div>
 
-        <div id="setup-ready" style="display:none;">
-            <div id="schedule-section">
-                <div class="section-title">Today's Counts</div>
-                <div id="schedule-list"></div>
-            </div>
-
-            <div class="section-title">Select Aisle</div>
-            <div class="aisle-grid" id="aisle-grid"></div>
-
-            <div class="section-title">Product / Bin Lookup</div>
-            <div style="padding: 0 16px 16px; display: flex; gap: 8px;">
-                <input type="text" id="product-lookup-input" placeholder="Scan SKU, Bin, or type 'FRESH'" class="extra-field mono" style="margin: 0; flex: 1;" onkeypress="if(event.key==='Enter'){handleGateway(this.value.trim().toUpperCase()); this.value='';}">
-                <button onclick="handleGateway(document.getElementById('product-lookup-input').value.trim().toUpperCase()); document.getElementById('product-lookup-input').value='';" class="primary-btn blue" style="width: auto; padding: 14px 24px; font-size: 12px; min-height: 50px;">Go</button>
-            </div>
-
-            <div style="padding: 0 16px 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
-                <div class="report-stat"><div id="stat-loaded" class="val" style="font-size:20px">0</div><div class="label">SAP Items</div></div>
-                <div class="report-stat"><div id="stat-bins" class="val" style="font-size:20px">0</div><div class="label">Bins</div></div>
-                <div class="report-stat"><div id="stat-done" class="val" style="font-size:20px; color:var(--green)">0</div><div class="label">Done</div></div>
-            </div>
+        <div class="search-container">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="hub-search" class="search-field" placeholder="Scan Product, Bin, or type 'FRESH'...">
         </div>
+        
+        <div class="section-title" style="padding: 0 16px; font-size: 10px; font-weight: 800; color: var(--text-3); text-transform: uppercase;">Aisle Audit</div>
+        <div class="aisle-grid" id="aisle-grid"></div>
 
-        <div id="setup-offline" style="display:none;" class="setup-hero">
-            <div class="icon">📵</div>
-            <h2>No Connection</h2>
-            <p>Cannot reach cloud. Upload a local SAP file or retry.</p>
-            <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 12px; align-items: center;">
-                <button onclick="pullCloudData()" class="primary-btn blue" style="width: auto; padding: 14px 32px;">↻ Retry</button>
-                <input type="file" id="local-file-input" accept=".xlsx,.xls,.csv" class="hidden" style="display:none" onchange="handleLocalFile(event)">
-                <button onclick="document.getElementById('local-file-input').click()" class="secondary-btn" style="padding: 12px 24px;">Upload Local File</button>
-            </div>
+        <div style="padding: 0 16px">
+            <button onclick="initFreshMode()" style="width:100%; padding:20px; border-radius:var(--radius); background:linear-gradient(135deg, var(--amber), #b45309); color:white; font-weight:900; font-size:15px; letter-spacing:1px; border:none; box-shadow:var(--shadow-sm);">START FRESH AUDIT</button>
         </div>
-    </div>
-
-    <div class="bottom-bar" style="display:flex; gap:8px;">
-        <button onclick="switchScreen('setup')" class="secondary-btn active" style="flex:1">Count</button>
-        <button onclick="switchScreen('report')" class="secondary-btn" style="flex:1">Report</button>
     </div>
 </div>
 
 <div id="screen-count" class="screen">
     <div class="app-header">
-        <div style="display:flex;align-items:center;gap:10px;">
-            <button onclick="leaveAisle()" class="hdr-btn">← Back</button>
-            <h1 id="count-title">Counting</h1>
+        <button onclick="switchScreen('setup')" class="hdr-btn">← Back</button>
+        <div class="bin-nav-cluster">
+            <button id="btn-prev" class="nav-arrow" onclick="prevBin()">←</button>
+            <h1 id="count-title" class="mono" style="font-size: 16px; width: 85px; text-align: center; display:flex; align-items:center; justify-content:center; gap:4px;"></h1>
+            <button id="btn-next-top" class="nav-arrow" onclick="skipBin()">→</button>
         </div>
-        <div class="header-right">
-            <div id="sync-dot-2" class="sync-dot"></div>
-        </div>
+        <div class="sync-dot"></div>
     </div>
-
+    
     <div>
         <div class="phase-bar">
             <div id="phase-1" class="phase-step active"></div>
@@ -297,1600 +232,1060 @@
             <div id="phase-3" class="phase-step"></div>
         </div>
         <div class="phase-label">
-            <span id="phase-1-label" class="active">Check HUs</span>
-            <span id="phase-2-label">Scan Extras</span>
+            <span id="phase-1-label" class="active">Verify HUs</span>
+            <span id="phase-2-label">Review</span>
             <span id="phase-3-label">Finalize</span>
         </div>
     </div>
 
-    <div class="bin-header">
-        <div class="bin-nav">
-            <button class="bin-nav-btn" onclick="stepBin(-1)">◀</button>
-            <div style="flex:1;position:relative;">
-                <input type="text" id="bin-input" class="bin-input" placeholder="SCAN BIN..." onchange="selectBin(this.value)">
-                <span id="bin-counted-badge" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);padding:3px 8px;border-radius:6px;font-size:9px;font-weight:800;text-transform:uppercase;">Counted ✓</span>
-            </div>
-            <button class="bin-nav-btn" onclick="stepBin(1)">▶</button>
-        </div>
-        <div id="bin-map-strip" style="display:flex;gap:3px;overflow-x:auto;padding:10px 0 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch;"></div>
-        <div class="bin-progress">
-            <div class="bin-progress-bar"><div id="bin-progress-fill" class="bin-progress-fill" style="width:0%"></div></div>
-            <span id="bin-progress-text" class="bin-progress-text">0 / 0</span>
+    <div class="bin-strip" id="bin-strip"></div>
+    
+    <div style="padding: 12px 16px 0; flex-shrink:0;">
+        <div style="position: relative;">
+            <span class="search-icon" style="top: 14px; left: 16px; font-size: 14px; color:var(--purple);">➕</span>
+            <input type="text" id="bin-scan-input" class="search-field" placeholder="Scan unexpected HU..." style="border-color: var(--purple); padding-left: 40px; padding-top: 12px; padding-bottom: 12px; font-size: 14px;">
         </div>
     </div>
 
-    <div id="hint-check" class="hint" style="display:none;">
-        <span class="hint-icon">💡</span>
-        <div class="hint-body">
-            <p>Check each HU below. Tap <strong>Confirm</strong> if present, or <strong>Missing</strong> if not found.</p>
-            <small>After checking all HUs, you'll scan for extras.</small>
+    <div class="scroll-area" id="hu-list" style="padding-top: 12px;">
         </div>
-        <button class="hint-dismiss" onclick="dismissHint('check')">Got it</button>
-    </div>
-    <div id="hint-extras" class="hint" style="display:none;">
-        <span class="hint-icon">🔍</span>
-        <div class="hint-body">
-            <p>Scan any <strong>extra HUs</strong> you find in this bin that SAP didn't expect.</p>
-            <small>If an extra has no HU label, enter its product # instead.</small>
+    <div class="bottom-bar">
+        <div style="display:flex; gap:8px; width:100%;">
+            <button class="secondary-btn" style="flex: 1;" onclick="skipBin()">Skip</button>
+            <button class="primary-btn" id="btn-next" style="flex: 2;" onclick="finalizeAisleBin()">Finalize & Next →</button>
         </div>
-        <button class="hint-dismiss" onclick="dismissHint('extras')">Got it</button>
-    </div>
-
-    <div id="hu-list" class="scroll-area"></div>
-
-    <div id="count-bottom" class="bottom-bar">
-        <div class="secondary-row">
-            <button id="btn-add-extra" onclick="showExtraInput()" class="secondary-btn" style="flex:1">+ Found Extra HU</button>
-            <button id="btn-confirm-all" onclick="confirmAllHUs()" class="secondary-btn" style="flex:1; display:none;">✓ Confirm All</button>
-        </div>
-        <button id="btn-finalize" onclick="finalizeBin()" class="primary-btn disabled">
-            <span id="finalize-text">Check all HUs first</span>
-        </button>
     </div>
 </div>
 
-<div id="screen-fresh-overview" class="screen">
+<div id="screen-product" class="screen">
     <div class="app-header">
         <button onclick="switchScreen('setup')" class="hdr-btn">← Back</button>
-        <h1 style="color:var(--amber)">FRESH Audit</h1>
-        <div class="header-right">
-            <div id="sync-dot-3" class="sync-dot"></div>
-        </div>
+        <h1 style="color:var(--cyan)">Product Audit</h1>
+        <div class="sync-dot"></div>
     </div>
-    <div class="scroll-area" id="fresh-overview-list" style="padding-top:16px;"></div>
-</div>
-
-<div id="screen-product-cc" class="screen">
-    <div class="app-header">
-        <div style="display:flex;align-items:center;gap:10px;">
-            <button onclick="exitProductCC()" class="hdr-btn">← Back</button>
-            <h1>Product Count</h1>
-        </div>
-        <div class="header-right">
-            <span id="pcc-product" class="mono" style="font-size:12px;font-weight:700;color:var(--accent);"></span>
+    <div style="padding: 16px 16px 0; font-size: 12px; color: var(--text-2); text-align:center;">
+        Global system reconciliation for <strong id="product-display" style="color:var(--text)"></strong>
+    </div>
+    
+    <div style="padding: 12px 16px 0; flex-shrink:0;">
+        <div style="position: relative;">
+            <span class="search-icon" style="top: 14px; left: 16px; font-size: 14px; color:var(--cyan);">➕</span>
+            <input type="text" id="product-scan-input" class="search-field" placeholder="Scan HU to add to audit..." style="border-color: var(--cyan); padding-left: 40px; padding-top: 12px; padding-bottom: 12px; font-size: 14px;">
         </div>
     </div>
 
-    <div class="bin-header">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div>
-                <div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;">Counting product across all bins</div>
-                <div id="pcc-desc" style="font-size:13px;font-weight:600;color:var(--text-2);margin-top:2px;"></div>
-            </div>
-            <div id="pcc-progress-badge" class="tag" style="background:var(--accent-glow);color:var(--accent);">0 / 0</div>
+    <div class="scroll-area" id="product-list" style="padding-top: 12px;">
         </div>
-        <div class="bin-progress" style="margin-top:8px;">
-            <div class="bin-progress-bar"><div id="pcc-progress-fill" class="bin-progress-fill" style="width:0%"></div></div>
-        </div>
-    </div>
-
-    <div id="pcc-list" class="scroll-area"></div>
-
-    <div id="pcc-bottom" class="bottom-bar">
-        <button id="btn-pcc-verify" onclick="verifyProductCC()" class="primary-btn blue disabled">
-            <span>Verify Totals</span>
-        </button>
-    </div>
-</div>
-
-<div id="screen-verify" class="screen">
-    <div class="app-header">
-        <h1>Verification</h1>
-        <div class="header-right">
-            <button onclick="closeVerification()" class="hdr-btn">Done</button>
-        </div>
-    </div>
-    <div id="verify-content" class="scroll-area"></div>
     <div class="bottom-bar">
-        <button onclick="closeVerification()" class="primary-btn green">
-            <span>Complete</span>
-        </button>
+        <button class="primary-btn" style="background:var(--cyan)" onclick="submitProductAudit()">Finalize Product Audit</button>
     </div>
 </div>
 
-<div id="screen-report" class="screen">
+<div id="screen-fresh" class="screen">
     <div class="app-header">
-        <h1>Session Report</h1>
-        <div class="header-right">
-            <button onclick="switchScreen('setup')" class="hdr-btn">← Back</button>
-        </div>
+        <button onclick="handleFreshBack()" class="hdr-btn">← Back</button>
+        <h1 id="fresh-title" style="color:var(--amber)">FRESH Tally</h1>
+        <div class="sync-dot"></div>
     </div>
-    <div id="report-content" class="scroll-area"></div>
-    <div class="bottom-bar" style="display:flex;gap:8px;">
-        <button onclick="switchScreen('setup')" class="secondary-btn" style="flex:1">Count</button>
-        <button onclick="switchScreen('report')" class="secondary-btn active" style="flex:1">Report</button>
+    <div class="search-container" id="fresh-search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="fresh-scan-input" class="search-field" style="border-color:var(--amber)" placeholder="Scan any pallet...">
     </div>
-</div>
-
-<div id="modal-name" class="modal-overlay" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
-    <div class="modal-sheet">
-        <div class="modal-handle"></div>
-        <div class="modal-title">Your Name</div>
-        <div class="modal-sub">So your counts are attributed to you</div>
-        <input type="text" id="name-input" class="extra-field" placeholder="e.g. Albert" style="text-align:center;font-size:18px;">
-        <button onclick="saveName()" class="primary-btn blue" style="margin-top:16px;">Save</button>
+    <div class="scroll-area" id="fresh-list" style="padding-top:0;">
+        <div id="fresh-overview" style="padding-top:16px;"></div>
+        <div id="fresh-detail" style="display:none; padding-top:16px;"></div>
     </div>
-</div>
-
-<div id="modal-note" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeNoteModal()">
-    <div class="modal-sheet">
-        <div class="modal-handle"></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-            <div class="modal-title">Note & Photo</div>
-            <span id="note-upload-status" style="display:none;font-size:9px;font-weight:800;color:var(--green);background:var(--green-bg);padding:4px 10px;border-radius:6px;"></span>
-        </div>
-        <div id="note-context" class="modal-sub"></div>
-        <div style="margin-bottom:16px;">
-            <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Note</div>
-            <textarea id="note-text" rows="3" placeholder="Describe issue..." style="width:100%;background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;font-size:14px;font-weight:500;color:var(--text);outline:none;resize:none;font-family:inherit;"></textarea>
-        </div>
-        <div style="margin-bottom:16px;">
-            <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Photo Evidence</div>
-            <div id="photo-capture-area">
-                <div id="photo-empty" style="display:flex;gap:8px;">
-                    <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event)">
-                    <label for="camera-input" style="flex:1;background:var(--accent-glow);border:1.5px dashed rgba(59,108,245,0.2);border-radius:var(--radius-sm);padding:20px 0;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
-                        <span style="font-size:24px;">📷</span>
-                        <span style="font-size:10px;font-weight:800;color:var(--accent);text-transform:uppercase;">Camera</span>
-                    </label>
-                    <input type="file" id="gallery-input" accept="image/*" style="display:none" onchange="handlePhoto(event)">
-                    <label for="gallery-input" style="flex:1;background:var(--surface-2);border:1.5px dashed var(--border);border-radius:var(--radius-sm);padding:20px 0;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
-                        <span style="font-size:24px;">🖼️</span>
-                        <span style="font-size:10px;font-weight:800;color:var(--text-3);text-transform:uppercase;">Gallery</span>
-                    </label>
-                </div>
-                <div id="photo-preview-area" style="display:none;">
-                    <div style="position:relative;border-radius:var(--radius-sm);overflow:hidden;border:1.5px solid var(--border);background:var(--surface-2);">
-                        <img id="photo-preview-img" style="width:100%;display:block;max-height:240px;object-fit:contain;">
-                        <canvas id="annot-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:10;touch-action:none;"></canvas>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
-                        <div style="display:flex;gap:6px;">
-                            <button onclick="setAnnotColor('#dc2626')" class="annot-color active" style="width:24px;height:24px;border-radius:50%;background:#dc2626;border:2px solid var(--border);"></button>
-                            <button onclick="setAnnotColor('#3b6cf5')" class="annot-color" style="width:24px;height:24px;border-radius:50%;background:#3b6cf5;border:2px solid var(--border);"></button>
-                            <button onclick="setAnnotColor('#16a34a')" class="annot-color" style="width:24px;height:24px;border-radius:50%;background:#16a34a;border:2px solid var(--border);"></button>
-                        </div>
-                        <div style="display:flex;gap:4px;">
-                            <button onclick="undoAnnot()" style="background:var(--surface-2);color:var(--text-3);padding:6px 10px;border-radius:6px;font-size:10px;font-weight:700;">Undo</button>
-                            <button onclick="removePhoto()" style="background:var(--red-bg);color:var(--red);padding:6px 10px;border-radius:6px;font-size:10px;font-weight:700;">Remove</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div style="display:flex;gap:10px;">
-            <button onclick="closeNoteModal()" class="secondary-btn" style="flex:1;padding:16px 0;">Cancel</button>
-            <button onclick="saveNote()" class="primary-btn blue" style="flex:2">Save</button>
-        </div>
-    </div>
-</div>
-
-<div id="photo-viewer" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:250;align-items:center;justify-content:center;padding:24px;" onclick="this.style.display='none'">
-    <img id="photo-viewer-img" style="max-width:100%;max-height:100%;border-radius:var(--radius);box-shadow:0 20px 60px rgba(0,0,0,0.5);">
-</div>
-
-<div id="modal-cc-trigger" class="modal-overlay" style="display:none;">
-    <div class="modal-sheet">
-        <div class="modal-handle"></div>
-        <div style="text-align:center;margin-bottom:20px;">
-            <div style="font-size:48px;margin-bottom:8px;">⚠️</div>
-            <div class="modal-title">Unknown Item Found</div>
-            <div id="cct-reason" class="modal-sub">This HU isn't in SAP for any bin</div>
-        </div>
-        <div style="background:var(--surface-2);border-radius:var(--radius);padding:16px;margin-bottom:20px;">
-            <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-                <span style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;">Product</span>
-                <span id="cct-product" class="mono" style="font-weight:700;color:var(--accent);"></span>
-            </div>
-            <div style="display:flex;justify-content:space-between;">
-                <span style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;">Qty Found</span>
-                <span id="cct-qty" class="mono" style="font-weight:700;"></span>
-            </div>
-        </div>
-        <p style="font-size:13px;color:var(--text-2);text-align:center;margin-bottom:20px;line-height:1.5;">
-            Cycle count recommended. Count <strong style="color:var(--accent);">all bins</strong> with this product to verify floor total against SAP?
-        </p>
-        <div style="display:flex;gap:10px;">
-            <button onclick="declineCCTrigger()" class="secondary-btn" style="flex:1;padding:16px 0;">Not Now</button>
-            <button onclick="acceptCCTrigger()" class="primary-btn blue" style="flex:2">Count Now</button>
-        </div>
+    <div class="bottom-bar">
+        <button class="primary-btn" style="background:var(--amber)" onclick="submitFreshAudit()">Submit Fresh Audit</button>
     </div>
 </div>
 
 <script>
-// ===== CONFIG =====
-const API_URL = "https://script.google.com/macros/s/AKfycbw_huXZUnTzHzTbcdPLG8xga_bwgfsB6SS0wL_e6dyIiDSrKpaHYK4qikcoX-OhHNxg/exec";
-const AISLE_ROWS = "ABCDEFGHJKLMNP".split("");
-const FRESH_SKUS = ["3305704","3307506","3307509","3307515","3307518","3307525","3307710","3308356","3309009","3309016","3309017","3309019","3309138","3309139"];
+const NovusSettings = (() => {
+  const STORAGE_KEY = 'novus_settings';
+  const DEFAULTS = { userName: '', theme: 'dark', pollInterval: 10, hapticFeedback: true, compactMode: false };
 
-// ===== STATE =====
-let sapMaster = JSON.parse(localStorage.getItem('sap2') || '[]');
-let binIndex = {}, huIndex = new Map();
-let auditorName = localStorage.getItem('auditorName2') || '';
-let offlineQueue = JSON.parse(localStorage.getItem('offQ2') || '[]');
-let cloudReport = [], cloudAssignments = [];
-let hints = JSON.parse(localStorage.getItem('hints2') || '{}');
-let completedBins = new Set(JSON.parse(localStorage.getItem('doneBins2') || '[]'));
-let countedFreshProducts = new Set(); 
+  const LIGHT_VARS = {
+    '--bg': '#f8f9fb', '--surface': '#ffffff', '--surface-2': '#f1f3f5', '--surface-3': '#e5e7eb',
+    '--border': '#d1d5dc', '--text': '#111827', '--text-2': '#374151', '--text-3': '#6b7280',
+    '--accent': '#2563eb', '--accent-dim': 'rgba(37,99,235,.07)',
+    '--green': '#059669', '--green-bg': 'rgba(5,150,105,.08)', '--green-border': 'rgba(5,150,105,.25)',
+    '--red': '#dc2626', '--red-bg': 'rgba(220,38,38,.07)', '--red-border': 'rgba(220,38,38,.25)',
+    '--amber': '#b45309', '--amber-bg': 'rgba(180,83,9,.07)', '--amber-border': 'rgba(180,83,9,.25)',
+    '--purple': '#7c3aed', '--purple-bg': 'rgba(124,58,237,.07)', '--purple-border': 'rgba(124,58,237,.25)',
+    '--cyan': '#0e7490', '--cyan-bg': 'rgba(14,116,144,.07)', '--cyan-border': 'rgba(14,116,144,.25)'
+  };
 
-let activeAuditMode = 'hub'; // 'hub', 'aisle', 'fresh', 'product'
-let isFreshFlow = false; // Tracks if Product CC originated from Fresh Overview
-let currentBin = '';
-let currentItems = []; // Used for Aisle Audit
-let currentPhase = 1; 
+  const DARK_VARS = {
+    '--bg': '#0f1117', '--surface': '#181a23', '--surface-2': '#1f2230', '--surface-3': '#2a2d3a',
+    '--border': '#313546', '--text': '#eceef4', '--text-2': '#9ba1b5', '--text-3': '#6c7189',
+    '--accent': '#5b9aff', '--accent-dim': 'rgba(91,154,255,.1)',
+    '--green': '#34d399', '--green-bg': 'rgba(52,211,153,.1)', '--green-border': 'rgba(52,211,153,.25)',
+    '--red': '#f87171', '--red-bg': 'rgba(248,113,113,.1)', '--red-border': 'rgba(248,113,113,.25)',
+    '--amber': '#fbbf24', '--amber-bg': 'rgba(251,191,36,.1)', '--amber-border': 'rgba(251,191,36,.25)',
+    '--purple': '#a78bfa', '--purple-bg': 'rgba(167,139,250,.1)', '--purple-border': 'rgba(167,139,250,.25)',
+    '--cyan': '#22d3ee', '--cyan-bg': 'rgba(34,211,238,.1)', '--cyan-border': 'rgba(34,211,238,.25)'
+  };
 
-let pccProduct = '';
-let pccItems = []; // Used for Product CC
-let pccTriggerQty = 0; 
-let pccTriggerBin = '';
+  function loadAll() {
+    try { const r = localStorage.getItem(STORAGE_KEY); return r ? { ...DEFAULTS, ...JSON.parse(r) } : { ...DEFAULTS }; }
+    catch { return { ...DEFAULTS }; }
+  }
+  function saveAll(s) { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
 
-// ===== UTILS =====
-function haptic() { if (navigator.vibrate) navigator.vibrate(25); }
-function toast(msg, color = 'green') {
-    const t = document.getElementById('toast');
-    t.className = `toast ${color}`;
-    document.getElementById('toast-text').textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2200);
-}
+  let _cache = loadAll();
+  const legacyName = localStorage.getItem('novus_name');
+  if (legacyName && !_cache.userName) { _cache.userName = legacyName; saveAll(_cache); }
 
-// ===== OFFLINE QUEUE =====
-function enqueue(payload) {
-    offlineQueue.push(payload);
-    localStorage.setItem('offQ2', JSON.stringify(offlineQueue));
-    updateSyncDot();
-    drainQueue();
-}
-async function drainQueue() {
-    if (!offlineQueue.length) return;
-    let ok = 0;
-    for (const p of [...offlineQueue]) {
-        try {
-            const r = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) });
-            if (r.ok) { ok++; offlineQueue.shift(); } else break;
-        } catch { break; }
+  function get(key) { return _cache[key] !== undefined ? _cache[key] : DEFAULTS[key]; }
+  function set(key, val) {
+    _cache[key] = val; saveAll(_cache);
+    if (key === 'userName') {
+        localStorage.setItem('novus_name', val);
+        const disp = document.getElementById('name-display');
+        if(disp) disp.innerText = val || 'Operator';
     }
-    localStorage.setItem('offQ2', JSON.stringify(offlineQueue));
-    updateSyncDot();
-    if (ok > 0) toast(`${ok} synced`, 'green');
-}
-function updateSyncDot() {
-    const cls = offlineQueue.length > 0 ? 'sync-dot queued' : 'sync-dot';
-    document.querySelectorAll('.sync-dot').forEach(el => el.className = cls);
-}
-
-// ===== HINTS =====
-function showHint(id) {
-    if (hints[id]) return;
-    const el = document.getElementById('hint-' + id);
-    if (el) el.style.display = 'flex';
-}
-function dismissHint(id) {
-    hints[id] = true;
-    localStorage.setItem('hints2', JSON.stringify(hints));
-    const el = document.getElementById('hint-' + id);
-    if (el) el.style.display = 'none';
-}
-
-// ===== NAME =====
-function showNameModal() {
-    document.getElementById('name-input').value = auditorName;
-    document.getElementById('modal-name').style.display = 'flex';
-    setTimeout(() => document.getElementById('name-input').focus(), 100);
-}
-function saveName() {
-    auditorName = document.getElementById('name-input').value.trim() || 'Counter';
-    localStorage.setItem('auditorName2', auditorName);
-    document.getElementById('name-display').textContent = auditorName;
-    document.getElementById('modal-name').style.display = 'none';
-}
-
-// ===== REFRESH =====
-async function refreshAll() {
-    const btn = document.getElementById('refresh-btn');
-    const icon = document.getElementById('refresh-icon');
-    btn.style.pointerEvents = 'none';
-    btn.style.opacity = '0.5';
-    icon.style.transform = 'rotate(360deg)';
+    if (key === 'theme') applyTheme();
+  }
+  function getUser() { return get('userName') || 'Operator'; }
+  function applyTheme() {
+    const vars = get('theme') === 'light' ? LIGHT_VARS : DARK_VARS;
+    Object.entries(vars).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+    document.body.setAttribute('data-theme', get('theme'));
     
-    try {
-        const controller = new AbortController();
-        setTimeout(() => controller.abort(), 15000);
-        const sapRes = await fetch(API_URL + '?type=sapdata&t=' + Date.now(), { signal: controller.signal });
-        const sapData = await sapRes.json();
-        if (sapData.sapData && sapData.sapData.length > 0) {
-            sapMaster = sapData.sapData;
-            localStorage.setItem('sap2', JSON.stringify(sapMaster));
-            buildIndexes();
-        }
-
-        const reportRes = await fetch(API_URL + '?t=' + Date.now());
-        const reportData = await reportRes.json();
-        cloudReport = reportData.report || [];
-        cloudAssignments = reportData.assignments || [];
-
-        completedBins = new Set(cloudReport.filter(r => r.type === 'bin_finalized').map(r => r.scanBin).filter(Boolean));
-        localStorage.setItem('doneBins2', JSON.stringify([...completedBins]));
-        countedFreshProducts = new Set(cloudReport.map(r => r.prod).filter(p => FRESH_SKUS.includes(p)));
-
-        buildAisleGrid();
-        buildSchedule();
-        updateDoneCount();
-        toast(`Refreshed · ${sapMaster.length} items`, 'blue');
-    } catch (err) {
-        toast('Refresh failed — check connection', 'red');
-    }
-
-    btn.style.pointerEvents = '';
-    btn.style.opacity = '';
-    setTimeout(() => { icon.style.transform = ''; }, 300);
-}
-
-// ===== SCREENS =====
-function switchScreen(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById('screen-' + id).classList.add('active');
-    
-    document.querySelectorAll('.bottom-bar').forEach(b => b.style.display = 'none');
-    const activeScreen = document.getElementById('screen-' + id);
-    const activeBar = activeScreen.querySelector('.bottom-bar');
-    if (activeBar) {
-        activeBar.style.display = '';
-        if (id === 'setup' || id === 'report') activeBar.style.display = 'flex';
-    }
-    
-    if (id === 'setup') activeAuditMode = 'hub';
-    if (id === 'report') renderReport();
-}
-
-// ===== DATA LOADING =====
-function buildIndexes() {
-    binIndex = {};
-    huIndex = new Map();
-    sapMaster.forEach(i => {
-        i.sapBin = String(i.sapBin || '').trim().toUpperCase();
-        i.hu = String(i.hu || '').trim();
-        i.product = String(i.product || '').trim();
-        i.batch = String(i.batch || '').trim();
-        i.desc = String(i.desc || '');
-        i.sapQty = Number(i.sapQty) || 0;
-        
-        if (i.sapBin) {
-            if (!binIndex[i.sapBin]) binIndex[i.sapBin] = [];
-            binIndex[i.sapBin].push(i);
-        }
-        if (i.hu) huIndex.set(i.hu, i);
+    document.querySelectorAll('.bottom-bar').forEach(bb => {
+        bb.style.background = get('theme') === 'light' ? 'rgba(255,255,255,0.95)' : 'rgba(15,17,23,0.95)';
     });
-    document.getElementById('stat-loaded').textContent = sapMaster.length;
-    document.getElementById('stat-bins').textContent = Object.keys(binIndex).length;
-}
+  }
 
-async function pullCloudData() {
-    document.getElementById('setup-loading').style.display = 'block';
-    document.getElementById('setup-ready').style.display = 'none';
-    document.getElementById('setup-offline').style.display = 'none';
-
-    try {
-        const controller = new AbortController();
-        setTimeout(() => controller.abort(), 15000);
-        const res = await fetch(API_URL + '?type=sapdata&t=' + Date.now(), { signal: controller.signal });
-        const data = await res.json();
-        if (data.sapData && data.sapData.length > 0) {
-            sapMaster = data.sapData;
-            localStorage.setItem('sap2', JSON.stringify(sapMaster));
-            buildIndexes();
-            showSetupReady();
-            toast(`${sapMaster.length} items loaded`, 'blue');
-        } else {
-            showSetupOffline('No SAP data in cloud — ask your lead to upload from Control Center');
-        }
-    } catch (err) {
-        if (sapMaster.length > 0) {
-            buildIndexes();
-            showSetupReady();
-            toast('Using cached data', 'amber');
-        } else {
-            showSetupOffline('Cannot reach cloud');
-        }
-    }
-    syncCloud();
-}
-
-function showSetupReady() {
-    document.getElementById('setup-loading').style.display = 'none';
-    document.getElementById('setup-ready').style.display = 'block';
-    document.getElementById('setup-offline').style.display = 'none';
-    buildAisleGrid();
-    buildSchedule();
-}
-
-function showSetupOffline(msg) {
-    document.getElementById('setup-loading').style.display = 'none';
-    document.getElementById('setup-ready').style.display = 'none';
-    document.getElementById('setup-offline').style.display = 'block';
-}
-
-function handleLocalFile(event) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-        sapMaster = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]).map(row => ({
-            sapBin: String(row['Storage Bin'] || '').trim().toUpperCase(),
-            hu: String(row['Handling Unit'] || '').trim(),
-            product: String(row['Product'] || ''),
-            batch: String(row['Batch'] || '').trim(),
-            desc: row['Product Short Description'] || '',
-            sapQty: parseFloat(row['Quantity']) || 0
-        }));
-        localStorage.setItem('sap2', JSON.stringify(sapMaster));
-        buildIndexes();
-        showSetupReady();
-        toast(`${sapMaster.length} items loaded`, 'blue');
-    };
-    reader.readAsArrayBuffer(event.target.files[0]);
-}
-
-async function syncCloud() {
-    try {
-        const r = await fetch(API_URL + '?t=' + Date.now());
-        const d = await r.json();
-        cloudReport = d.report || [];
-        cloudAssignments = d.assignments || [];
-        countedBins = new Set(cloudReport.filter(r => r.type === 'bin_finalized').map(r => r.scanBin).filter(Boolean));
-        countedFreshProducts = new Set(cloudReport.map(r => r.prod).filter(p => FRESH_SKUS.includes(p)));
-        updateDoneCount();
-    } catch {}
-    drainQueue();
-}
-function updateDoneCount() {
-    const done = new Set(cloudReport.filter(r => r.type === 'bin_finalized').map(i => i.scanBin));
-    completedBins.forEach(b => done.add(b));
-    document.getElementById('stat-done').textContent = done.size;
-}
-
-// ===== GATEWAY ROUTING =====
-function handleGateway(input) {
-    if (!input) return;
-    if (input === 'FRESH') return initFreshMode();
-    
-    if (input.match(/^W[A-P][0-9]{2}[A-C]$/)) {
-        startAisleAudit(input.charAt(1), input);
-        return;
-    }
-    
-    const skuMatch = sapMaster.filter(i => String(i.product).trim() === input);
-    if (skuMatch.length > 0) return startProductCycle(input);
-    
-    const huMatch = sapMaster.find(i => i.hu === input);
-    if (huMatch) return startProductCycle(huMatch.product);
-
-    toast("No SAP Match Found", "amber");
-}
-
-// ===== AISLE GRID =====
-function buildAisleGrid() {
-    const grid = document.getElementById('aisle-grid');
-    grid.innerHTML = '';
-    const assigned = new Set();
-    cloudAssignments.forEach(a => {
-        if (a.type === 'aisle') {
-            const letter = (a.value || '').replace('W', '').split(':')[0];
-            if (letter) assigned.add(letter);
-        }
-    });
-
-    AISLE_ROWS.forEach(row => {
-        const binCount = Object.keys(binIndex).filter(b => b.includes(`W${row}`)).length;
-        const doneBinsForRow = new Set();
-        completedBins.forEach(b => { if (b.includes(`W${row}`)) doneBinsForRow.add(b); });
-        
-        const doneCount = doneBinsForRow.size;
-        const isAssigned = assigned.has(row);
-        const allDone = binCount > 0 && doneCount >= binCount;
-        const btn = document.createElement('button');
-        btn.className = `aisle-btn ${isAssigned ? 'assigned' : ''}`;
-        if (allDone) btn.style.cssText += 'border-color:var(--green-border);background:var(--green-bg);';
-        const pct = binCount > 0 ? Math.min(100, Math.round((doneCount / binCount) * 100)) : 0;
-        btn.innerHTML = `
-            <div class="aisle-fill" style="height:${pct}%"></div>
-            <span style="position:relative;z-index:1;${allDone ? 'color:var(--green)' : ''}">${row}</span>
-            <span class="aisle-count" style="${doneCount > 0 ? 'color:var(--green);font-weight:800;' : ''}">${doneCount}/${binCount}</span>
-            ${allDone ? '<span style="position:absolute;bottom:4px;left:50%;transform:translateX(-50%);font-size:8px;color:var(--green);font-weight:800;z-index:1;">✓ DONE</span>' : ''}`;
-        btn.onclick = () => selectBin(`W${row}00A`);
-        grid.appendChild(btn);
-    });
-}
-
-function buildSchedule() {
-    const container = document.getElementById('schedule-list');
-    container.innerHTML = '';
-
-    const day = new Date().getDay();
-    const isFreshDay = day === 1 || day === 3 || day === 5;
-
-    if (isFreshDay) {
-        const card = document.createElement('div');
-        card.className = 'schedule-card fresh';
-        card.innerHTML = `<div class="sch-left"><span class="sch-icon">🧊</span><div><div class="sch-label">FRESH Count</div><div class="sch-sub">${FRESH_SKUS.length} SKUs · Mon/Wed/Fri</div></div></div><span class="sch-go">Start →</span>`;
-        card.onclick = () => initFreshMode();
-        container.appendChild(card);
-    }
-
-    cloudAssignments.forEach(a => {
-        const card = document.createElement('div');
-        card.className = 'schedule-card';
-        const icon = a.type === 'product' ? '📦' : '📍';
-        card.innerHTML = `<div class="sch-left"><span class="sch-icon">${icon}</span><div><div class="sch-label">${a.description || a.value}</div><div class="sch-sub">From ${a.assignedBy || 'Control Center'}</div></div></div><span class="sch-go">Start →</span>`;
-        card.onclick = () => {
-            if (a.type === 'product') startProductCycle(a.value);
-            else { const letter = (a.value || '').replace('W', '').split(':')[0]; selectBin(`W${letter}00A`); }
-        };
-        container.appendChild(card);
-    });
-
-    if (!isFreshDay && cloudAssignments.length === 0) {
-        container.innerHTML = '<div class="schedule-card"><div class="sch-left"><span class="sch-icon">📋</span><div><div class="sch-label" style="color:var(--text-3)">No assignments</div><div class="sch-sub">Select an aisle below to begin</div></div></div></div>';
-    }
-}
-
-// ===== AISLE COUNTING =====
-function selectBin(binStr) {
-    if (!binStr) return;
-    activeAuditMode = 'aisle';
-    currentBin = binStr.toUpperCase();
-    const expected = binIndex[currentBin] || [];
-
-    currentItems = expected.map(i => ({
-        hu: i.hu, product: i.product, desc: i.desc, batch: i.batch,
-        sapBin: i.sapBin, sapQty: i.sapQty,
-        countQty: null, status: 'pending', isExtra: false, note: '', photoUrl: '', photoBase64: null
-    }));
-
-    currentPhase = 1;
-    document.getElementById('bin-input').value = currentBin;
-    document.getElementById('count-title').textContent = currentBin;
-
-    const alreadyCounted = completedBins.has(currentBin);
-    document.getElementById('bin-counted-badge').style.display = alreadyCounted ? 'inline' : 'none';
-    const binInput = document.getElementById('bin-input');
-    binInput.style.borderColor = alreadyCounted ? 'var(--green-border)' : '';
-    binInput.style.background = alreadyCounted ? 'var(--green-bg)' : '';
-
-    switchScreen('count');
-    showHint('check');
-    renderAisleHUList();
-    renderBinMapStrip();
-    updatePhase();
-}
-
-function renderBinMapStrip() {
-    const strip = document.getElementById('bin-map-strip');
-    if (!strip || !currentBin) return;
-    strip.innerHTML = '';
-    const aisleChar = currentBin.charAt(1);
-    const allBins = getAllBinsForAisle(aisleChar);
-    
-    const binNums = {};
-    allBins.forEach(b => {
-        const num = b.substring(2, 4); 
-        if (!binNums[num]) binNums[num] = [];
-        binNums[num].push(b);
-    });
-
-    let activeEl = null;
-    Object.entries(binNums).forEach(([num, slots]) => {
-        const anyDone = slots.some(s => completedBins.has(s));
-        const hasSAP = slots.some(s => binIndex[s] && binIndex[s].length > 0);
-        const isCurrent = slots.some(s => s === currentBin);
-
-        const dot = document.createElement('button');
-        dot.style.cssText = `
-            min-width:${isCurrent ? '40px' : '28px'};height:28px;border-radius:7px;
-            display:flex;align-items:center;justify-content:center;flex-shrink:0;
-            font-size:${isCurrent ? '11px' : '9px'};font-weight:800;
-            transition:all 0.15s;border:1.5px solid transparent;
-        `;
-
-        if (isCurrent) {
-            dot.style.background = 'var(--accent)';
-            dot.style.color = 'white';
-            dot.style.borderColor = 'var(--accent)';
-            dot.textContent = num;
-            activeEl = dot;
-        } else if (anyDone) {
-            dot.style.background = 'var(--green-bg)';
-            dot.style.color = 'var(--green)';
-            dot.style.borderColor = 'var(--green-border)';
-            dot.textContent = '✓';
-        } else if (hasSAP) {
-            dot.style.background = 'var(--surface-2)';
-            dot.style.color = 'var(--text-3)';
-            dot.style.borderColor = 'var(--border)';
-            dot.textContent = num;
-        } else {
-            dot.style.background = 'var(--surface-2)';
-            dot.style.color = 'var(--border)';
-            dot.textContent = '·';
-        }
-
-        dot.onclick = () => selectBin(slots[0]);
-        strip.appendChild(dot);
-    });
-
-    if (activeEl) {
-        setTimeout(() => {
-            activeEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-        }, 50);
-    }
-}
-
-function getAllBinsForAisle(aisleChar) {
-    const bins = [];
-    const maxBin = (aisleChar === 'B' || aisleChar === 'C') ? 25 : 38;
-    for (let num = 0; num <= maxBin; num++) {
-        const numStr = String(num).padStart(2, '0');
-        ['A', 'B'].forEach(slot => { bins.push(`W${aisleChar}${numStr}${slot}`); });
-        bins.push(`W${aisleChar}${numStr}C`);
-    }
-    return bins;
-}
-
-function stepBin(dir) {
-    if (!currentBin) return;
-    const aisleChar = currentBin.charAt(1);
-    const allBins = getAllBinsForAisle(aisleChar);
-    const idx = allBins.indexOf(currentBin);
-    if (idx === -1) {
-        const nearest = dir > 0 ? allBins.find(b => b > currentBin) : [...allBins].reverse().find(b => b < currentBin);
-        if (nearest) selectBin(nearest);
-        else toast(dir > 0 ? 'End of aisle' : 'Start of aisle', 'blue');
-    } else {
-        const next = allBins[idx + dir];
-        if (next) selectBin(next);
-        else toast(dir > 0 ? 'End of aisle' : 'Start of aisle', 'blue');
-    }
-}
-
-function leaveAisle() {
-    const pending = currentItems.filter(i => i.status === 'pending');
-    if (pending.length > 0 && !confirm(`${pending.length} items unchecked. Leave?`)) return;
-    currentBin = '';
-    currentItems = [];
-    switchScreen('setup');
-    buildAisleGrid();
-}
-
-function updatePhase() {
-    const allChecked = currentItems.filter(i => !i.isExtra).every(i => i.status !== 'pending');
-    if (allChecked && currentPhase === 1) {
-        currentPhase = 2;
-        showHint('extras');
-    }
-
-    [1, 2, 3].forEach(p => {
-        const el = document.getElementById(`phase-${p}`);
-        const label = document.getElementById(`phase-${p}-label`);
-        el.className = 'phase-step';
-        label.className = '';
-        if (p < currentPhase) { el.classList.add('done'); label.classList.add('done'); }
-        else if (p === currentPhase) { el.classList.add('active'); label.classList.add('active'); }
-    });
-
-    const btn = document.getElementById('btn-finalize');
-    const txt = document.getElementById('finalize-text');
-    const pending = currentItems.filter(i => i.status === 'pending');
-    if (pending.length > 0) {
-        btn.className = 'primary-btn disabled';
-        txt.textContent = `${pending.length} item${pending.length > 1 ? 's' : ''} unchecked`;
-    } else {
-        btn.className = 'primary-btn green';
-        txt.textContent = 'Finalize & Next Bin →';
-    }
-
-    const unchecked = currentItems.filter(i => !i.isExtra && i.status === 'pending');
-    document.getElementById('btn-confirm-all').style.display = unchecked.length > 1 ? 'block' : 'none';
-
-    const total = currentItems.length;
-    const done = currentItems.filter(i => i.status !== 'pending').length;
-    document.getElementById('bin-progress-fill').style.width = total > 0 ? Math.round((done / total) * 100) + '%' : '0%';
-    document.getElementById('bin-progress-text').textContent = `${done} / ${total}`;
-}
-
-// ===== TARGETED DOM UPDATES FOR AISLE =====
-function createHUCardHTML(item, idx) {
-    let statusClass = '';
-    let statusBadge = '';
-
-    if (item.status === 'confirmed') { statusClass = item.isExtra ? 'extra' : 'confirmed'; statusBadge = '<span class="hu-status ok">✓ Confirmed</span>'; }
-    else if (item.status === 'missing') { statusClass = 'missing'; statusBadge = '<span class="hu-status miss">✗ Missing</span>'; }
-    else if (item.status === 'adjusted') { statusClass = 'adjusted'; statusBadge = '<span class="hu-status adj">± Adjusted</span>'; }
-    else if (item.isExtra) { statusClass = 'extra'; statusBadge = '<span class="hu-status ext">+ Extra</span>'; }
-
-    const qtyMatch = item.countQty === item.sapQty && item.status === 'confirmed';
-    const showActions = item.status === 'pending' || item.status === 'adjusted';
-    const hasEvidence = item.note || item.photoBase64 || item.photoUrl;
-
-    return `
-        <div class="hu-card ${statusClass}" id="hu-card-${item.hu}">
-            <div class="hu-header">
-                <span class="hu-id">HU ${item.hu || '—'}</span>
-                ${statusBadge}
+  let _modalInjected = false;
+  function _injectModal() {
+    if (_modalInjected) return;
+    _modalInjected = true;
+    const overlay = document.createElement('div');
+    overlay.id = 'novus-settings-overlay';
+    overlay.innerHTML = `
+      <div class="ns-modal">
+        <div class="ns-header"><h3 style="margin:0; font-size:16px;">⚙ Settings</h3><button class="ns-close" onclick="NovusSettings.closeModal()" style="background:none; border:none; font-size:18px; cursor:pointer; color:var(--text-3);">✕</button></div>
+        <div class="ns-body" style="padding:16px 20px;">
+          <div style="margin-bottom:20px;">
+            <label style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--text-3); display:block; margin-bottom:8px;">Your Name / ID</label>
+            <input type="text" id="ns-username" placeholder="Enter your name..." style="width:100%; padding:14px; background:var(--surface-2); border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; outline:none; color:var(--text);">
+          </div>
+          <div style="margin-bottom:20px;">
+            <label style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--text-3); display:block; margin-bottom:8px;">Theme</label>
+            <div style="display:flex; gap:10px;">
+                <button onclick="NovusSettings.set('theme', 'light'); NovusSettings._updateThemeSwitch();" id="btn-theme-light" style="flex:1; padding:14px; background:var(--surface-2); border:1.5px solid var(--border); border-radius:var(--radius-sm); font-weight:700; color:var(--text);">Light</button>
+                <button onclick="NovusSettings.set('theme', 'dark'); NovusSettings._updateThemeSwitch();" id="btn-theme-dark" style="flex:1; padding:14px; background:var(--surface-2); border:1.5px solid var(--border); border-radius:var(--radius-sm); font-weight:700; color:var(--text);">Dark</button>
             </div>
-            <div class="hu-meta">
-                <div class="hu-meta-item"><div class="hu-meta-label">Product</div><div class="hu-meta-value">${item.product}</div></div>
-                <div class="hu-meta-item"><div class="hu-meta-label">SAP Qty</div><div class="hu-meta-value mono">${item.sapQty}</div></div>
-                ${item.isExtra && item.sapBin ? `<div class="hu-meta-item"><div class="hu-meta-label">SAP Says</div><div class="hu-meta-value mono" style="color:var(--purple)">${item.sapBin}</div></div>` : ''}
-            </div>
-            <div style="font-size:11px;color:var(--text-2);font-weight:500;margin-bottom:12px;">${item.desc || ''}</div>
-            ${showActions ? `
-                <div class="qty-row">
-                    <button class="qty-stepper" onclick="adjustQty(${idx},-1)">−</button>
-                    <input type="number" inputmode="numeric" class="qty-input" value="${item.countQty !== null && item.countQty !== undefined ? item.countQty : ''}" placeholder="${item.sapQty}" onfocus="this.select()" oninput="setQty(${idx},this.value)">
-                    <button class="qty-stepper" onclick="adjustQty(${idx},1)">+</button>
-                </div>
-                <div class="sap-qty-badge">SAP expects <strong>${item.sapQty}</strong></div>
-                <div class="hu-actions">
-                    <button class="hu-btn confirm" onclick="confirmHU(${idx})">Confirm ${item.sapQty}</button>
-                    <button class="hu-btn miss-btn ${item.status === 'missing' ? 'active' : ''}" onclick="markMissing(${idx})">Missing</button>
-                </div>
-                <button onclick="openNoteModal(${idx})" style="width:100%;margin-top:8px;padding:10px 14px;background:${hasEvidence ? 'var(--amber-bg)' : 'var(--surface-2)'};border:1.5px solid ${hasEvidence ? 'var(--amber-border)' : 'var(--border)'};border-radius:var(--radius-sm);font-size:11px;font-weight:700;color:${hasEvidence ? 'var(--amber)' : 'var(--text-3)'};text-align:left;display:flex;align-items:center;gap:6px;">
-                    ${item.photoBase64 || item.photoUrl ? '📷 ' : ''}📝 ${item.note ? item.note.substring(0, 30) : 'Add Note / Photo'}
-                </button>
-            ` : `
-                ${item.status !== 'pending' ? `
-                    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--surface-2);border-radius:var(--radius-sm);">
-                        <span style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;">Count</span>
-                        <span class="mono" style="font-size:18px;font-weight:700;color:${qtyMatch ? 'var(--green)' : 'var(--amber)'};">${item.countQty}</span>
-                    </div>
-                    <button onclick="openNoteModal(${idx})" style="width:100%;margin-top:8px;padding:10px 14px;background:${hasEvidence ? 'var(--amber-bg)' : 'var(--surface-2)'};border:1.5px solid ${hasEvidence ? 'var(--amber-border)' : 'var(--border)'};border-radius:var(--radius-sm);font-size:11px;font-weight:700;color:${hasEvidence ? 'var(--amber)' : 'var(--text-3)'};text-align:left;display:flex;align-items:center;gap:6px;">
-                        ${item.photoBase64 || item.photoUrl ? '📷 ' : ''}📝 ${item.note ? item.note.substring(0, 30) : 'Add Note / Photo'}
-                    </button>
-                    ${item.photoBase64 || item.photoUrl ? `<button onclick="viewPhoto(${idx})" style="width:100%;margin-top:4px;padding:8px;background:var(--accent-glow);border:1px solid rgba(59,108,245,0.15);border-radius:var(--radius-sm);font-size:10px;font-weight:700;color:var(--accent);text-align:center;">🔍 View Full Photo</button>` : ''}
-                    <button onclick="resetHU(${idx})" style="width:100%;margin-top:4px;padding:10px;background:none;color:var(--text-3);font-size:10px;font-weight:700;">↺ Undo</button>
-                ` : ''}
-            `}
+          </div>
+          <div style="margin-bottom:20px;">
+            <button onclick="if(confirm('Clear local data and reload?')){ localStorage.removeItem('sap2'); localStorage.removeItem('doneBins2'); if(typeof sessionRegistry !== 'undefined') sessionRegistry.clear(); window.location.reload(); }" style="width:100%; padding:14px; background:var(--red-bg); color:var(--red); border:1px solid var(--red-border); border-radius:var(--radius-sm); font-weight:800; font-size:12px; text-transform:uppercase;">🗑 Clear Local Data</button>
+          </div>
+          <button onclick="NovusSettings._save()" style="width:100%; padding:16px; background:var(--accent); color:white; border:none; border-radius:var(--radius); font-weight:800; font-size:14px; text-transform:uppercase;">Save Settings</button>
         </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    
+    const style = document.createElement('style');
+    style.textContent = `
+      #novus-settings-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:9999;align-items:flex-end;justify-content:center;}
+      #novus-settings-overlay.open{display:flex}
+      .ns-modal{background:var(--surface);width:100%;border-radius:24px 24px 0 0;display:flex;flex-direction:column;max-height:90vh;overflow-y:auto; padding-bottom:env(safe-area-inset-bottom, 20px);}
+      .ns-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
     `;
-}
+    document.body.appendChild(style);
+  }
 
-function updateSingleAisleCard(idx) {
-    const item = currentItems[idx];
-    const cardEl = document.getElementById(`hu-card-${item.hu}`);
-    if (cardEl) {
-        cardEl.outerHTML = createHUCardHTML(item, idx);
+  function openModal() {
+    _injectModal();
+    document.getElementById('novus-settings-overlay').classList.add('open');
+    document.getElementById('ns-username').value = get('userName');
+    _updateThemeSwitch();
+  }
+  function closeModal() { const o = document.getElementById('novus-settings-overlay'); if (o) o.classList.remove('open'); }
+  function _updateThemeSwitch() {
+    const t = get('theme');
+    const l = document.getElementById('btn-theme-light');
+    const d = document.getElementById('btn-theme-dark');
+    if (l && d) {
+        l.style.borderColor = t === 'light' ? 'var(--accent)' : 'var(--border)';
+        l.style.color = t === 'light' ? 'var(--accent)' : 'var(--text)';
+        d.style.borderColor = t === 'dark' ? 'var(--accent)' : 'var(--border)';
+        d.style.color = t === 'dark' ? 'var(--accent)' : 'var(--text)';
     }
-    updatePhase();
-}
+  }
+  function _save() {
+    set('userName', document.getElementById('ns-username').value.trim());
+    closeModal(); 
+    if(typeof showToast === 'function') showToast('Settings saved', 'green');
+  }
 
-function renderAisleHUList() {
-    const container = document.getElementById('hu-list');
-    let html = '';
+  applyTheme();
+  return { get, set, getUser, applyTheme, openModal, closeModal, _updateThemeSwitch, _save };
+})();
+</script>
 
-    const alreadyCounted = completedBins.has(currentBin);
-    if (alreadyCounted) {
-        html += `
-            <div style="background:var(--green-bg);border:1.5px solid var(--green-border);border-radius:var(--radius);padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">
-                <span style="font-size:20px;">✅</span>
-                <div>
-                    <div style="font-size:12px;font-weight:800;color:var(--green);">Already Counted</div>
-                    <div style="font-size:10px;color:var(--text-2);font-weight:600;">This bin was finalized earlier. Counting again will replace the previous results.</div>
-                </div>
-            </div>`;
-    }
+<script>
+    const FRESH_PRODUCTS = ["3305704","3307506","3307509","3307515","3307518","3307525","3307710","3308356","3309009","3309016","3309017","3309019","3309138","3309139"];
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwZ1Dhmf6cK_hWV2xLKYmwEImUvifIRCPqVm0Fz4E7gjvfcpyzoqhAFIgvgwrjBretc/exec';
+    
+    const SESSION_ID = 'sess_' + Math.random().toString(36).substr(2, 9);
+    
+    let sapMaster = JSON.parse(localStorage.getItem('sap2') || '[]');
+    let sessionRegistry = new Map(); 
+    let countedBins = new Set(JSON.parse(localStorage.getItem('doneBins2') || '[]')); 
+    let countedFreshProducts = new Set(); 
+    
+    let activeAuditMode = 'hub'; // 'hub', 'aisle', 'fresh', 'product'
+    let currentAisle = "";
+    let currentBinIdx = 0;
+    let currentBins = [];
+    let currentPhase = 1;
+    let activeFreshProduct = null;
+    let activeGhostHU = ""; 
+    let activeProductAudit = ""; 
 
-    if (currentItems.length === 0 && currentBin) {
-        html += `
-            <div class="empty-state">
-                <div class="es-icon">📭</div>
-                <p>SAP shows this bin as empty</p>
-                <p style="color:var(--accent);margin-top:8px;font-weight:700;">Scan any items found here using "+ Found Extra HU" below</p>
-            </div>`;
-        container.innerHTML = html;
-        updatePhase();
-        return;
-    }
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('name-display').innerText = NovusSettings.getUser();
+        renderAisleGrid();
+        refreshData(); // Initial pull
 
-    const expected = currentItems.filter(i => !i.isExtra);
-    const extras = currentItems.filter(i => i.isExtra);
+        setInterval(pollLightweight, 15000);
 
-    if (expected.length > 0 && currentPhase <= 1) {
-        html += `<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);margin-bottom:8px;">Expected in bin (${expected.length})</div>`;
-    }
-
-    expected.forEach((item) => {
-        html += createHUCardHTML(item, currentItems.indexOf(item));
-    });
-
-    if (extras.length > 0) {
-        html += `<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--cyan);margin:16px 0 8px;display:flex;align-items:center;gap:8px;">🔍 Extra Items Found</div>`;
-        extras.forEach((item) => {
-            html += createHUCardHTML(item, currentItems.indexOf(item));
+        document.getElementById('hub-search').addEventListener('keypress', e => {
+            if(e.key === 'Enter') { handleGateway(e.target.value.trim().toUpperCase()); e.target.value = ''; }
         });
-    }
-
-    container.innerHTML = html;
-    updatePhase();
-}
-
-function confirmHU(idx) {
-    haptic();
-    const item = currentItems[idx];
-    item.countQty = item.countQty !== null && item.countQty !== undefined ? item.countQty : item.sapQty;
-    if (item.countQty !== item.sapQty) {
-        item.status = 'adjusted';
-    } else {
-        item.status = 'confirmed';
-    }
-    updateSingleAisleCard(idx);
-}
-
-function markMissing(idx) {
-    haptic();
-    const item = currentItems[idx];
-    item.status = item.status === 'missing' ? 'pending' : 'missing';
-    if (item.status === 'missing') item.countQty = 0;
-    updateSingleAisleCard(idx);
-}
-
-function adjustQty(idx, delta) {
-    haptic();
-    const item = currentItems[idx];
-    item.countQty = Math.max(0, (item.countQty || 0) + delta);
-    if (item.countQty !== item.sapQty && item.countQty > 0) {
-        item.status = 'adjusted';
-    } else if (item.countQty === item.sapQty) {
-        item.status = 'confirmed';
-    }
-    updateSingleAisleCard(idx);
-}
-
-function setQty(idx, val) {
-    const item = currentItems[idx];
-    item.countQty = parseFloat(val) || 0;
-    if (item.countQty > 0) {
-        item.status = item.countQty === item.sapQty ? 'confirmed' : 'adjusted';
-    }
-    updateSingleAisleCard(idx);
-}
-
-function resetHU(idx) {
-    haptic();
-    currentItems[idx].status = 'pending';
-    currentItems[idx].countQty = null;
-    updateSingleAisleCard(idx);
-}
-
-function confirmAllHUs() {
-    haptic();
-    let c = 0;
-    currentItems.forEach((item, idx) => {
-        if (!item.isExtra && item.status === 'pending') {
-            item.countQty = item.sapQty;
-            item.status = 'confirmed';
-            c++;
-            updateSingleAisleCard(idx);
-        }
-    });
-    toast(`${c} confirmed`, 'green');
-}
-
-function showExtraInput() {
-    haptic();
-    const container = document.getElementById('hu-list');
-
-    if (document.getElementById('extra-input-form')) {
-        document.getElementById('extra-hu-field').focus();
-        return;
-    }
-
-    const form = document.createElement('div');
-    form.id = 'extra-input-form';
-    form.className = 'extra-input-area';
-    form.innerHTML = `
-        <h3>🔍 Found Extra Item</h3>
-        <input type="text" id="extra-hu-field" class="extra-field mono" placeholder="Scan or type HU (0 if no label)" autofocus>
-        <div style="display:flex;gap:8px;">
-            <input type="text" id="extra-prod-field" class="extra-field" placeholder="Product #" style="flex:1;margin:0;">
-            <input type="number" id="extra-qty-field" class="extra-field mono" placeholder="Qty" style="width:80px;margin:0;text-align:center;">
-        </div>
-        <div id="extra-autofill" style="display:none;margin-top:4px;">
-            <span class="tag" style="background:var(--green-bg);color:var(--green);font-size:9px;">Auto-filled from SAP</span>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:12px;">
-            <button onclick="cancelExtra()" class="secondary-btn" style="flex:1;padding:14px 0;">Cancel</button>
-            <button onclick="submitExtra()" class="primary-btn blue" style="flex:2">Add Item</button>
-        </div>`;
-    container.insertBefore(form, container.firstChild);
-
-    document.getElementById('extra-hu-field').addEventListener('input', (e) => {
-        const hu = e.target.value.trim();
-        if (hu.length >= 8) {
-            const match = huIndex.get(hu);
-            if (match) {
-                document.getElementById('extra-prod-field').value = match.product;
-                document.getElementById('extra-qty-field').value = match.sapQty;
-                document.getElementById('extra-autofill').style.display = 'block';
-            }
-        } else {
-            document.getElementById('extra-autofill').style.display = 'none';
-        }
-    });
-
-    setTimeout(() => document.getElementById('extra-hu-field').focus(), 100);
-}
-
-function cancelExtra() {
-    const form = document.getElementById('extra-input-form');
-    if (form) form.remove();
-}
-
-function submitExtra() {
-    const hu = document.getElementById('extra-hu-field').value.trim();
-    const prod = document.getElementById('extra-prod-field').value.trim().toUpperCase();
-    const qty = parseFloat(document.getElementById('extra-qty-field').value) || 0;
-
-    if (!prod || qty <= 0) { toast('Need product # and qty', 'red'); return; }
-    haptic();
-
-    const huMatch = hu ? huIndex.get(hu) : null;
-    const isNoHU = !hu || hu === '0';
-
-    currentItems.push({
-        hu: hu || '0', product: prod,
-        desc: huMatch ? huMatch.desc : 'FOUND (Extra)',
-        batch: huMatch ? huMatch.batch : '',
-        sapBin: huMatch ? huMatch.sapBin : '',
-        sapQty: huMatch ? huMatch.sapQty : 0,
-        countQty: qty,
-        status: 'confirmed',
-        isExtra: true, note: '', photoUrl: '', photoBase64: null
-    });
-
-    cancelExtra();
-    toast('Extra added', 'green');
-    renderAisleHUList(); // Full render is fine here because DOM changed size
-
-    if ((isNoHU || !huMatch) && prod) {
-        setTimeout(() => showCCTrigger(prod, qty, isNoHU ? 'No HU label on material' : `Unknown HU: ${hu}`), 400);
-    }
-}
-
-function skipBin() {
-    stepBin(1);
-}
-
-function finalizeAisleBin() {
-    const pending = currentItems.filter(i => i.status === 'pending');
-    if (pending.length > 0) { toast(`${pending.length} unchecked`, 'red'); return; }
-    if (!currentBin) return;
-    haptic();
-
-    const itemsToLog = currentItems.length === 0
-        ? [{ hu: 'EMPTY_BIN', product: 'NONE', desc: 'Confirmed Empty', batch: '', sapBin: '', scannedBin: currentBin, sapQty: 0, countQty: 0, type: 'ok', note: '', photoUrl: '' }]
-        : currentItems.map(i => {
-            let type = 'ok';
-            if (i.status === 'missing') type = 'miss';
-            else if (i.isExtra) {
-                type = i.sapBin ? 'move' : 'unexpected'; // If it has an SAP bin, it moved. Otherwise, completely unexpected.
-            }
-            else if (i.countQty !== i.sapQty) type = 'adj';
-            return {
-                hu: i.hu, product: i.product, desc: i.desc, batch: i.batch,
-                sapBin: i.sapBin, scannedBin: currentBin,
-                sapQty: i.sapQty, countQty: i.countQty,
-                type, note: i.note || '', photoUrl: i.photoUrl || ''
-            };
+        document.getElementById('fresh-scan-input').addEventListener('keypress', e => {
+            if(e.key === 'Enter') { processFreshScan(e.target.value.trim().toUpperCase()); e.target.value = ''; }
         });
+        document.getElementById('bin-scan-input').addEventListener('keypress', e => {
+            if(e.key === 'Enter') { processBinScan(e.target.value.trim().toUpperCase()); e.target.value = ''; }
+        });
+        document.getElementById('product-scan-input').addEventListener('keypress', e => {
+            if(e.key === 'Enter') { processProductScan(e.target.value.trim().toUpperCase()); e.target.value = ''; }
+        });
+    });
 
-    itemsToLog.push({ hu: 'BIN_CLEAR', product: 'SYSTEM', desc: 'Bin Finalized', batch: '', sapBin: currentBin, sapQty: 0, countQty: 0, type: 'bin_finalized', note: `Finalized by ${auditorName}`});
-
-    completedBins.add(currentBin);
-    localStorage.setItem('doneBins2', JSON.stringify([...completedBins]));
-
-    enqueue({ action: 'logAudit', user: auditorName || 'Counter', bin: currentBin, items: itemsToLog });
-
-    toast('Bin finalized', 'blue');
-    stepBin(1); 
-}
-
-// ===== CYCLE COUNT TRIGGER (GHOSTS) =====
-function showCCTrigger(product, qty, reason) {
-    document.getElementById('cct-product').textContent = product;
-    document.getElementById('cct-qty').textContent = qty;
-    document.getElementById('cct-reason').textContent = reason;
-    document.getElementById('modal-cc-trigger').dataset.product = product;
-    document.getElementById('modal-cc-trigger').dataset.qty = qty;
-    document.getElementById('modal-cc-trigger').dataset.reason = reason;
-    document.getElementById('modal-cc-trigger').style.display = 'flex';
-}
-
-function declineCCTrigger() {
-    document.getElementById('modal-cc-trigger').style.display = 'none';
-    const prod = document.getElementById('modal-cc-trigger').dataset.product;
-    enqueue({ action: 'triggerCycleCount', id: 'CC' + Date.now(), product: prod, reason: document.getElementById('modal-cc-trigger').dataset.reason, triggeredBy: auditorName || 'Counter', status: 'declined', bin: currentBin });
-    toast('Skipped', 'amber');
-}
-
-function acceptCCTrigger() {
-    document.getElementById('modal-cc-trigger').style.display = 'none';
-    const prod = document.getElementById('modal-cc-trigger').dataset.product;
-    const qty = parseFloat(document.getElementById('modal-cc-trigger').dataset.qty) || 0;
-    enqueue({ action: 'triggerCycleCount', id: 'CC' + Date.now(), product: prod, reason: document.getElementById('modal-cc-trigger').dataset.reason, triggeredBy: auditorName || 'Counter', status: 'accepted', bin: currentBin });
-    pccTriggerQty = qty;
-    pccTriggerBin = currentBin;
-    startProductCycle(prod);
-}
-
-// ===== FRESH AUDIT (DRILL DOWN) =====
-function initFreshMode() {
-    activeAuditMode = 'fresh';
-    hideFreshDetail();
-    updateFreshOverview();
-    switchScreen('fresh');
-}
-
-function handleFreshBack() {
-    if (document.getElementById('fresh-detail').style.display === 'block') {
-        hideFreshDetail();
-    } else {
-        switchScreen('setup');
+    // ==========================================
+    // BACKEND SYNC & POLLING
+    // ==========================================
+    async function refreshData() {
+        try {
+            showToast("Syncing SAP...", "blue");
+            
+            const res = await fetch(API_URL + '?t=' + Date.now(), { redirect: 'follow' });
+            const text = await res.text();
+            
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch(e) {
+                document.querySelectorAll('.sync-dot').forEach(d => d.classList.add('offline'));
+                showToast("API Error - Contact Admin", "red");
+                return;
+            }
+            
+            sapMaster = data.sapData || [];
+            localStorage.setItem('sap2', JSON.stringify(sapMaster));
+            
+            const report = data.report || [];
+            
+            countedBins = new Set(report.filter(r => r.type === 'bin_finalized').map(r => r.scanBin).filter(Boolean));
+            localStorage.setItem('doneBins2', JSON.stringify([...countedBins]));
+            
+            countedFreshProducts = new Set(report.map(r => r.prod).filter(p => FRESH_PRODUCTS.includes(p)));
+            
+            document.querySelectorAll('.sync-dot').forEach(d => d.classList.remove('offline'));
+            showToast(`Loaded ${sapMaster.length} SAP records`, "green");
+            
+            if (activeAuditMode === 'aisle') {
+                updateBinView();
+            } else if (activeAuditMode === 'fresh') {
+                updateFreshOverview();
+            } else if (activeAuditMode === 'hub') {
+                renderAisleGrid();
+            }
+        } catch(e) { 
+            document.querySelectorAll('.sync-dot').forEach(d => d.classList.add('offline'));
+            showToast("Offline Mode", "amber");
+        }
     }
-}
 
-function hideFreshDetail() {
-    document.getElementById('fresh-detail').style.display = 'none';
-    document.getElementById('fresh-overview').style.display = 'block';
-}
-
-function updateFreshOverview() {
-    const overview = document.getElementById('fresh-overview');
-    let htmlStr = '';
-    
-    const productsToShow = FRESH_SKUS.filter(prod => !countedFreshProducts.has(prod));
-    
-    if (productsToShow.length === 0) {
-        overview.innerHTML = `
-            <div style="text-align:center; padding:60px 20px; color:var(--text-3);">
-                <span style="font-size:42px; display:block; margin-bottom:12px;">🎉</span>
-                <div style="font-size:18px; font-weight:800; color:var(--text); margin-bottom:4px;">All Fresh Counts Complete</div>
-                <div>No pending fresh products detected in this cycle.</div>
-            </div>`;
-        return;
+    async function pollLightweight() {
+        try {
+            const res = await fetch(API_URL + '?type=poll&t=' + Date.now(), { redirect: 'follow' });
+            const text = await res.text();
+            const data = JSON.parse(text);
+            const report = data.report || [];
+            
+            countedBins = new Set(report.filter(r => r.type === 'bin_finalized').map(r => r.scanBin).filter(Boolean));
+            countedFreshProducts = new Set(report.map(r => r.prod).filter(p => FRESH_PRODUCTS.includes(p)));
+            localStorage.setItem('doneBins2', JSON.stringify([...countedBins]));
+            
+            if (activeAuditMode === 'aisle') {
+                renderBinStrip(); 
+                const currentBin = currentBins[currentBinIdx];
+                const titleEl = document.getElementById('count-title');
+                titleEl.innerHTML = `${currentBin} ${countedBins.has(currentBin) ? '<span style="color:var(--green); font-size:14px; margin-left:4px">✓</span>' : ''}`;
+            } else if (activeAuditMode === 'hub') {
+                renderAisleGrid();
+            }
+        } catch(e) {} 
     }
-    
-    productsToShow.forEach(prod => {
-        const sapItem = sapMaster.find(i => i.product === prod);
-        const desc = sapItem ? sapItem.desc : "Product description unavailable";
-        const expectedHUs = sapMaster.filter(i => i.product === prod);
+
+    // ==========================================
+    // GATEWAY ROUTING
+    // ==========================================
+    function handleGateway(input) {
+        if (!input) return;
+        if (input === 'FRESH') return initFreshMode();
         
-        htmlStr += `
-            <div class="hu-card" style="cursor:pointer; border-color:var(--border);" onclick="startProductCycle('${prod}', true)">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start">
-                    <div style="flex:1; padding-right:12px;">
+        if (input.match(/^W[A-P][0-9]{2}[A-C]$/)) {
+            startAisleAudit(input.charAt(1), input);
+            return;
+        }
+        
+        const skuMatch = sapMaster.filter(i => String(i.product).trim() === input);
+        if (skuMatch.length > 0) return initProductAudit(input);
+        
+        const huMatch = sapMaster.find(i => i.hu === input);
+        if (huMatch) return initProductAudit(huMatch.product);
+
+        showToast("No SAP Match Found", "amber");
+    }
+
+    // ==========================================
+    // UNEXPECTED HU (GHOST ITEM) LOGIC
+    // ==========================================
+    function processBinScan(input) {
+        if(!input) return;
+        const currentBin = currentBins[currentBinIdx];
+        
+        const existingReg = sessionRegistry.get(input);
+        if (existingReg && existingReg.foundIn === currentBin) {
+            showToast("HU already scanned in this bin", "blue");
+            return;
+        }
+
+        const sap = sapMaster.find(i => i.hu === input);
+        if (sap) {
+            saveToRegistry(input, { 
+                scanBin: currentBin, 
+                foundIn: currentBin, 
+                scanQty: sap.sapQty, 
+                status: 'MOVEMENT'
+            });
+            showToast(`Moved ${input} to ${currentBin}`, "purple");
+            if(navigator.vibrate) navigator.vibrate(50);
+        } else {
+            activeGhostHU = input;
+            document.getElementById('ghost-hu').innerText = input;
+            document.getElementById('ghost-modal').style.display = 'flex';
+            document.getElementById('ghost-prod-input').value = ''; 
+            if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        }
+    }
+
+    function closeGhostModal() {
+        document.getElementById('ghost-modal').style.display = 'none';
+        activeGhostHU = "";
+    }
+
+    function pivotToProductAudit() {
+        const prod = document.getElementById('ghost-prod-input').value.trim().toUpperCase();
+        if(!prod) return showToast("Enter a valid Product Number", "red");
+        
+        sapMaster.push({
+            hu: activeGhostHU,
+            product: prod,
+            desc: 'Ghost Item - Manually Added',
+            batch: '',
+            sapBin: 'NONE',
+            sapQty: 0
+        }); 
+        
+        const foundLoc = (activeAuditMode === 'aisle') ? currentBins[currentBinIdx] : 'NONE';
+        
+        saveToRegistry(activeGhostHU, { 
+            scanQty: 1, 
+            scanBin: foundLoc, 
+            foundIn: foundLoc,
+            status: 'confirmed'
+        });
+        
+        closeGhostModal();
+        showToast(`Ghost HU assigned to Product ${prod}`, "cyan");
+        
+        initProductAudit(prod);
+    }
+
+    // ==========================================
+    // CENTRALIZED CARD TEMPLATE
+    // ==========================================
+    function createHUCardHTML(item) {
+        const reg = sessionRegistry.get(item.hu);
+        const movedElsewhere = !reg && Array.from(sessionRegistry.values()).find(r => r.hu === item.hu && r.status === 'MOVEMENT');
+        const statusLabel = reg ? reg.status : (movedElsewhere ? 'MOVED' : 'PENDING');
+        const statusClass = reg ? reg.status.toLowerCase() : (movedElsewhere ? 'move' : 'pending');
+        const currentQty = reg ? reg.scanQty : item.sapQty;
+        const isAdj = currentQty !== item.sapQty;
+
+        const showBin = activeAuditMode === 'fresh' || activeAuditMode === 'product';
+
+        return `
+            <div class="hu-card ${statusClass}" id="hu-card-${item.hu}">
+                <div class="hu-header">
+                    <span class="hu-id">HU ${item.hu}</span>
+                    <span class="hu-status ${statusClass}">${statusLabel}</span>
+                </div>
+                <div class="hu-meta">
+                    <div style="flex:2">
                         <div class="hu-meta-label">Product</div>
-                        <div style="font-size:20px; font-weight:900">${prod}</div>
-                        <div style="font-size:11px; color:var(--text-2); margin-top:4px; line-height:1.3;">${desc}</div>
+                        <div class="hu-meta-value">${item.product}</div>
+                        <div style="font-size:10px; color:var(--text-2); margin-top:2px; line-height:1.3;">${item.desc || ''}</div>
                     </div>
-                    <div style="text-align:right">
-                        <div style="font-size:32px; font-weight:900; color:var(--accent)">
-                            ${expectedHUs.length}
-                        </div>
-                        <div class="hu-meta-label">Expected Pallets</div>
-                    </div>
+                    ${showBin ? `
+                    <div style="flex:1">
+                        <div class="hu-meta-label">Expected Bin</div>
+                        <div class="hu-meta-value mono" style="font-size:14px; color:var(--accent)">${item.sapBin}</div>
+                    </div>` : `
+                    <div style="flex:1">
+                        <div class="hu-meta-label">SAP Qty</div>
+                        <div class="hu-meta-value mono">${item.sapQty}</div>
+                    </div>`}
+                </div>
+                ${movedElsewhere ? `<div style="font-size:11px; color:var(--purple); font-weight:700; margin-bottom:12px; background:var(--purple-bg); padding:6px 10px; border-radius:6px; border:1px solid var(--purple-border);">📍 Found earlier in ${movedElsewhere.foundIn}</div>` : ''}
+                ${(reg && reg.scanBin && reg.scanBin !== item.sapBin && showBin) ? `<div style="font-size:11px; color:var(--purple); font-weight:700; margin-bottom:12px; background:var(--purple-bg); padding:6px 10px; border-radius:6px; border:1px solid var(--purple-border);">📍 Scanned in ${reg.scanBin}</div>` : ''}
+                
+                <div class="qty-row">
+                    <button class="qty-stepper" onclick="adjQty('${item.hu}', -1)">−</button>
+                    <input type="number" class="qty-input qty-val-${item.hu}" value="${currentQty}" onchange="setQty('${item.hu}', this.value)">
+                    <button class="qty-stepper" onclick="adjQty('${item.hu}', 1)">+</button>
+                </div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <button class="primary-btn" style="flex:2; padding:12px; font-size:13px; min-height:48px; background:${isAdj ? 'var(--amber)' : 'var(--green)'}" onclick="confirmItem('${item.hu}')">
+                        ${isAdj ? 'Confirm Adj' : 'Confirm'}
+                    </button>
+                    <button class="secondary-btn" style="flex:1; padding:12px; font-size:12px; min-height:48px; color:var(--purple)" onclick="initiateMovement('${item.hu}')">Move</button>
+                    <button class="secondary-btn" style="flex:1; padding:12px; font-size:12px; min-height:48px; color:var(--red)" onclick="markMissing('${item.hu}')">Miss</button>
                 </div>
             </div>
         `;
-    });
-    overview.innerHTML = htmlStr;
-}
-
-// ===== PRODUCT CYCLE COUNT =====
-function startProductCycle(sku, fromFresh = false) {
-    if (!sku) { toast('Enter a product #', 'red'); return; }
-    sku = String(sku).trim().toUpperCase();
-    
-    let matches = sapMaster.filter(i => String(i.product).trim() === sku);
-    
-    if (!matches.length) {
-        const skuNum = sku.replace(/^0+/, '');
-        matches = sapMaster.filter(i => String(i.product).trim().replace(/^0+/, '') === skuNum);
-    }
-    
-    if (!matches.length) {
-        matches = sapMaster.filter(i => String(i.product).trim().includes(sku));
     }
 
-    if (!matches.length) { 
-        toast(`"${sku}" not found in active SAP extract`, 'red'); 
-        return; 
-    }
-
-    activeAuditMode = 'product';
-    isFreshFlow = fromFresh;
-    pccProduct = matches[0].product; // Use exact matched product ID
-    
-    pccItems = matches.map(i => ({
-        hu: i.hu, sapBin: i.sapBin, sapQty: i.sapQty,
-        batch: i.batch, desc: i.desc, product: i.product,
-        countQty: null, checked: false, missing: false, actualBin: null, note: '', photoUrl: '', photoBase64: null
-    }));
-
-    document.getElementById('pcc-product').textContent = pccProduct;
-    document.getElementById('pcc-desc').textContent = matches[0].desc || '';
-    switchScreen('product-cc');
-    renderPCCList();
-}
-
-function renderPCCList() {
-    const container = document.getElementById('pcc-list');
-    container.innerHTML = '';
-
-    const checked = pccItems.filter(i => i.checked || i.missing).length;
-    const total = pccItems.length;
-    document.getElementById('pcc-progress-badge').textContent = `${checked} / ${total}`;
-    document.getElementById('pcc-progress-fill').style.width = total > 0 ? Math.round((checked / total) * 100) + '%' : '0%';
-
-    const groups = {};
-    pccItems.forEach((item, idx) => {
-        if (!groups[item.sapBin]) groups[item.sapBin] = [];
-        groups[item.sapBin].push({ item, idx });
-    });
-
-    Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0])).forEach(([bin, items]) => {
-        const allDone = items.every(o => o.item.checked || o.item.missing);
-        const div = document.createElement('div');
-        div.className = `hu-card ${allDone ? 'confirmed' : ''}`;
-        div.innerHTML = `
-            <div class="hu-header">
-                <span class="hu-id">${bin}</span>
-                ${allDone ? '<span class="hu-status ok">✓ Done</span>' : `<span class="tag" style="background:var(--surface-3);color:var(--text-3);">${items.length} HU${items.length > 1 ? 's' : ''}</span>`}
-            </div>`;
-
-        items.forEach(({ item, idx }) => {
-            const row = document.createElement('div');
-            row.style.cssText = 'margin-top:10px;padding-top:10px;border-top:1px solid var(--border);';
-
-            const isMissing = item.missing;
-            const isChecked = item.checked;
-            const hasMoved = item.actualBin && item.actualBin !== item.sapBin;
-            const hasEvidence = item.note || item.photoBase64 || item.photoUrl;
-
-            let statusHTML = '';
-            if (isMissing) {
-                statusHTML = `
-                    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:var(--radius-sm);margin-top:6px;">
-                        <span style="font-size:10px;font-weight:800;color:var(--red);text-transform:uppercase;">✗ Missing</span>
-                        <button onclick="pccUnmiss(${idx})" style="background:none;color:var(--text-3);font-size:10px;font-weight:700;padding:4px 8px;">Undo</button>
-                    </div>`;
-            } else if (isChecked) {
-                statusHTML = `
-                    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--green-bg);border:1px solid var(--green-border);border-radius:var(--radius-sm);margin-top:6px;">
-                        <span style="font-size:10px;font-weight:800;color:var(--green);">✓ Counted: <span class="mono">${item.countQty}</span></span>
-                        <button onclick="pccReset(${idx})" style="background:none;color:var(--text-3);font-size:10px;font-weight:700;padding:4px 8px;">Undo</button>
-                    </div>`;
-            }
-
-            let moveHTML = '';
-            if (hasMoved) {
-                moveHTML = `<div style="margin-top:6px;padding:6px 10px;background:var(--purple-bg);border:1px solid var(--purple-border);border-radius:var(--radius-sm);font-size:10px;font-weight:700;color:var(--purple);">📍 Moved → ${item.actualBin}</div>`;
-            }
-
-            row.innerHTML = `
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                    <span class="mono" style="font-size:11px;font-weight:600;color:var(--text-2);">HU ···${(item.hu || '').slice(-4)}</span>
-                    <span style="font-size:10px;color:var(--text-3);font-weight:600;">SAP: ${item.sapQty}</span>
-                </div>
-                ${!isChecked && !isMissing ? `
-                    <div class="qty-row">
-                        <button class="qty-stepper" onclick="pccAdjust(${idx},-1)">−</button>
-                        <input type="number" inputmode="numeric" class="qty-input" value="${item.countQty !== null ? item.countQty : ''}" placeholder="${item.sapQty}" onfocus="this.select()" oninput="pccSetQty(${idx},this.value)">
-                        <button class="qty-stepper" onclick="pccAdjust(${idx},1)">+</button>
-                    </div>
-                    <div class="hu-actions">
-                        <button class="hu-btn confirm" onclick="pccConfirm(${idx})">Confirm ${item.sapQty}</button>
-                        <button class="hu-btn miss-btn" onclick="pccMiss(${idx})">Missing</button>
-                    </div>
-                    <button onclick="pccBinMove(${idx})" style="width:100%;margin-top:6px;padding:10px 14px;background:${hasMoved ? 'var(--purple-bg)' : 'var(--surface-2)'};border:1.5px solid ${hasMoved ? 'var(--purple-border)' : 'var(--border)'};border-radius:var(--radius-sm);font-size:11px;font-weight:700;color:${hasMoved ? 'var(--purple)' : 'var(--text-3)'};text-align:left;">
-                        📍 ${hasMoved ? 'Moved → ' + item.actualBin : 'Record Bin Move'}
-                    </button>
-                ` : ''}
-                ${statusHTML}
-                ${isChecked ? moveHTML : ''}
-            `;
-            div.appendChild(row);
-        });
-
-        container.appendChild(div);
-    });
-
-    const allDone = pccItems.every(i => i.checked || i.missing);
-    document.getElementById('btn-pcc-verify').className = `primary-btn ${allDone ? 'blue' : 'disabled'}`;
-}
-
-function pccConfirm(idx) {
-    haptic();
-    pccItems[idx].countQty = pccItems[idx].countQty !== null ? pccItems[idx].countQty : pccItems[idx].sapQty;
-    pccItems[idx].checked = true;
-    renderPCCList();
-}
-
-function pccAdjust(idx, delta) {
-    haptic();
-    pccItems[idx].countQty = Math.max(0, (pccItems[idx].countQty || 0) + delta);
-    if (pccItems[idx].countQty > 0) pccItems[idx].checked = true;
-    renderPCCList();
-}
-
-function pccSetQty(idx, val) {
-    pccItems[idx].countQty = val === '' ? null : (parseFloat(val) || 0);
-    if (pccItems[idx].countQty !== null) pccItems[idx].checked = true;
-    renderPCCList();
-}
-
-function pccMiss(idx) {
-    haptic();
-    pccItems[idx].missing = true;
-    pccItems[idx].checked = false;
-    pccItems[idx].countQty = 0;
-    renderPCCList();
-}
-
-function pccUnmiss(idx) {
-    haptic();
-    pccItems[idx].missing = false;
-    pccItems[idx].countQty = null;
-    renderPCCList();
-}
-
-function pccReset(idx) {
-    haptic();
-    pccItems[idx].checked = false;
-    pccItems[idx].missing = false;
-    pccItems[idx].countQty = null;
-    renderPCCList();
-}
-
-function pccBinMove(idx) {
-    haptic();
-    const item = pccItems[idx];
-    const newBin = prompt(`HU is in SAP bin ${item.sapBin}.\nEnter the actual bin where you found it:`, item.actualBin || '');
-    if (newBin !== null) {
-        pccItems[idx].actualBin = newBin.trim().toUpperCase() || null;
-        renderPCCList();
-    }
-}
-
-function exitProductCC() {
-    if (pccItems.some(i => i.checked || i.missing) && !confirm('Leave product count? Progress will be lost.')) return;
-    pccProduct = '';
-    pccItems = [];
-    if (isFreshFlow) {
-        isFreshFlow = false;
-        switchScreen('fresh');
-    } else {
-        switchScreen('setup');
-    }
-}
-
-// ===== VERIFICATION =====
-function verifyProductCC() {
-    if (!pccItems.every(i => i.checked || i.missing)) { toast('Check all items first', 'amber'); return; }
-    haptic();
-
-    const sapTotal = pccItems.reduce((s, i) => s + i.sapQty, 0);
-    const floorTotal = pccItems.filter(i => !i.missing).reduce((s, i) => s + (i.countQty || 0), 0) + pccTriggerQty;
-    const variance = floorTotal - sapTotal;
-    const isMatch = variance === 0;
-    const missingCount = pccItems.filter(i => i.missing).length;
-    const movedCount = pccItems.filter(i => i.actualBin && i.actualBin !== i.sapBin).length;
-
-    const itemsToLog = pccItems.map(i => {
-        let type = 'ok';
-        if (i.missing) type = 'miss';
-        else if (i.actualBin && i.actualBin !== i.sapBin) type = 'move';
-        else if ((i.countQty || 0) !== i.sapQty) type = 'adj';
-        return {
-            hu: i.hu, product: i.product || pccProduct, desc: i.desc, batch: i.batch,
-            sapBin: i.sapBin, scannedBin: i.actualBin || i.sapBin,
-            sapQty: i.sapQty, countQty: i.missing ? 0 : (i.countQty || 0),
-            type, note: i.missing ? 'Missing during product cycle count' : '', photoUrl: ''
+    // ==========================================
+    // DATA CONTROLLER LOGIC (TARGETED UPDATES)
+    // ==========================================
+    function saveToRegistry(hu, updates) {
+        const sap = sapMaster.find(i => i.hu === hu);
+        
+        let defaultBin = sap.sapBin;
+        if (activeAuditMode === 'aisle') defaultBin = currentBins[currentBinIdx];
+        
+        const current = sessionRegistry.get(hu) || { 
+            ...sap, scanQty: sap.sapQty, scanBin: defaultBin, foundIn: defaultBin, note: '', type: 'ok', status: 'PENDING' 
         };
-    });
-
-    enqueue({ action: 'logAudit', user: auditorName || 'Counter', bin: `PRODUCT: ${pccProduct}`, items: itemsToLog });
-
-    const content = document.getElementById('verify-content');
-    content.innerHTML = `
-        <div class="verify-card">
-            <div class="verify-header">
-                <div class="v-icon">${isMatch ? '✅' : '⚠️'}</div>
-                <h3>${pccProduct}</h3>
-                <p>${pccItems[0]?.desc || ''}</p>
-            </div>
-            <div class="verify-row"><span class="vr-label">SAP System Total</span><span class="vr-value">${sapTotal}</span></div>
-            <div class="verify-row"><span class="vr-label">Floor Count Total</span><span class="vr-value" style="color:var(--accent)">${floorTotal}</span></div>
-            ${pccTriggerQty > 0 ? `<div class="verify-row"><span class="vr-label">Includes Extra Found</span><span class="vr-value" style="color:var(--cyan)">+${pccTriggerQty}</span></div>` : ''}
-            ${missingCount > 0 ? `<div class="verify-row"><span class="vr-label">Missing HUs</span><span class="vr-value" style="color:var(--red)">${missingCount}</span></div>` : ''}
-            ${movedCount > 0 ? `<div class="verify-row"><span class="vr-label">Bin Movements</span><span class="vr-value" style="color:var(--purple)">${movedCount}</span></div>` : ''}
-            <div class="verify-row"><span class="vr-label">Variance</span><span class="vr-value" style="color:${isMatch ? 'var(--green)' : 'var(--red)'}">${variance >= 0 ? '+' : ''}${variance}</span></div>
-            <div class="verify-result ${isMatch ? 'match' : 'mismatch'}">
-                <h4>${isMatch ? '✓ Totals Match' : '✗ Variance Detected'}</h4>
-                <p>${isMatch
-                    ? 'The floor total (including the extra found) matches SAP. This was likely a movement or re-label.'
-                    : `Floor has ${Math.abs(variance)} ${variance > 0 ? 'more than' : 'fewer than'} SAP expects. This needs investigation.`
-                }</p>
-            </div>
-        </div>
-        <div class="section-title">Bin Breakdown</div>
-        ${pccItems.map(i => {
-            const isMiss = i.missing;
-            const isMoved = i.actualBin && i.actualBin !== i.sapBin;
-            const statusColor = isMiss ? 'var(--red)' : (isMoved ? 'var(--purple)' : ((i.countQty || 0) !== i.sapQty ? 'var(--amber)' : 'var(--green)'));
-            const statusLabel = isMiss ? '✗ MISS' : (isMoved ? '→ ' + i.actualBin : '');
-            return `
-            <div class="report-card" style="${isMiss ? 'opacity:0.6;' : ''}">
-                <div>
-                    <div class="mono" style="font-size:12px;font-weight:700;color:var(--accent);">${i.sapBin}</div>
-                    <div style="font-size:10px;color:var(--text-3);font-weight:600;">HU ···${(i.hu || '').slice(-4)}</div>
-                    ${statusLabel ? `<div style="font-size:9px;font-weight:800;color:${statusColor};margin-top:2px;">${statusLabel}</div>` : ''}
-                </div>
-                <div style="text-align:right;">
-                    <span class="mono" style="font-size:14px;font-weight:700;color:${statusColor};">${isMiss ? '—' : (i.countQty || 0)}</span>
-                    <span style="font-size:10px;color:var(--text-3);"> / ${i.sapQty}</span>
-                    ${!isMiss && (i.countQty || 0) !== i.sapQty ? `<div style="font-size:9px;font-weight:700;color:var(--amber);">Δ ${(i.countQty || 0) - i.sapQty}</div>` : ''}
-                </div>
-            </div>`;
-        }).join('')}`;
-
-    switchScreen('verify');
-    toast(isMatch ? 'Totals match!' : 'Variance detected', isMatch ? 'green' : 'amber');
-}
-
-function closeVerification() {
-    if (isFreshFlow && pccProduct) {
-        countedFreshProducts.add(pccProduct);
-    }
-    
-    pccProduct = '';
-    pccItems = [];
-    pccTriggerQty = 0;
-    pccTriggerBin = '';
-    
-    if (isFreshFlow) {
-        isFreshFlow = false;
-        initFreshMode();
-    } else {
-        switchScreen('setup');
-        buildAisleGrid();
-    }
-    
-    drainQueue(); // Push the payload to cloud
-}
-
-// ===== NOTE & PHOTO =====
-let noteTargetIdx = null;
-let currentPhotoBase64 = null;
-let annotCanvas, annotCtx, annotColor = '#dc2626', annotSize = 5, isDrawing = false, annotHistory = [];
-
-function openNoteModal(idx) {
-    haptic();
-    noteTargetIdx = idx;
-    const item = currentItems[idx];
-    document.getElementById('note-context').textContent = `${item.product} — ${item.hu || 'No HU'} — Bin: ${currentBin}`;
-    document.getElementById('note-text').value = item.note || '';
-    currentPhotoBase64 = item.photoBase64 || null;
-    document.getElementById('note-upload-status').style.display = 'none';
-    if (currentPhotoBase64) {
-        showPhotoPreview();
-    } else {
-        document.getElementById('photo-empty').style.display = 'flex';
-        document.getElementById('photo-preview-area').style.display = 'none';
-    }
-    document.getElementById('modal-note').style.display = 'flex';
-}
-
-function closeNoteModal() {
-    document.getElementById('modal-note').style.display = 'none';
-    noteTargetIdx = null;
-    currentPhotoBase64 = null;
-}
-
-function handlePhoto(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-            let w = img.width, h = img.height;
-            const maxW = 1200, maxH = 900;
-            if (w > maxW) { h = h * (maxW / w); w = maxW; }
-            if (h > maxH) { w = w * (maxH / h); h = maxH; }
-            const c = document.createElement('canvas');
-            c.width = w; c.height = h;
-            c.getContext('2d').drawImage(img, 0, 0, w, h);
-            currentPhotoBase64 = c.toDataURL('image/jpeg', 0.75);
-            showPhotoPreview();
-        };
-        img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-    event.target.value = '';
-}
-
-function showPhotoPreview() {
-    document.getElementById('photo-empty').style.display = 'none';
-    document.getElementById('photo-preview-area').style.display = 'block';
-    const img = document.getElementById('photo-preview-img');
-    img.src = currentPhotoBase64;
-    img.onload = () => initAnnotCanvas();
-}
-
-function initAnnotCanvas() {
-    const img = document.getElementById('photo-preview-img');
-    annotCanvas = document.getElementById('annot-canvas');
-    annotCanvas.width = img.clientWidth;
-    annotCanvas.height = img.clientHeight;
-    annotCtx = annotCanvas.getContext('2d');
-    annotCtx.lineCap = 'round';
-    annotCtx.lineJoin = 'round';
-    annotHistory = [];
-    annotCanvas.addEventListener('touchstart', aStart, { passive: false });
-    annotCanvas.addEventListener('touchmove', aMove, { passive: false });
-    annotCanvas.addEventListener('touchend', aEnd, { passive: false });
-    annotCanvas.addEventListener('mousedown', aStart);
-    annotCanvas.addEventListener('mousemove', aMove);
-    annotCanvas.addEventListener('mouseup', aEnd);
-    annotCanvas.addEventListener('mouseleave', aEnd);
-}
-
-function aPos(e) {
-    const r = annotCanvas.getBoundingClientRect();
-    const t = e.touches ? e.touches[0] : e;
-    return { x: (t.clientX - r.left) * (annotCanvas.width / r.width), y: (t.clientY - r.top) * (annotCanvas.height / r.height) };
-}
-function aStart(e) { e.preventDefault(); isDrawing = true; annotCtx.strokeStyle = annotColor; annotCtx.lineWidth = annotSize; annotCtx.beginPath(); const p = aPos(e); annotCtx.moveTo(p.x, p.y); annotHistory.push(annotCtx.getImageData(0, 0, annotCanvas.width, annotCanvas.height)); }
-function aMove(e) { if (!isDrawing) return; e.preventDefault(); const p = aPos(e); annotCtx.lineTo(p.x, p.y); annotCtx.stroke(); }
-function aEnd() { if (isDrawing) { isDrawing = false; annotCtx.closePath(); } }
-
-function setAnnotColor(c) {
-    annotColor = c;
-    document.querySelectorAll('.annot-color').forEach(b => {
-        b.classList.toggle('active', b.style.background === c || b.style.backgroundColor === c);
-        b.style.borderColor = b.classList.contains('active') ? 'var(--accent)' : 'var(--border)';
-    });
-}
-
-function undoAnnot() { if (annotHistory.length > 0) annotCtx.putImageData(annotHistory.pop(), 0, 0); }
-
-function removePhoto() {
-    currentPhotoBase64 = null;
-    document.getElementById('photo-preview-area').style.display = 'none';
-    document.getElementById('photo-empty').style.display = 'flex';
-    annotHistory = [];
-}
-
-function getCompositeImage() {
-    if (!currentPhotoBase64) return null;
-    const img = document.getElementById('photo-preview-img');
-    const c = document.createElement('canvas');
-    c.width = annotCanvas.width; c.height = annotCanvas.height;
-    const ctx = c.getContext('2d');
-    ctx.drawImage(img, 0, 0, c.width, c.height);
-    ctx.drawImage(annotCanvas, 0, 0);
-    return c.toDataURL('image/jpeg', 0.8);
-}
-
-function saveNote() {
-    if (noteTargetIdx === null) return;
-    const item = currentItems[noteTargetIdx];
-    item.note = document.getElementById('note-text').value.trim();
-    const composite = getCompositeImage();
-    if (composite) {
-        item.photoBase64 = composite;
-        item.photoUrl = null;
-        uploadPhoto(noteTargetIdx, composite);
-    } else if (!currentPhotoBase64) {
-        item.photoBase64 = null;
-        item.photoUrl = null;
-    }
-    closeNoteModal();
-    updateSingleAisleCard(noteTargetIdx);
-}
-
-async function uploadPhoto(idx, base64) {
-    const item = currentItems[idx];
-    try {
-        const res = await fetch(API_URL, {
-            method: 'POST',
-            body: JSON.stringify({
-                action: 'uploadPhoto', hu: item.hu, bin: currentBin, product: item.product, imageData: base64
-            })
-        });
-        const result = await res.json();
-        if (result.success && result.url) {
-            item.photoUrl = result.url;
-            toast('Photo uploaded', 'green');
-            updateSingleAisleCard(idx);
+        
+        const merged = { ...current, ...updates };
+        
+        if (merged.status === 'MISSING' || merged.scanQty === 0) {
+            merged.type = 'miss'; merged.status = 'MISSING'; merged.scanQty = 0;
+        } else if (sap.sapBin === 'NONE' && merged.scanBin === 'NONE') {
+            merged.type = 'unexpected'; merged.status = 'UNEXPECTED'; 
         } else {
-            throw new Error(result.error || 'No URL returned');
+            const isMoved = merged.scanBin !== merged.sapBin;
+            const isAdj = merged.scanQty !== merged.sapQty;
+            if (isMoved && isAdj) { merged.type = 'move_adj'; merged.status = 'MOVEMENT'; }
+            else if (isMoved) { merged.type = 'move'; merged.status = 'MOVEMENT'; }
+            else if (isAdj) { merged.type = 'adj'; merged.status = 'ADJUSTED'; }
+            else { merged.type = 'ok'; merged.status = 'OK'; }
         }
-    } catch {
-        toast('Photo queued', 'amber');
-        enqueue({
-            action: 'uploadPhoto', hu: item.hu, bin: currentBin, product: item.product, imageData: base64
+        
+        sessionRegistry.set(hu, merged);
+        
+        const cardEl = document.getElementById(`hu-card-${hu}`);
+        
+        if (activeAuditMode === 'fresh') {
+            if (activeFreshProduct) {
+                if (cardEl) cardEl.outerHTML = createHUCardHTML(merged);
+                else showFreshDetail(activeFreshProduct);
+            }
+            updateFreshOverview();
+        } else if (activeAuditMode === 'product') {
+            if (cardEl) cardEl.outerHTML = createHUCardHTML(merged);
+            else renderProductList(); 
+        } else {
+            if (cardEl) {
+                cardEl.outerHTML = createHUCardHTML(merged);
+                updatePhase();
+            } else {
+                renderAisleHUList(); 
+            }
+        }
+    }
+
+    function confirmItem(hu) { 
+        const val = parseInt(document.querySelector(`.qty-val-${hu}`).value, 10) || 0;
+        const sap = sapMaster.find(i => i.hu === hu);
+        let scanBin = sap.sapBin;
+        if (activeAuditMode === 'aisle') scanBin = currentBins[currentBinIdx];
+        if (sap.sapBin === 'NONE') scanBin = prompt("Enter bin location for this item:", "") || 'NONE'; 
+        
+        saveToRegistry(hu, { scanQty: val, scanBin: scanBin }); 
+        if(navigator.vibrate) navigator.vibrate(25);
+    }
+    
+    function adjQty(hu, delta) { 
+        const cur = sessionRegistry.get(hu); 
+        const sap = sapMaster.find(i => i.hu === hu);
+        saveToRegistry(hu, { scanQty: Math.max(0, (cur ? cur.scanQty : sap.sapQty) + delta) }); 
+        if(navigator.vibrate) navigator.vibrate(25);
+    }
+    
+    function setQty(hu, val) { 
+        saveToRegistry(hu, { scanQty: parseInt(val, 10) || 0 }); 
+    }
+    
+    function markMissing(hu) { 
+        saveToRegistry(hu, { status: 'MISSING' }); 
+        if(navigator.vibrate) navigator.vibrate(25);
+    }
+    
+    function initiateMovement(hu) {
+        const sap = sapMaster.find(i => i.hu === hu);
+        const dest = prompt(`Transfer HU ${hu}\nExpected: ${sap.sapBin}\nEnter new bin:`, sessionRegistry.get(hu)?.scanBin || sap.sapBin);
+        if (dest && dest.trim() !== '') { 
+            saveToRegistry(hu, { scanBin: dest.trim().toUpperCase(), foundIn: dest.trim().toUpperCase() }); 
+            showToast(`Routed to ${dest.trim().toUpperCase()}`, "purple"); 
+        }
+    }
+
+    // ==========================================
+    // AISLE AUDIT RENDERING
+    // ==========================================
+    function startAisleAudit(aisle, targetBin = null) {
+        activeAuditMode = 'aisle';
+        currentAisle = aisle;
+        currentBins = [];
+        const max = (aisle === 'B' || aisle === 'C') ? 25 : 38;
+        for(let i=0; i<=max; i++) {
+            const num = String(i).padStart(2, '0');
+            ["A","B","C"].forEach(s => currentBins.push(`W${aisle}${num}${s}`));
+        }
+        currentBinIdx = targetBin ? currentBins.indexOf(targetBin) : 0;
+        switchScreen('count');
+        updateBinView();
+    }
+
+    function renderAisleHUList() {
+        const container = document.getElementById('hu-list');
+        const bin = currentBins[currentBinIdx];
+        
+        const isCounted = countedBins.has(bin);
+        document.getElementById('count-title').innerHTML = `${bin} ${isCounted ? '<span style="color:var(--green); font-size:14px; margin-left:4px">✓</span>' : ''}`;
+
+        const expected = sapMaster.filter(i => i.sapBin === bin);
+        const movementsHere = Array.from(sessionRegistry.values()).filter(i => i.foundIn === bin && i.sapBin !== bin);
+
+        const allItems = [...expected];
+        movementsHere.forEach(m => { if(!allItems.find(i => i.hu === m.hu)) allItems.push(m); });
+
+        let htmlStr = '';
+
+        if (isCounted) {
+            htmlStr += `
+                <div style="background:var(--green-bg);border:1.5px solid var(--green-border);border-radius:var(--radius);padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:20px;">✅</span>
+                    <div>
+                        <div style="font-size:12px;font-weight:800;color:var(--green);">Already Counted</div>
+                        <div style="font-size:10px;color:var(--text-2);font-weight:600;">This bin was finalized earlier.</div>
+                    </div>
+                </div>`;
+        }
+
+        if (allItems.length === 0) {
+            htmlStr += `
+                <div class="empty-state" style="padding: 32px 16px;">
+                    <div class="es-icon" style="font-size:32px;">📭</div>
+                    <p>SAP shows this bin as empty.</p>
+                </div>`;
+        } else {
+            const expectArr = allItems.filter(i => i.sapBin === bin);
+            const extraArr = allItems.filter(i => i.sapBin !== bin);
+
+            if (expectArr.length > 0) {
+                htmlStr += `<div class="section-title" style="padding: 10px 0 6px;">Expected in bin</div>`;
+                expectArr.forEach(item => { htmlStr += createHUCardHTML(item); });
+            }
+
+            if (extraArr.length > 0) {
+                htmlStr += `<div class="section-title" style="padding: 16px 0 6px; color:var(--cyan);">🔍 Extras Found Here</div>`;
+                extraArr.forEach(item => { htmlStr += createHUCardHTML(item); });
+            }
+        }
+
+        container.innerHTML = htmlStr;
+        updatePhase();
+    }
+    
+    function renderBinStrip() {
+        const strip = document.getElementById('bin-strip');
+        strip.innerHTML = '';
+        const start = Math.max(0, currentBinIdx - 2);
+        const end = Math.min(currentBins.length, start + 10);
+        
+        for(let i=start; i<end; i++) {
+            const bin = currentBins[i];
+            const isCounted = countedBins.has(bin);
+            
+            const dot = document.createElement('div');
+            dot.className = `strip-dot ${i === currentBinIdx ? 'active' : ''}`;
+            
+            if (isCounted && i !== currentBinIdx) {
+                dot.style.background = 'var(--green-bg)';
+                dot.style.color = 'var(--green)';
+                dot.style.border = '1px solid var(--green-border)';
+            }
+            
+            dot.innerHTML = `${bin.slice(-3)}${isCounted ? '<span style="font-size:9px; margin-left:3px">✓</span>' : ''}`;
+            dot.onclick = () => { currentBinIdx = i; updateBinView(); };
+            strip.appendChild(dot);
+        }
+    }
+
+    function prevBin() { if(currentBinIdx > 0) { currentBinIdx--; updateBinView(); } }
+    
+    function skipBin() {
+        if(currentBinIdx < currentBins.length - 1) { 
+            currentBinIdx++; 
+            updateBinView(); 
+        } else {
+            showToast("End of Aisle", "blue");
+        }
+    }
+
+    function updateBinView() {
+        renderAisleHUList(); renderBinStrip();
+        const pBtn = document.getElementById('btn-prev');
+        if(pBtn) pBtn.disabled = currentBinIdx === 0;
+    }
+
+    function updatePhase() {
+        const bin = currentBins[currentBinIdx];
+        const expected = sapMaster.filter(i => i.sapBin === bin);
+        const movementsHere = Array.from(sessionRegistry.values()).filter(i => i.foundIn === bin && i.sapBin !== bin);
+        const allItems = [...expected];
+        movementsHere.forEach(m => { if(!allItems.find(i => i.hu === m.hu)) allItems.push(m); });
+
+        const pendingCount = allItems.filter(i => {
+            const reg = sessionRegistry.get(i.hu);
+            return !reg || reg.status === 'PENDING';
+        }).length;
+
+        currentPhase = pendingCount === 0 ? 3 : 1;
+
+        [1, 2, 3].forEach(p => {
+            const el = document.getElementById(`phase-${p}`);
+            const label = document.getElementById(`phase-${p}-label`);
+            el.className = 'phase-step';
+            label.className = '';
+            if (p < currentPhase) { el.classList.add('done'); label.classList.add('done'); }
+            else if (p === currentPhase) { el.classList.add('active'); label.classList.add('active'); }
+        });
+
+        const btn = document.getElementById('btn-next');
+        if (currentPhase === 3) {
+            btn.style.background = 'var(--green)';
+            btn.style.pointerEvents = 'auto';
+            btn.style.opacity = '1';
+            btn.innerText = currentBinIdx === currentBins.length - 1 ? 'Finalize Aisle ✓' : 'Finalize & Next →';
+        } else {
+            btn.style.background = 'var(--surface-3)';
+            btn.style.pointerEvents = 'none';
+            btn.style.opacity = '0.7';
+            btn.innerText = `${pendingCount} item${pendingCount > 1 ? 's' : ''} pending`;
+        }
+    }
+
+    // ==========================================
+    // PRODUCT AUDIT RENDERING
+    // ==========================================
+    function initProductAudit(product) {
+        activeAuditMode = 'product';
+        activeProductAudit = product;
+        document.getElementById('product-display').innerText = product;
+        
+        // Populate items in registry if they aren't there
+        const expected = sapMaster.filter(i => i.product === activeProductAudit);
+        expected.forEach(sap => {
+            if (!sessionRegistry.has(sap.hu)) {
+                sessionRegistry.set(sap.hu, { ...sap, scanQty: sap.sapQty, scanBin: sap.sapBin, foundIn: sap.sapBin, note: '', type: 'ok', status: 'PENDING' });
+            }
+        });
+        
+        renderProductList();
+        switchScreen('product');
+    }
+
+    function renderProductList() {
+        const container = document.getElementById('product-list');
+        const expected = sapMaster.filter(i => i.product === activeProductAudit);
+        const extra = Array.from(sessionRegistry.values()).filter(i => i.product === activeProductAudit && !expected.find(e => e.hu === i.hu));
+        const allItems = [...expected, ...extra];
+        
+        let htmlStr = '';
+        allItems.forEach(item => { htmlStr += createHUCardHTML(item); });
+        container.innerHTML = htmlStr || '<div class="empty-state"><div class="es-icon">📭</div><p>No pallets found for this product.</p></div>';
+    }
+
+    function processProductScan(input) {
+        const sap = sapMaster.find(i => i.hu === input);
+        if (sap && sap.product === activeProductAudit) {
+            saveToRegistry(input, { scanQty: sap.sapQty, status: 'OK', type: 'ok' });
+            showToast(`Verified Pallet ${input}`, "green");
+            if(navigator.vibrate) navigator.vibrate(50);
+        } else if (sap) {
+            showToast(`HU belongs to different Product: ${sap.product}`, "red");
+            if(navigator.vibrate) navigator.vibrate([100,50,100]); 
+        } else {
+            activeGhostHU = input;
+            document.getElementById('ghost-hu').innerText = input;
+            document.getElementById('ghost-modal').style.display = 'flex';
+            document.getElementById('ghost-prod-input').value = activeProductAudit; 
+            if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        }
+    }
+
+    // ==========================================
+    // FRESH AUDIT RENDERING & LOGIC
+    // ==========================================
+    function handleFreshBack() {
+        if (activeFreshProduct) hideFreshDetail();
+        else switchScreen('setup');
+    }
+
+    function initFreshMode() {
+        activeAuditMode = 'fresh';
+        hideFreshDetail();
+        updateFreshOverview();
+        
+        // Hide the top search bar, show the bottom one in the setup screen
+        document.getElementById('fresh-search-bar').style.display = 'block';
+        
+        switchScreen('fresh');
+    }
+
+    function hideFreshDetail() {
+        activeFreshProduct = null;
+        document.getElementById('fresh-detail').style.display = 'none';
+        document.getElementById('fresh-overview').style.display = 'block';
+        document.getElementById('fresh-search-bar').style.display = 'block';
+    }
+
+    function updateFreshOverview() {
+        const overview = document.getElementById('fresh-overview');
+        let htmlStr = '';
+        const productsToShow = FRESH_SKUS.filter(prod => !countedFreshProducts.has(prod));
+        
+        if (productsToShow.length === 0) {
+            overview.innerHTML = `
+                <div style="text-align:center; padding:60px 20px; color:var(--text-3);">
+                    <span style="font-size:42px; display:block; margin-bottom:12px;">🎉</span>
+                    <div style="font-size:18px; font-weight:800; color:var(--text); margin-bottom:4px;">All Fresh Counts Complete</div>
+                    <div>No pending fresh products detected in this cycle.</div>
+                </div>`;
+            return;
+        }
+        
+        productsToShow.forEach(prod => {
+            const sapItem = sapMaster.find(i => i.product === prod);
+            const desc = sapItem ? sapItem.desc : "Product description unavailable";
+            const expectedHUs = sapMaster.filter(i => i.product === prod);
+            
+            let totalFound = 0;
+            expectedHUs.forEach(huItem => {
+                const reg = sessionRegistry.get(huItem.hu);
+                if (reg && reg.scanQty > 0) totalFound++;
+            });
+
+            let borderColor = 'var(--border)';
+            if (totalFound === expectedHUs.length && expectedHUs.length > 0) borderColor = 'var(--green)';
+            else if (totalFound > 0) borderColor = 'var(--amber)';
+
+            htmlStr += `
+                <div class="hu-card" style="cursor:pointer; border-color:${borderColor};" onclick="showFreshDetail('${prod}')">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start">
+                        <div style="flex:1; padding-right:12px;">
+                            <div class="hu-meta-label">Product</div>
+                            <div style="font-size:20px; font-weight:900">${prod}</div>
+                            <div style="font-size:11px; color:var(--text-2); margin-top:4px; line-height:1.3;">${desc}</div>
+                        </div>
+                        <div style="text-align:right">
+                            <div style="font-size:32px; font-weight:900; color:${totalFound === expectedHUs.length && expectedHUs.length > 0 ? 'var(--green)' : 'var(--amber)'}">
+                                ${totalFound} <span style="font-size:16px; color:var(--text-3)">/ ${expectedHUs.length}</span>
+                            </div>
+                            <div class="hu-meta-label">Pallets Found</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        overview.innerHTML = htmlStr;
+    }
+
+    function showFreshDetail(product) {
+        activeFreshProduct = product;
+        document.getElementById('fresh-overview').style.display = 'none';
+        document.getElementById('fresh-search-bar').style.display = 'none';
+        
+        const detail = document.getElementById('fresh-detail');
+        detail.style.display = 'block';
+        
+        const sapItem = sapMaster.find(i => i.product === product);
+        const desc = sapItem ? sapItem.desc : "";
+        const expectedHUs = sapMaster.filter(i => i.product === product);
+        
+        // Populate missing items into registry as pending if not there
+        expectedHUs.forEach(sap => {
+            if (!sessionRegistry.has(sap.hu)) {
+                sessionRegistry.set(sap.hu, { ...sap, scanQty: sap.sapQty, scanBin: sap.sapBin, foundIn: sap.sapBin, note: '', type: 'ok', status: 'PENDING' });
+            }
+        });
+
+        let html = `
+            <div style="margin-bottom: 16px;">
+                <div style="font-size: 22px; font-weight: 900; color: var(--accent);">${product}</div>
+                <div style="font-size: 13px; color: var(--text-2); margin-top:2px;">${desc}</div>
+                <div style="font-size: 11px; color: var(--text-3); margin-top:6px; font-weight:700;">Expected Pallets: ${expectedHUs.length}</div>
+            </div>
+        `;
+        
+        if(expectedHUs.length === 0) {
+            html += `<div style="text-align:center; padding: 20px; color: var(--text-3);">No pallets expected in SAP for this Product.</div>`;
+        } else {
+            expectedHUs.forEach(item => {
+                html += createHUCardHTML(item);
+            });
+        }
+        detail.innerHTML = html;
+    }
+
+    function processFreshScan(input) {
+        const sap = sapMaster.find(i => i.hu === input);
+        if (sap && FRESH_SKUS.includes(sap.product)) {
+            
+            if (countedFreshProducts.has(sap.product)) {
+                showToast("Product already audited in this cycle", "amber");
+                if(navigator.vibrate) navigator.vibrate([100,50,100]);
+                return;
+            }
+            
+            saveToRegistry(input, { scanQty: sap.sapQty, status: 'OK', type: 'ok', scanBin: sap.sapBin, foundIn: sap.sapBin });
+            showToast(`Found Pallet ${input}`, "green");
+            
+            if (activeFreshProduct !== sap.product) showFreshDetail(sap.product);
+            else showFreshDetail(sap.product); 
+            
+            updateFreshOverview();
+            if(navigator.vibrate) navigator.vibrate(50);
+            
+        } else { 
+            showToast("Scan a specific Pallet (HU) from the FRESH list", "red"); 
+            if(navigator.vibrate) navigator.vibrate([100,50,100]); 
+        }
+    }
+
+    // ==========================================
+    // UTILS
+    // ==========================================
+    function renderAisleGrid() {
+        const grid = document.getElementById('aisle-grid');
+        grid.innerHTML = '';
+        
+        let assigned = new Set();
+        // Assuming cloudAssignments exists, if not just show standard grid
+        if (typeof cloudAssignments !== 'undefined') {
+            cloudAssignments.forEach(a => {
+                if (a.type === 'aisle') {
+                    const letter = (a.value || '').replace('W', '').split(':')[0];
+                    if (letter) assigned.add(letter);
+                }
+            });
+        }
+
+        "ABCDEFGHJKLMNP".split("").forEach(row => {
+            const binCount = Object.keys(binIndex).filter(b => b.includes(`W${row}`)).length;
+            const doneBinsForRow = new Set();
+            countedBins.forEach(b => { if (b.includes(`W${row}`)) doneBinsForRow.add(b); });
+            
+            const doneCount = doneBinsForRow.size;
+            const isAssigned = assigned.has(row);
+            const allDone = binCount > 0 && doneCount >= binCount;
+            const btn = document.createElement('button');
+            btn.className = `aisle-btn ${isAssigned ? 'assigned' : ''}`;
+            if (allDone) btn.style.cssText += 'border-color:var(--green-border);background:var(--green-bg);';
+            const pct = binCount > 0 ? Math.min(100, Math.round((doneCount / binCount) * 100)) : 0;
+            btn.innerHTML = `
+                <div class="aisle-fill" style="height:${pct}%"></div>
+                <span style="position:relative;z-index:1;${allDone ? 'color:var(--green)' : ''}">${row}</span>
+                <span class="aisle-count" style="${doneCount > 0 ? 'color:var(--green);font-weight:800;' : ''}">${doneCount}/${binCount}</span>
+                ${allDone ? '<span style="position:absolute;bottom:4px;left:50%;transform:translateX(-50%);font-size:8px;color:var(--green);font-weight:800;z-index:1;">✓ DONE</span>' : ''}`;
+            btn.onclick = () => startAisleAudit(row);
+            grid.appendChild(btn);
         });
     }
-}
 
-function viewPhoto(idx) {
-    const item = currentItems[idx];
-    const src = item.photoUrl || item.photoBase64;
-    if (!src) return;
-    const viewer = document.getElementById('photo-viewer');
-    document.getElementById('photo-viewer-img').src = src;
-    viewer.style.display = 'flex';
-}
-
-// ===== REPORT VIEW =====
-function renderReport() {
-    const content = document.getElementById('report-content');
-    const items = cloudReport.filter(i => i.hu !== 'EMPTY_BIN');
-    const disc = items.filter(i => i.type !== 'ok');
-
-    content.innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
-            <div class="report-stat"><div class="val" style="color:var(--accent)">${new Set(cloudReport.map(i=>i.scanBin)).size}</div><div class="label">Bins Done</div></div>
-            <div class="report-stat"><div class="val" style="color:var(--red)">${disc.length}</div><div class="label">Discrepancies</div></div>
-            <div class="report-stat"><div class="val" style="color:var(--green)">${items.length > 0 ? Math.round(((items.length - disc.length) / items.length) * 100) + '%' : '—'}</div><div class="label">Accuracy</div></div>
-        </div>
-        <div class="section-title">Recent Discrepancies</div>
-        ${disc.length === 0 ? '<div class="empty-state"><div class="es-icon">✨</div><p>No discrepancies yet</p></div>' : ''}
-        ${disc.slice(-30).reverse().map(i => {
-            const tc = { miss: 'var(--red)', adj: 'var(--amber)', inactive: 'var(--purple)', move: 'var(--accent)', unexpected: 'var(--cyan)' }[i.type] || 'var(--text-3)';
-            return `<div class="report-card"><div><div style="font-size:13px;font-weight:700;">${i.prod || i.product}</div><div class="mono" style="font-size:10px;color:var(--text-3);">${i.scanBin} · HU ${i.hu}</div></div><div style="text-align:right;"><span class="mono" style="font-size:14px;font-weight:700;">${i.scanQty || i.countQty}/${i.sapQty}</span><div style="font-size:9px;font-weight:800;text-transform:uppercase;color:${tc};">${i.type}</div></div></div>`;
-        }).join('')}`;
-}
-
-// ===== INIT =====
-window.onload = () => {
-    if (auditorName) document.getElementById('name-display').textContent = auditorName;
-    else setTimeout(showNameModal, 500);
-
-    document.querySelectorAll('.bottom-bar').forEach(b => b.style.display = 'none');
-    const setupBar = document.querySelector('#screen-setup .bottom-bar');
-    if (setupBar) setupBar.style.display = 'flex';
-
-    if (sapMaster.length > 0) {
-        buildIndexes();
-        showSetupReady();
-    } else {
-        pullCloudData();
+    function showToast(msg, color) {
+        const t = document.getElementById('toast');
+        document.getElementById('toast-text').innerText = msg;
+        t.className = `toast ${color} show`;
+        setTimeout(() => t.classList.remove('show'), 2000);
     }
-    updateSyncDot();
-    setInterval(drainQueue, 15000);
-};
+    window.toast = showToast; 
+
+    // ==========================================
+    // AUTO-SYNC LOGIC
+    // ==========================================
+    async function executeAuditSync(binName, itemsToLog, isFresh = false) {
+        try {
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                redirect: 'follow',
+                body: JSON.stringify({
+                    action: 'logAudit',
+                    user: NovusSettings.getUser(),
+                    bin: binName,
+                    sessionId: SESSION_ID,
+                    items: itemsToLog
+                })
+            });
+            const result = await res.json();
+            
+            if (result.success || result.skipped) {
+                if (isFresh) {
+                    Array.from(sessionRegistry.values()).forEach(reg => {
+                        if (FRESH_SKUS.includes(reg.product)) countedFreshProducts.add(reg.product);
+                    });
+                    sessionRegistry.clear();
+                } else if (activeAuditMode === 'product') {
+                    sessionRegistry.clear(); 
+                } else {
+                    countedBins.add(binName); 
+                    localStorage.setItem('doneBins2', JSON.stringify([...countedBins]));
+                }
+                return true;
+            } else {
+                showToast("Server error: " + (result.error || "Unknown"), "red");
+                return false;
+            }
+        } catch (err) {
+            showToast("Network Error: Could not reach server", "red");
+            return false;
+        }
+    }
+
+    async function finalizeAisleBin() { 
+        const btn = document.getElementById('btn-next');
+        const origText = btn.innerText;
+        const origBg = btn.style.background;
+        
+        btn.disabled = true;
+        btn.innerText = "Syncing...";
+        btn.style.background = "var(--text-3)"; 
+
+        const currentBin = currentBins[currentBinIdx];
+        
+        // Filter out untouched items (we implicitly confirm them on backend, but explicitly in UI for user confidence)
+        const itemsToSync = Array.from(sessionRegistry.values()).filter(r => r.foundIn === currentBin || r.sapBin === currentBin);
+        
+        let itemsToLog = itemsToSync.map(record => ({
+            hu: record.hu, product: record.product, desc: record.desc, batch: record.batch, sapBin: record.sapBin, sapQty: record.sapQty, countQty: record.scanQty, type: record.type, note: record.note
+        }));
+
+        itemsToLog.push({ hu: 'BIN_CLEAR', product: 'SYSTEM', desc: 'Bin Finalized', batch: '', sapBin: currentBin, sapQty: 0, countQty: 0, type: 'bin_finalized', note: `Finalized by ${NovusSettings.getUser()}`});
+
+        const success = await executeAuditSync(currentBin, itemsToLog, false);
+        
+        btn.disabled = false;
+        btn.innerText = origText;
+        btn.style.background = origBg;
+
+        if (success) {
+            if(currentBinIdx < currentBins.length - 1) { 
+                currentBinIdx++; 
+                updateBinView(); 
+            } else {
+                showToast("Aisle Complete ✓", "green");
+                switchScreen('setup');
+                renderAisleGrid();
+            }
+        }
+    }
+
+    async function submitProductAudit() {
+        const btn = document.querySelector('#screen-product .primary-btn');
+        const origText = btn.innerText;
+        
+        btn.disabled = true;
+        btn.innerText = "Syncing...";
+
+        const itemsToSync = Array.from(sessionRegistry.values()).filter(r => r.product === activeProductAudit);
+        
+        if (itemsToSync.length === 0) {
+            btn.disabled = false;
+            btn.innerText = origText;
+            showToast("No counts to submit", "amber");
+            return;
+        }
+
+        const itemsToLog = itemsToSync.map(record => ({
+            hu: record.hu, product: record.product, desc: record.desc, batch: record.batch, sapBin: record.sapBin, sapQty: record.sapQty, countQty: record.scanQty, type: record.type, note: record.note
+        }));
+
+        const success = await executeAuditSync(`PRODUCT: ${activeProductAudit}`, itemsToLog, false);
+        
+        btn.disabled = false;
+        btn.innerText = origText;
+
+        if (success) {
+            showToast("Product Audit Complete", "green");
+            switchScreen('setup');
+        }
+    }
+
+    async function submitFreshAudit() {
+        const btn = document.querySelector('#screen-fresh .primary-btn');
+        const origText = btn.innerText;
+        
+        btn.disabled = true;
+        btn.innerText = "Syncing...";
+
+        const itemsToSync = Array.from(sessionRegistry.values());
+        if (itemsToSync.length === 0) {
+            btn.disabled = false;
+            btn.innerText = origText;
+            showToast("No counts to submit", "amber");
+            return;
+        }
+
+        const itemsToLog = itemsToSync.map(record => ({
+            hu: record.hu, product: record.product, desc: record.desc, batch: record.batch, sapBin: record.sapBin, sapQty: record.sapQty, countQty: record.scanQty, type: record.type, note: record.note
+        }));
+
+        const success = await executeAuditSync("FRESH", itemsToLog, true);
+        
+        btn.disabled = false;
+        btn.innerText = origText;
+
+        if (success) {
+            showToast("Fresh Audit Complete", "green");
+            switchScreen('setup');
+            hideFreshDetail();
+            initFreshMode(); 
+        }
+    }
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </body>
 </html>
