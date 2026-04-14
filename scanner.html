@@ -145,7 +145,7 @@
 
 <div id="screen-fresh" class="screen">
     <div class="app-header">
-        <button onclick="switchScreen('setup')" class="hdr-btn">← Back</button>
+        <button onclick="handleFreshBack()" class="hdr-btn">← Back</button>
         <h1 id="fresh-title" style="color:var(--amber)">FRESH Tally</h1>
         <div class="sync-dot"></div>
     </div>
@@ -380,7 +380,7 @@ const NovusSettings = (() => {
                 ${reg && reg.note ? `<div style="font-size:12px; padding:8px; background:var(--surface-3); border-radius:6px; margin-bottom:12px; font-style:italic;">💬 ${reg.note}</div>` : ''}
                 <div class="qty-row">
                     <button class="qty-stepper" onclick="adjQty('${item.hu}', -1)">−</button>
-                    <input type="number" class="qty-input" id="qty-${item.hu}" value="${currentQty}" onchange="setQty('${item.hu}', this.value)">
+                    <input type="number" class="qty-input qty-val-${item.hu}" value="${currentQty}" onchange="setQty('${item.hu}', this.value)">
                     <button class="qty-stepper" onclick="adjQty('${item.hu}', 1)">+</button>
                 </div>
                 <div style="display:flex; gap:6px; flex-wrap:wrap;">
@@ -446,7 +446,7 @@ const NovusSettings = (() => {
     }
 
     function confirmItem(hu) { 
-        const val = parseInt(document.getElementById(`qty-${hu}`).value, 10) || 0;
+        const val = parseInt(document.querySelector(`.qty-val-${hu}`).value, 10) || 0;
         const isFresh = document.getElementById('screen-fresh').classList.contains('active');
         const sap = sapMaster.find(i => i.hu === hu);
         const scanBin = isFresh ? sap.sapBin : currentBins[currentBinIdx];
@@ -507,12 +507,24 @@ const NovusSettings = (() => {
     // ==========================================
     // FRESH AUDIT RENDERING & LOGIC
     // ==========================================
+    function handleFreshBack() {
+        if (activeFreshProduct) {
+            hideFreshDetail();
+        } else {
+            switchScreen('setup');
+        }
+    }
+
     function initFreshMode() {
-        document.getElementById('fresh-detail').style.display = 'none';
-        document.getElementById('fresh-overview').style.display = 'block';
-        activeFreshProduct = null;
+        hideFreshDetail();
         updateFreshOverview();
         switchScreen('fresh');
+    }
+
+    function hideFreshDetail() {
+        activeFreshProduct = null;
+        document.getElementById('fresh-detail').style.display = 'none';
+        document.getElementById('fresh-overview').style.display = 'block';
     }
 
     function updateFreshOverview() {
@@ -566,7 +578,6 @@ const NovusSettings = (() => {
         const expectedHUs = sapMaster.filter(i => i.product === product);
         
         let html = `
-            <button onclick="initFreshMode()" class="hdr-btn" style="padding: 8px 16px; margin-bottom: 16px; width: auto; font-size: 12px; display:inline-flex;">← Back to Products</button>
             <div style="margin-bottom: 16px;">
                 <div style="font-size: 22px; font-weight: 900; color: var(--accent);">${product}</div>
                 <div style="font-size: 13px; color: var(--text-2); margin-top:2px;">${desc}</div>
