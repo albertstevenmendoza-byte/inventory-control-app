@@ -32,7 +32,7 @@
         /* ===== HEADER ===== */
         .app-header { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-shrink: 0; background: var(--surface); box-shadow: var(--shadow-sm); }
         .app-header h1 { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; }
-        .hdr-btn { background: var(--surface-2); color: var(--text-2); padding: 8px 14px; border-radius: 10px; font-size: 11px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; }
+        .hdr-btn { background: var(--surface-2); color: var(--text-2); padding: 8px 14px; border-radius: 10px; font-size: 11px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer;}
         .header-right { display: flex; align-items: center; gap: 8px; }
         .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
         .sync-dot.offline { background: var(--red); animation: pulse 1.5s infinite; }
@@ -89,6 +89,7 @@
         .toast.red { background: var(--red-bg); color: var(--red); border: 1px solid rgba(248,113,113,.25); }
         .toast.purple { background: var(--purple-bg); color: var(--purple); border: 1px solid rgba(167,139,250,.25); }
         .toast.blue { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(91,154,255,.25); }
+        .toast.cyan { background: var(--cyan-bg); color: var(--cyan); border: 1px solid rgba(34,211,238,.25); }
     </style>
 </head>
 <body>
@@ -98,15 +99,18 @@
 <div class="modal-overlay" id="ghost-modal">
   <div class="ns-modal" style="margin: auto;">
     <div class="ns-header">
-        <h3 style="display:flex; align-items:center; gap:8px;">👻 Ghost Item</h3>
+        <h3 style="display:flex; align-items:center; gap:8px;">👻 Unexpected Item</h3>
         <button class="ns-close" onclick="closeGhostModal()">✕</button>
     </div>
     <div class="ns-body" style="text-align:center; padding: 24px 20px;">
         <p style="color:var(--text-2); font-size:14px; margin-bottom: 16px;">HU <span id="ghost-hu" class="mono" style="color:var(--accent); font-weight:700"></span> is not in the active SAP extract.</p>
-        <p style="font-size:13px; color:var(--text-3); margin-bottom:24px">Would you like to force add this to the current bin anyway?</p>
+        <p style="font-size:13px; color:var(--text-3); margin-bottom:16px">Cycle count recommended for this item.</p>
+        
+        <input type="text" id="ghost-prod-input" class="ns-input" placeholder="Enter Product # to begin audit..." style="text-align:center; font-family:'JetBrains Mono', monospace; margin-bottom:24px;">
+
         <div style="display:flex; gap:10px">
-            <button class="secondary-btn" style="flex:1" onclick="closeGhostModal()">Dismiss</button>
-            <button class="primary-btn" style="flex:2; background:var(--cyan)" onclick="addGhostItem()">Force Add</button>
+            <button class="secondary-btn" style="flex:1; padding:12px;" onclick="closeGhostModal()">Dismiss</button>
+            <button class="primary-btn" style="flex:2; background:var(--cyan); padding:12px;" onclick="pivotToProductAudit()">Start Product Audit</button>
         </div>
     </div>
   </div>
@@ -167,7 +171,31 @@
         </div>
     <div class="bottom-bar">
         <button class="secondary-btn" style="flex: 1;" onclick="skipBin()">Skip</button>
-        <button class="primary-btn" id="btn-next" style="flex: 2;" onclick="finalizeBin()">Finalize & Next →</button>
+        <button class="primary-btn" id="btn-next" style="flex: 2;" onclick="finalizeAisleBin()">Finalize & Next →</button>
+    </div>
+</div>
+
+<div id="screen-product" class="screen">
+    <div class="app-header">
+        <button onclick="switchScreen('setup')" class="hdr-btn">← Back</button>
+        <h1 id="product-title" style="color:var(--cyan)">Product Audit</h1>
+        <div class="sync-dot"></div>
+    </div>
+    <div style="padding: 16px 16px 0; font-size: 12px; color: var(--text-2); text-align:center;">
+        Global system reconciliation for <strong id="product-display" style="color:var(--text)"></strong>
+    </div>
+    
+    <div style="padding: 12px 16px 0; flex-shrink:0;">
+        <div style="position: relative;">
+            <span class="search-icon" style="top: 14px; left: 16px; font-size: 14px; color:var(--cyan);">➕</span>
+            <input type="text" id="product-scan-input" class="search-field" placeholder="Scan HU to add to audit..." style="border-color: var(--cyan); padding-left: 40px; padding-top: 12px; padding-bottom: 12px; font-size: 14px;">
+        </div>
+    </div>
+
+    <div class="scroll-area" id="product-list" style="padding-top: 12px;">
+        </div>
+    <div class="bottom-bar">
+        <button class="primary-btn" style="background:var(--cyan)" onclick="submitProductAudit()">Finalize Product Audit</button>
     </div>
 </div>
 
@@ -272,7 +300,7 @@ const NovusSettings = (() => {
         </div>
         <div class="ns-footer"><button class="ns-save-btn" onclick="NovusSettings._save()">Save & Close</button></div>
       </div>`;
-    document.body.appendChild(overlay);
+    document.body.appendChild(style);
     const style = document.createElement('style');
     style.textContent = `
       #novus-settings-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;padding:20px}
@@ -332,14 +360,16 @@ const NovusSettings = (() => {
     
     let sapMaster = [];
     let sessionRegistry = new Map(); 
-    let countedBins = new Set(); // Tracks bins that have been explicitly finalized
+    let countedBins = new Set(); 
     let countedFreshProducts = new Set(); 
     
+    let activeAuditMode = 'hub'; // 'hub', 'aisle', 'fresh', 'product'
     let currentAisle = "";
     let currentBinIdx = 0;
     let currentBins = [];
     let activeFreshProduct = null;
-    let activeGhostHU = ""; // Tracks HU scanned that is not in SAP
+    let activeGhostHU = ""; 
+    let activeProductAudit = ""; // Tracks global product audit
 
     document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('name-display').innerText = NovusSettings.getUser();
@@ -355,9 +385,11 @@ const NovusSettings = (() => {
         document.getElementById('fresh-scan-input').addEventListener('keypress', e => {
             if(e.key === 'Enter') { processFreshScan(e.target.value.trim().toUpperCase()); e.target.value = ''; }
         });
-        // Unexpected Item Scan inside Aisle Audit
         document.getElementById('bin-scan-input').addEventListener('keypress', e => {
             if(e.key === 'Enter') { processBinScan(e.target.value.trim().toUpperCase()); e.target.value = ''; }
+        });
+        document.getElementById('product-scan-input').addEventListener('keypress', e => {
+            if(e.key === 'Enter') { processProductScan(e.target.value.trim().toUpperCase()); e.target.value = ''; }
         });
     });
 
@@ -375,7 +407,6 @@ const NovusSettings = (() => {
             try {
                 data = JSON.parse(text);
             } catch(e) {
-                console.error("API returned non-JSON. Possible execution error.");
                 document.querySelectorAll('.sync-dot').forEach(d => d.classList.add('offline'));
                 showToast("API Error - Contact Admin", "red");
                 return;
@@ -384,16 +415,15 @@ const NovusSettings = (() => {
             sapMaster = data.sapData || [];
             const report = data.report || [];
             
-            // Only strictly finalized bins get the checkmark
             countedBins = new Set(report.filter(r => r.type === 'bin_finalized').map(r => r.scanBin).filter(Boolean));
             countedFreshProducts = new Set(report.map(r => r.prod).filter(p => FRESH_PRODUCTS.includes(p)));
             
             document.querySelectorAll('.sync-dot').forEach(d => d.classList.remove('offline'));
             showToast(`Loaded ${sapMaster.length} SAP records`, "green");
             
-            if (document.getElementById('screen-count').classList.contains('active')) {
+            if (activeAuditMode === 'aisle') {
                 updateBinView();
-            } else if (document.getElementById('screen-fresh').classList.contains('active')) {
+            } else if (activeAuditMode === 'fresh') {
                 updateFreshOverview();
             }
         } catch(e) { 
@@ -412,9 +442,8 @@ const NovusSettings = (() => {
             countedBins = new Set(report.filter(r => r.type === 'bin_finalized').map(r => r.scanBin).filter(Boolean));
             countedFreshProducts = new Set(report.map(r => r.prod).filter(p => FRESH_PRODUCTS.includes(p)));
             
-            if (document.getElementById('screen-count').classList.contains('active')) {
+            if (activeAuditMode === 'aisle') {
                 renderBinStrip(); 
-                
                 const currentBin = currentBins[currentBinIdx];
                 const titleEl = document.getElementById('count-title');
                 titleEl.innerHTML = `${currentBin} ${countedBins.has(currentBin) ? '<span style="color:var(--green); font-size:14px; margin-left:4px">✓</span>' : ''}`;
@@ -422,24 +451,25 @@ const NovusSettings = (() => {
         } catch(e) {} // Fail silently on background poll
     }
 
+    // ==========================================
+    // GATEWAY ROUTING
+    // ==========================================
     function handleGateway(input) {
         if (!input) return;
         if (input === 'FRESH') return initFreshMode();
+        
+        // 1. Is it a bin?
         if (input.match(/^W[A-P][0-9]{2}[A-C]$/)) return startAisleAudit(input.charAt(1), input);
-        showToast("Use Aisle Grid for structured counts", "amber");
-    }
+        
+        // 2. Is it a Product Number?
+        const skuMatch = sapMaster.filter(i => i.product === input);
+        if (skuMatch.length > 0) return initProductAudit(input);
+        
+        // 3. Is it an HU? -> Find its Product
+        const huMatch = sapMaster.find(i => i.hu === input);
+        if (huMatch) return initProductAudit(huMatch.product);
 
-    function startAisleAudit(aisle, targetBin = null) {
-        currentAisle = aisle;
-        currentBins = [];
-        const max = (aisle === 'B' || aisle === 'C') ? 25 : 38;
-        for(let i=0; i<=max; i++) {
-            const num = String(i).padStart(2, '0');
-            ["A","B","C"].forEach(s => currentBins.push(`W${aisle}${num}${s}`));
-        }
-        currentBinIdx = targetBin ? currentBins.indexOf(targetBin) : 0;
-        switchScreen('count');
-        updateBinView();
+        showToast("No SAP Match Found", "amber");
     }
 
     // ==========================================
@@ -449,7 +479,6 @@ const NovusSettings = (() => {
         if(!input) return;
         const currentBin = currentBins[currentBinIdx];
         
-        // Prevent duplicate scanning of something already locally logged in this bin
         const existingReg = sessionRegistry.get(input);
         if (existingReg && existingReg.foundIn === currentBin) {
             showToast("HU already scanned in this bin", "blue");
@@ -458,20 +487,19 @@ const NovusSettings = (() => {
 
         const sap = sapMaster.find(i => i.hu === input);
         if (sap) {
-            // Item found in SAP extract! Move it to this bin.
             saveToRegistry(input, { 
                 scanBin: currentBin, 
                 foundIn: currentBin, 
-                scanQty: sap.sapQty, // Assume full quantity is moved
+                scanQty: sap.sapQty, 
                 status: 'MOVEMENT'
             });
             showToast(`Moved ${input} to ${currentBin}`, "purple");
             if(NovusSettings.get('hapticFeedback') && navigator.vibrate) navigator.vibrate(50);
         } else {
-            // Item NOT in SAP extract -> Trigger Ghost flow
             activeGhostHU = input;
             document.getElementById('ghost-hu').innerText = input;
             document.getElementById('ghost-modal').classList.add('open');
+            document.getElementById('ghost-prod-input').value = ''; // clear input
             if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
         }
     }
@@ -481,28 +509,33 @@ const NovusSettings = (() => {
         activeGhostHU = "";
     }
 
-    function addGhostItem() {
-        const currentBin = currentBins[currentBinIdx];
+    function pivotToProductAudit() {
+        const prod = document.getElementById('ghost-prod-input').value.trim().toUpperCase();
+        if(!prod) return showToast("Enter a valid Product Number", "red");
         
-        // Create a dummy SAP record for the ghost item so it renders properly in cards
-        const dummySap = {
+        // Inject dummy SAP record for the ghost item
+        sapMaster.push({
             hu: activeGhostHU,
-            product: 'UNKNOWN',
-            desc: 'Ghost Item - Not in SAP Extract',
+            product: prod,
+            desc: 'Ghost Item - Manually Added',
             batch: '',
             sapBin: 'NONE',
             sapQty: 0
-        };
-        sapMaster.push(dummySap); 
+        }); 
+        
+        // If we pivoted from an Aisle audit, we should default the finding location to where they were standing
+        const foundLoc = (activeAuditMode === 'aisle') ? currentBins[currentBinIdx] : 'NONE';
         
         saveToRegistry(activeGhostHU, { 
             scanQty: 1, 
-            scanBin: currentBin, 
-            foundIn: currentBin
+            scanBin: foundLoc, 
+            foundIn: foundLoc
         });
         
         closeGhostModal();
-        showToast(`Ghost HU added to ${currentBin}`, "cyan");
+        showToast(`Ghost HU assigned to Product ${prod}`, "cyan");
+        
+        initProductAudit(prod);
     }
 
     // ==========================================
@@ -516,7 +549,7 @@ const NovusSettings = (() => {
         const currentQty = reg ? reg.scanQty : item.sapQty;
         const isAdj = currentQty !== item.sapQty;
 
-        const isFresh = document.getElementById('screen-fresh').classList.contains('active');
+        const showBin = activeAuditMode === 'fresh' || activeAuditMode === 'product';
 
         return `
             <div class="hu-card ${reg ? reg.status.toLowerCase() : ''}" id="hu-card-${item.hu}">
@@ -530,7 +563,7 @@ const NovusSettings = (() => {
                         <div class="hu-meta-value">${item.product}</div>
                         <div style="font-size:10px; color:var(--text-2); margin-top:2px; line-height:1.3;">${item.desc || ''}</div>
                     </div>
-                    ${isFresh ? `
+                    ${showBin ? `
                     <div style="flex:1">
                         <div class="hu-meta-label">Expected Bin</div>
                         <div class="hu-meta-value mono" style="font-size:13px; color:var(--accent)">${item.sapBin}</div>
@@ -541,7 +574,9 @@ const NovusSettings = (() => {
                     </div>`}
                 </div>
                 ${movedElsewhere ? `<div style="font-size:11px; color:var(--purple); font-weight:700; margin-bottom:12px">📍 Found earlier in ${movedElsewhere.foundIn}</div>` : ''}
+                ${(reg && reg.scanBin && reg.scanBin !== item.sapBin && showBin) ? `<div style="font-size:11px; color:var(--purple); font-weight:700; margin-bottom:12px">📍 Scanned in ${reg.scanBin}</div>` : ''}
                 ${reg && reg.note ? `<div style="font-size:12px; padding:8px; background:var(--surface-3); border-radius:6px; margin-bottom:12px; font-style:italic;">💬 ${reg.note}</div>` : ''}
+                
                 <div class="qty-row">
                     <button class="qty-stepper" onclick="adjQty('${item.hu}', -1)">−</button>
                     <input type="number" class="qty-input qty-val-${item.hu}" value="${currentQty}" onchange="setQty('${item.hu}', this.value)">
@@ -560,16 +595,16 @@ const NovusSettings = (() => {
     }
 
     // ==========================================
-    // DATA CONTROLLER LOGIC (TARGETED UPDATES)
+    // DATA CONTROLLER LOGIC
     // ==========================================
     function saveToRegistry(hu, updates) {
         const sap = sapMaster.find(i => i.hu === hu);
-        const isFresh = document.getElementById('screen-fresh').classList.contains('active');
         
-        const currentBin = isFresh ? sap.sapBin : currentBins[currentBinIdx];
+        let defaultBin = sap.sapBin;
+        if (activeAuditMode === 'aisle') defaultBin = currentBins[currentBinIdx];
         
         const current = sessionRegistry.get(hu) || { 
-            ...sap, scanQty: sap.sapQty, scanBin: currentBin, foundIn: currentBin, note: '', type: 'ok', status: 'PENDING' 
+            ...sap, scanQty: sap.sapQty, scanBin: defaultBin, foundIn: defaultBin, note: '', type: 'ok', status: 'PENDING' 
         };
         
         const merged = { ...current, ...updates };
@@ -577,8 +612,8 @@ const NovusSettings = (() => {
         // Evaluate Matrix for Backend Sync Types
         if (merged.status === 'MISSING' || merged.scanQty === 0) {
             merged.type = 'miss'; merged.status = 'MISSING'; merged.scanQty = 0;
-        } else if (sap.sapBin === 'NONE') {
-            merged.type = 'unexpected'; merged.status = 'UNEXPECTED';
+        } else if (sap.sapBin === 'NONE' && merged.scanBin === 'NONE') {
+            merged.type = 'unexpected'; merged.status = 'UNEXPECTED'; // Ghost item hasn't been assigned a bin yet
         } else {
             const isMoved = merged.scanBin !== merged.sapBin;
             const isAdj = merged.scanQty !== merged.sapQty;
@@ -592,12 +627,15 @@ const NovusSettings = (() => {
         
         const cardEl = document.getElementById(`hu-card-${hu}`);
         
-        if (isFresh) {
+        if (activeAuditMode === 'fresh') {
             if (activeFreshProduct) {
                 if (cardEl) cardEl.outerHTML = createHUCard(merged);
                 else showFreshDetail(activeFreshProduct);
             }
             updateFreshOverview();
+        } else if (activeAuditMode === 'product') {
+            if (cardEl) cardEl.outerHTML = createHUCard(merged);
+            else renderProductList(); 
         } else {
             if (cardEl) cardEl.outerHTML = createHUCard(merged);
             else renderHUList(); 
@@ -606,9 +644,10 @@ const NovusSettings = (() => {
 
     function confirmItem(hu) { 
         const val = parseInt(document.querySelector(`.qty-val-${hu}`).value, 10) || 0;
-        const isFresh = document.getElementById('screen-fresh').classList.contains('active');
         const sap = sapMaster.find(i => i.hu === hu);
-        const scanBin = isFresh ? sap.sapBin : currentBins[currentBinIdx];
+        let scanBin = sap.sapBin;
+        if (activeAuditMode === 'aisle') scanBin = currentBins[currentBinIdx];
+        if (sap.sapBin === 'NONE') scanBin = prompt("Enter bin location for this item:", "") || 'NONE'; // Ghost item prompt
         
         saveToRegistry(hu, { scanQty: val, scanBin: scanBin }); 
     }
@@ -636,7 +675,7 @@ const NovusSettings = (() => {
         const sap = sapMaster.find(i => i.hu === hu);
         const dest = prompt(`Transfer HU ${hu}\nExpected: ${sap.sapBin}\nEnter new bin:`, sessionRegistry.get(hu)?.scanBin || sap.sapBin);
         if (dest && dest.trim() !== '') { 
-            saveToRegistry(hu, { scanBin: dest.trim().toUpperCase() }); 
+            saveToRegistry(hu, { scanBin: dest.trim().toUpperCase(), foundIn: dest.trim().toUpperCase() }); 
             showToast(`Routed to ${dest.trim().toUpperCase()}`, "purple"); 
         }
     }
@@ -644,6 +683,20 @@ const NovusSettings = (() => {
     // ==========================================
     // AISLE AUDIT RENDERING
     // ==========================================
+    function startAisleAudit(aisle, targetBin = null) {
+        activeAuditMode = 'aisle';
+        currentAisle = aisle;
+        currentBins = [];
+        const max = (aisle === 'B' || aisle === 'C') ? 25 : 38;
+        for(let i=0; i<=max; i++) {
+            const num = String(i).padStart(2, '0');
+            ["A","B","C"].forEach(s => currentBins.push(`W${aisle}${num}${s}`));
+        }
+        currentBinIdx = targetBin ? currentBins.indexOf(targetBin) : 0;
+        switchScreen('count');
+        updateBinView();
+    }
+
     function renderHUList() {
         const container = document.getElementById('hu-list');
         const bin = currentBins[currentBinIdx];
@@ -658,24 +711,110 @@ const NovusSettings = (() => {
         movementsHere.forEach(m => { if(!allItems.find(i => i.hu === m.hu)) allItems.push(m); });
 
         let htmlStr = '';
-        allItems.forEach(item => {
-            htmlStr += createHUCard(item);
-        });
+        allItems.forEach(item => { htmlStr += createHUCard(item); });
         container.innerHTML = htmlStr;
+    }
+    
+    function renderBinStrip() {
+        const strip = document.getElementById('bin-strip');
+        strip.innerHTML = '';
+        const start = Math.max(0, currentBinIdx - 2);
+        const end = Math.min(currentBins.length, start + 10);
+        
+        for(let i=start; i<end; i++) {
+            const bin = currentBins[i];
+            const isCounted = countedBins.has(bin);
+            
+            const dot = document.createElement('div');
+            dot.className = `strip-dot ${i === currentBinIdx ? 'active' : ''}`;
+            
+            if (isCounted && i !== currentBinIdx) {
+                dot.style.background = 'var(--green-bg)';
+                dot.style.color = 'var(--green)';
+                dot.style.border = '1px solid var(--green-border)';
+            }
+            
+            dot.innerHTML = `${bin.slice(-3)}${isCounted ? '<span style="font-size:9px; margin-left:3px">✓</span>' : ''}`;
+            dot.onclick = () => { currentBinIdx = i; updateBinView(); };
+            strip.appendChild(dot);
+        }
+    }
+
+    function prevBin() { if(currentBinIdx > 0) { currentBinIdx--; updateBinView(); } }
+    
+    function skipBin() {
+        if(currentBinIdx < currentBins.length - 1) { 
+            currentBinIdx++; 
+            updateBinView(); 
+        } else {
+            showToast("End of Aisle", "blue");
+        }
+    }
+
+    function updateBinView() {
+        renderHUList(); renderBinStrip();
+        const pBtn = document.getElementById('btn-prev'), nBot = document.getElementById('btn-next');
+        if(pBtn) pBtn.disabled = currentBinIdx === 0;
+        
+        if(nBot) {
+            if (currentBinIdx === currentBins.length - 1) { nBot.innerText = "Finalize Aisle ✓"; nBot.style.background = "var(--purple)"; } 
+            else { nBot.innerText = "Finalize & Next →"; nBot.style.background = "var(--green)"; }
+        }
+    }
+
+    // ==========================================
+    // PRODUCT AUDIT RENDERING
+    // ==========================================
+    function initProductAudit(product) {
+        activeAuditMode = 'product';
+        activeProductAudit = product;
+        document.getElementById('product-display').innerText = product;
+        renderProductList();
+        switchScreen('product');
+    }
+
+    function renderProductList() {
+        const container = document.getElementById('product-list');
+        const expected = sapMaster.filter(i => i.product === activeProductAudit);
+        
+        // Pull in any extra items user already found for this product (like ghosts)
+        const extra = Array.from(sessionRegistry.values()).filter(i => i.product === activeProductAudit && !expected.find(e => e.hu === i.hu));
+        const allItems = [...expected, ...extra];
+        
+        let htmlStr = '';
+        allItems.forEach(item => { htmlStr += createHUCard(item); });
+        container.innerHTML = htmlStr || '<div style="text-align:center; padding:20px; color:var(--text-3);">No pallets found for this product.</div>';
+    }
+
+    function processProductScan(input) {
+        const sap = sapMaster.find(i => i.hu === input);
+        if (sap && sap.product === activeProductAudit) {
+            saveToRegistry(input, { scanQty: sap.sapQty, status: 'OK' });
+            showToast(`Verified Pallet ${input}`, "green");
+            if(NovusSettings.get('hapticFeedback') && navigator.vibrate) navigator.vibrate(50);
+        } else if (sap) {
+            showToast(`HU belongs to different Product: ${sap.product}`, "red");
+            if(navigator.vibrate) navigator.vibrate([100,50,100]); 
+        } else {
+            // Trigger Ghost Flow
+            activeGhostHU = input;
+            document.getElementById('ghost-hu').innerText = input;
+            document.getElementById('ghost-modal').classList.add('open');
+            document.getElementById('ghost-prod-input').value = activeProductAudit; // Pre-fill with current product
+            if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        }
     }
 
     // ==========================================
     // FRESH AUDIT RENDERING & LOGIC
     // ==========================================
     function handleFreshBack() {
-        if (activeFreshProduct) {
-            hideFreshDetail();
-        } else {
-            switchScreen('setup');
-        }
+        if (activeFreshProduct) hideFreshDetail();
+        else switchScreen('setup');
     }
 
     function initFreshMode() {
+        activeAuditMode = 'fresh';
         hideFreshDetail();
         updateFreshOverview();
         switchScreen('fresh');
@@ -690,7 +829,6 @@ const NovusSettings = (() => {
     function updateFreshOverview() {
         const overview = document.getElementById('fresh-overview');
         let htmlStr = '';
-        
         const productsToShow = FRESH_PRODUCTS.filter(prod => !countedFreshProducts.has(prod));
         
         if (productsToShow.length === 0) {
@@ -760,9 +898,7 @@ const NovusSettings = (() => {
         if(expectedHUs.length === 0) {
             html += `<div style="text-align:center; padding: 20px; color: var(--text-3);">No pallets expected in SAP for this Product.</div>`;
         } else {
-            expectedHUs.forEach(item => {
-                html += createHUCard(item);
-            });
+            expectedHUs.forEach(item => { html += createHUCard(item); });
         }
         detail.innerHTML = html;
     }
@@ -777,18 +913,11 @@ const NovusSettings = (() => {
                 return;
             }
             
-            // Auto-confirm the scanned pallet in its expected bin
-            sessionRegistry.set(input, { 
-                ...sap, scanQty: sap.sapQty, status: 'OK', type: 'ok', scanBin: sap.sapBin, foundIn: sap.sapBin 
-            });
+            saveToRegistry(input, { scanQty: sap.sapQty, status: 'OK', type: 'ok', scanBin: sap.sapBin, foundIn: sap.sapBin });
             showToast(`Found Pallet ${input}`, "green");
             
-            // Route user to the detail view for that product
-            if (activeFreshProduct !== sap.product) {
-                showFreshDetail(sap.product);
-            } else {
-                showFreshDetail(sap.product); // Re-render to show updated state
-            }
+            if (activeFreshProduct !== sap.product) showFreshDetail(sap.product);
+            else showFreshDetail(sap.product); 
             
             updateFreshOverview();
             if(NovusSettings.get('hapticFeedback') && navigator.vibrate) navigator.vibrate(50);
@@ -800,63 +929,13 @@ const NovusSettings = (() => {
     }
 
     // ==========================================
-    // UTILS & NAVIGATION
+    // UTILS
     // ==========================================
-    function switchScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(`screen-${id}`).classList.add('active'); }
-    function renderBinStrip() {
-        const strip = document.getElementById('bin-strip');
-        strip.innerHTML = '';
-        const start = Math.max(0, currentBinIdx - 2);
-        const end = Math.min(currentBins.length, start + 10);
-        
-        for(let i=start; i<end; i++) {
-            const bin = currentBins[i];
-            const isCounted = countedBins.has(bin);
-            
-            const dot = document.createElement('div');
-            dot.className = `strip-dot ${i === currentBinIdx ? 'active' : ''}`;
-            
-            if (isCounted && i !== currentBinIdx) {
-                dot.style.background = 'var(--green-bg)';
-                dot.style.color = 'var(--green)';
-                dot.style.border = '1px solid var(--green-border)';
-            }
-            
-            dot.innerHTML = `${bin.slice(-3)}${isCounted ? '<span style="font-size:9px; margin-left:3px">✓</span>' : ''}`;
-            dot.onclick = () => { currentBinIdx = i; updateBinView(); };
-            strip.appendChild(dot);
-        }
+    function switchScreen(id) { 
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
+        document.getElementById(`screen-${id}`).classList.add('active'); 
+        if (id === 'setup') activeAuditMode = 'hub';
     }
-
-    function prevBin() { if(currentBinIdx > 0) { currentBinIdx--; updateBinView(); } }
-    
-    function skipBin() {
-        if(currentBinIdx < currentBins.length - 1) { 
-            currentBinIdx++; 
-            updateBinView(); 
-        } else {
-            showToast("End of Aisle", "blue");
-        }
-    }
-
-    function updateBinView() {
-        renderHUList(); renderBinStrip();
-        const pBtn = document.getElementById('btn-prev'), nBot = document.getElementById('btn-next');
-        if(pBtn) pBtn.disabled = currentBinIdx === 0;
-        
-        if(nBot) {
-            if (currentBinIdx === currentBins.length - 1) { nBot.innerText = "Finalize Aisle ✓"; nBot.style.background = "var(--purple)"; } 
-            else { nBot.innerText = "Finalize & Next →"; nBot.style.background = "var(--green)"; }
-        }
-    }
-
-    function showToast(msg, color) {
-        const t = document.getElementById('toast');
-        document.getElementById('toast-text').innerText = msg;
-        t.className = `toast ${color} show`;
-        setTimeout(() => t.classList.remove('show'), 2000);
-    }
-    window.toast = showToast; 
 
     function renderAisleGrid() {
         const grid = document.getElementById('aisle-grid');
@@ -868,70 +947,18 @@ const NovusSettings = (() => {
         });
     }
 
+    function showToast(msg, color) {
+        const t = document.getElementById('toast');
+        document.getElementById('toast-text').innerText = msg;
+        t.className = `toast ${color} show`;
+        setTimeout(() => t.classList.remove('show'), 2000);
+    }
+    window.toast = showToast; 
+
     // ==========================================
     // AUTO-SYNC LOGIC
     // ==========================================
-    async function syncBinData(binName, isFresh = false) {
-        let itemsToSync = [];
-        let itemsToLog = [];
-        
-        if (isFresh) {
-            itemsToSync = Array.from(sessionRegistry.values());
-            if (itemsToSync.length === 0) {
-                showToast("No counts to submit", "amber");
-                return false;
-            }
-            itemsToLog = itemsToSync.map(record => ({
-                hu: record.hu,
-                product: record.product,
-                desc: record.desc,
-                batch: record.batch,
-                sapBin: record.sapBin,
-                sapQty: record.sapQty,
-                countQty: record.scanQty,
-                type: record.type,
-                note: record.note
-            }));
-        } else {
-            // Auto-confirm any expected items the auditor didn't touch (Implicit OK)
-            const expected = sapMaster.filter(i => i.sapBin === binName);
-            expected.forEach(sap => {
-                if (!sessionRegistry.has(sap.hu)) {
-                    sessionRegistry.set(sap.hu, { 
-                        ...sap, scanQty: sap.sapQty, scanBin: binName, foundIn: binName, note: '', type: 'ok', status: 'OK' 
-                    });
-                }
-            });
-
-            // Gather all items evaluated for this specific bin
-            itemsToSync = Array.from(sessionRegistry.values()).filter(r => r.foundIn === binName || r.sapBin === binName);
-            
-            itemsToLog = itemsToSync.map(record => ({
-                hu: record.hu,
-                product: record.product,
-                desc: record.desc,
-                batch: record.batch,
-                sapBin: record.sapBin,
-                sapQty: record.sapQty,
-                countQty: record.scanQty,
-                type: record.type,
-                note: record.note
-            }));
-
-            // Push a system marker to explicitly declare this bin as finalized
-            itemsToLog.push({
-                hu: 'BIN_CLEAR',
-                product: 'SYSTEM',
-                desc: 'Bin Finalized',
-                batch: '',
-                sapBin: binName,
-                sapQty: 0,
-                countQty: 0,
-                type: 'bin_finalized',
-                note: `Finalized by ${NovusSettings.getUser()}`
-            });
-        }
-
+    async function executeAuditSync(binName, itemsToLog, isFresh = false) {
         try {
             const res = await fetch(API_URL, {
                 method: 'POST',
@@ -945,17 +972,17 @@ const NovusSettings = (() => {
                     items: itemsToLog
                 })
             });
-            
             const result = await res.json();
             
             if (result.success || result.skipped) {
                 if (isFresh) {
                     Array.from(sessionRegistry.values()).forEach(reg => {
-                        if (FRESH_PRODUCTS.includes(reg.product)) {
-                            countedFreshProducts.add(reg.product);
-                        }
+                        if (FRESH_PRODUCTS.includes(reg.product)) countedFreshProducts.add(reg.product);
                     });
                     sessionRegistry.clear();
+                } else if (activeAuditMode === 'product') {
+                    // Specific product audit finished
+                    sessionRegistry.clear(); // Clear so it doesn't bleed into next count
                 } else {
                     countedBins.add(binName); 
                 }
@@ -970,20 +997,35 @@ const NovusSettings = (() => {
         }
     }
 
-    async function finalizeBin() { 
+    async function finalizeAisleBin() { 
         const btn = document.getElementById('btn-next');
         const origText = btn.innerText;
         const origBg = btn.style.background;
         
-        // Lock UI during sync
         btn.disabled = true;
         btn.innerText = "Syncing...";
         btn.style.background = "var(--text-3)"; 
 
         const currentBin = currentBins[currentBinIdx];
-        const success = await syncBinData(currentBin, false);
         
-        // Unlock UI
+        // Auto-confirm untouched items in bin
+        const expected = sapMaster.filter(i => i.sapBin === currentBin);
+        expected.forEach(sap => {
+            if (!sessionRegistry.has(sap.hu)) {
+                sessionRegistry.set(sap.hu, { ...sap, scanQty: sap.sapQty, scanBin: currentBin, foundIn: currentBin, note: '', type: 'ok', status: 'OK' });
+            }
+        });
+
+        const itemsToSync = Array.from(sessionRegistry.values()).filter(r => r.foundIn === currentBin || r.sapBin === currentBin);
+        
+        let itemsToLog = itemsToSync.map(record => ({
+            hu: record.hu, product: record.product, desc: record.desc, batch: record.batch, sapBin: record.sapBin, sapQty: record.sapQty, countQty: record.scanQty, type: record.type, note: record.note
+        }));
+
+        itemsToLog.push({ hu: 'BIN_CLEAR', product: 'SYSTEM', desc: 'Bin Finalized', batch: '', sapBin: currentBin, sapQty: 0, countQty: 0, type: 'bin_finalized', note: `Finalized by ${NovusSettings.getUser()}`});
+
+        const success = await executeAuditSync(currentBin, itemsToLog, false);
+        
         btn.disabled = false;
         btn.innerText = origText;
         btn.style.background = origBg;
@@ -999,6 +1041,38 @@ const NovusSettings = (() => {
         }
     }
 
+    async function submitProductAudit() {
+        const btn = document.querySelector('#screen-product .primary-btn');
+        const origText = btn.innerText;
+        
+        btn.disabled = true;
+        btn.innerText = "Syncing...";
+
+        // Only pull items relevant to this product
+        const itemsToSync = Array.from(sessionRegistry.values()).filter(r => r.product === activeProductAudit);
+        
+        if (itemsToSync.length === 0) {
+            btn.disabled = false;
+            btn.innerText = origText;
+            showToast("No counts to submit", "amber");
+            return;
+        }
+
+        const itemsToLog = itemsToSync.map(record => ({
+            hu: record.hu, product: record.product, desc: record.desc, batch: record.batch, sapBin: record.sapBin, sapQty: record.sapQty, countQty: record.scanQty, type: record.type, note: record.note
+        }));
+
+        const success = await executeAuditSync("PROD_AUDIT", itemsToLog, false);
+        
+        btn.disabled = false;
+        btn.innerText = origText;
+
+        if (success) {
+            showToast("Product Audit Complete", "green");
+            switchScreen('setup');
+        }
+    }
+
     async function submitFreshAudit() {
         const btn = document.querySelector('#screen-fresh .primary-btn');
         const origText = btn.innerText;
@@ -1006,7 +1080,19 @@ const NovusSettings = (() => {
         btn.disabled = true;
         btn.innerText = "Syncing...";
 
-        const success = await syncBinData("FRESH", true);
+        const itemsToSync = Array.from(sessionRegistry.values());
+        if (itemsToSync.length === 0) {
+            btn.disabled = false;
+            btn.innerText = origText;
+            showToast("No counts to submit", "amber");
+            return;
+        }
+
+        const itemsToLog = itemsToSync.map(record => ({
+            hu: record.hu, product: record.product, desc: record.desc, batch: record.batch, sapBin: record.sapBin, sapQty: record.sapQty, countQty: record.scanQty, type: record.type, note: record.note
+        }));
+
+        const success = await executeAuditSync("FRESH", itemsToLog, true);
         
         btn.disabled = false;
         btn.innerText = origText;
