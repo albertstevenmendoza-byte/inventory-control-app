@@ -6,7 +6,6 @@
     <title>Cycle Counter — Novus Ops</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Base Ecosystem Variables (overridden by NovusSettings) */
         :root {
             --bg: #0f1117; --surface: #181a23; --surface-2: #1f2230; --surface-3: #2a2d3a;
             --border: #313546; --text: #eceef4; --text-2: #9ba1b5; --text-3: #6c7189;
@@ -67,7 +66,8 @@
 
         /* ===== BOTTOM BAR ===== */
         .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 16px calc(env(safe-area-inset-bottom, 16px) + 12px); background: rgba(15,17,23,0.95); backdrop-filter: blur(24px); border-top: 1px solid var(--border); z-index: 50; display: flex; gap: 8px; }
-        .primary-btn { flex: 3; padding: 18px 0; border-radius: var(--radius); font-size: 14px; font-weight: 800; text-transform: uppercase; background: var(--green); color: white; transition: background 0.2s; }
+        .primary-btn { flex: 1; padding: 18px 0; border-radius: var(--radius); font-size: 14px; font-weight: 800; text-transform: uppercase; background: var(--green); color: white; transition: background 0.2s; }
+        .primary-btn:disabled { opacity: 0.7; pointer-events: none; }
         .secondary-btn { flex: 1; padding: 18px 0; border-radius: var(--radius); font-size: 14px; background: var(--surface-3); color: var(--text-2); font-weight: 800; }
 
         /* ===== HUB SPECIFICS ===== */
@@ -109,7 +109,6 @@
                 <div style="font-size:10px; font-weight:700; color:var(--text-3); text-transform:uppercase;">Auditor</div>
                 <div id="name-display" style="font-weight:800; color:var(--accent);">Operator</div>
             </div>
-            <button onclick="syncToServer()" style="background:var(--accent); color:white; padding:8px 16px; border-radius:8px; font-size:11px; font-weight:800;">⬆ Sync Counts</button>
         </div>
 
         <div class="search-container">
@@ -140,7 +139,6 @@
     <div class="scroll-area" id="hu-list">
         </div>
     <div class="bottom-bar">
-        <button class="secondary-btn" onclick="syncToServer()">Sync ⬆</button>
         <button class="primary-btn" id="btn-next" onclick="nextBin()">Next Bin →</button>
     </div>
 </div>
@@ -156,7 +154,7 @@
     </div>
     <div class="scroll-area" id="fresh-list"></div>
     <div class="bottom-bar">
-        <button class="primary-btn" style="background:var(--amber)" onclick="syncToServer()">Submit Fresh Audit</button>
+        <button class="primary-btn" style="background:var(--amber)" onclick="submitFreshAudit()">Submit Fresh Audit</button>
     </div>
 </div>
 
@@ -461,8 +459,9 @@ const NovusSettings = (() => {
             strip.appendChild(dot);
         }
     }
-    function nextBin() { if(currentBinIdx < currentBins.length - 1) { currentBinIdx++; updateBinView(); } }
+
     function prevBin() { if(currentBinIdx > 0) { currentBinIdx--; updateBinView(); } }
+    
     function updateBinView() {
         renderHUList(); renderBinStrip();
         const pBtn = document.getElementById('btn-prev'), nTop = document.getElementById('btn-next-top'), nBot = document.getElementById('btn-next');
@@ -480,7 +479,7 @@ const NovusSettings = (() => {
         t.className = `toast ${color} show`;
         setTimeout(() => t.classList.remove('show'), 2000);
     }
-    window.toast = showToast; // Expose for Settings Modal
+    window.toast = showToast; 
 
     async function pullSAPData() {
         try {
@@ -502,18 +501,34 @@ const NovusSettings = (() => {
     }
 
     // ==========================================
-    // 3. THE API POST LOOP
+    // 3. AUTO-SYNC & NAVIGATION LOGIC
     // ==========================================
-    async function syncToServer() {
-        if (sessionRegistry.size === 0) {
-            showToast("No counts to sync", "amber");
-            return;
+    async function syncBinData(binName, isFresh = false) {
+        let itemsToSync = [];
+        
+        if (isFresh) {
+            itemsToSync = Array.from(sessionRegistry.values());
+            if (itemsToSync.length === 0) {
+                showToast("No counts to submit", "amber");
+                return false;
+            }
+        } else {
+            // Auto-confirm any expected items the auditor didn't touch (Implicit OK)
+            const expected = sapMaster.filter(i => i.sapBin === binName);
+            expected.forEach(sap => {
+                if (!sessionRegistry.has(sap.hu)) {
+                    sessionRegistry.set(sap.hu, { 
+                        ...sap, scanQty: sap.sapQty, scanBin: binName, foundIn: binName, note: '', type: 'ok', status: 'OK' 
+                    });
+                }
+            });
+
+            // Gather all items evaluated for this specific bin
+            itemsToSync = Array.from(sessionRegistry.values()).filter(r => r.foundIn === binName || r.sapBin === binName);
+            if (itemsToSync.length === 0) return true; // Empty bin, nothing to do
         }
 
-        showToast("Syncing to server...", "blue");
-
-        // Format the Map into the array structure the backend expects
-        const itemsToLog = Array.from(sessionRegistry.values()).map(record => ({
+        const itemsToLog = itemsToSync.map(record => ({
             hu: record.hu,
             product: record.product,
             desc: record.desc,
@@ -521,11 +536,10 @@ const NovusSettings = (() => {
             sapBin: record.sapBin,
             sapQty: record.sapQty,
             countQty: record.scanQty,
-            type: record.type,     // Contains the calculated state (ok, adj, move, miss)
+            type: record.type,
             note: record.note
         }));
 
-        // Send the payload
         try {
             const res = await fetch(API_URL, {
                 method: 'POST',
@@ -534,7 +548,7 @@ const NovusSettings = (() => {
                 body: JSON.stringify({
                     action: 'logAudit',
                     user: NovusSettings.getUser(),
-                    bin: currentBins[currentBinIdx] || "FRESH", // Fallback for Fresh Audit
+                    bin: binName,
                     sessionId: SESSION_ID,
                     items: itemsToLog
                 })
@@ -542,24 +556,63 @@ const NovusSettings = (() => {
             
             const result = await res.json();
             
-            if (result.success) {
-                showToast(`Successfully synced ${result.logged || itemsToLog.length} items!`, "green");
-                sessionRegistry.clear(); // Clear the local registry upon success
-                
-                // Return to hub based on where they synced from
-                if(document.getElementById('screen-fresh').classList.contains('active') || 
-                   document.getElementById('btn-next')?.innerText.includes("Finish")) {
-                    switchScreen('setup');
-                } else {
-                    renderHUList(); // Re-render if they sync mid-aisle
-                }
-            } else if (result.skipped) {
-                showToast("Already synced (Idempotency check)", "blue");
+            if (result.success || result.skipped) {
+                if (isFresh) sessionRegistry.clear();
+                return true;
             } else {
                 showToast("Server error: " + (result.error || "Unknown"), "red");
+                return false;
             }
         } catch (err) {
             showToast("Network Error: Could not reach server", "red");
+            return false;
+        }
+    }
+
+    async function nextBin() { 
+        const btn = document.getElementById('btn-next');
+        const origText = btn.innerText;
+        const origBg = btn.style.background;
+        
+        // Lock UI during sync
+        btn.disabled = true;
+        btn.innerText = "Syncing...";
+        btn.style.background = "var(--text-3)"; 
+
+        const currentBin = currentBins[currentBinIdx];
+        const success = await syncBinData(currentBin, false);
+        
+        // Unlock UI
+        btn.disabled = false;
+        btn.innerText = origText;
+        btn.style.background = origBg;
+
+        if (success) {
+            if(currentBinIdx < currentBins.length - 1) { 
+                currentBinIdx++; 
+                updateBinView(); 
+            } else {
+                showToast("Aisle Complete ✓", "green");
+                switchScreen('setup');
+            }
+        }
+    }
+
+    async function submitFreshAudit() {
+        const btn = document.querySelector('#screen-fresh .primary-btn');
+        const origText = btn.innerText;
+        
+        btn.disabled = true;
+        btn.innerText = "Syncing...";
+
+        const success = await syncBinData("FRESH", true);
+        
+        btn.disabled = false;
+        btn.innerText = origText;
+
+        if (success) {
+            showToast("Fresh Audit Complete", "green");
+            switchScreen('setup');
         }
     }
 </script>
