@@ -355,7 +355,7 @@ const NovusSettings = (() => {
         const isFresh = document.getElementById('screen-fresh').classList.contains('active');
 
         return `
-            <div class="hu-card ${reg ? reg.status.toLowerCase() : ''}">
+            <div class="hu-card ${reg ? reg.status.toLowerCase() : ''}" id="hu-card-${item.hu}">
                 <div class="hu-header">
                     <span class="hu-id">${item.hu}</span>
                     <span class="hu-status ${statusClass}">${statusLabel}</span>
@@ -380,7 +380,7 @@ const NovusSettings = (() => {
                 ${reg && reg.note ? `<div style="font-size:12px; padding:8px; background:var(--surface-3); border-radius:6px; margin-bottom:12px; font-style:italic;">💬 ${reg.note}</div>` : ''}
                 <div class="qty-row">
                     <button class="qty-stepper" onclick="adjQty('${item.hu}', -1)">−</button>
-                    <input type="number" class="qty-input qty-val-${item.hu}" value="${currentQty}" onchange="setQty('${item.hu}', this.value)">
+                    <input type="number" class="qty-input" id="qty-${item.hu}" value="${currentQty}" onchange="setQty('${item.hu}', this.value)">
                     <button class="qty-stepper" onclick="adjQty('${item.hu}', 1)">+</button>
                 </div>
                 <div style="display:flex; gap:6px; flex-wrap:wrap;">
@@ -396,7 +396,7 @@ const NovusSettings = (() => {
     }
 
     // ==========================================
-    // DATA CONTROLLER LOGIC
+    // DATA CONTROLLER LOGIC (TARGETED UPDATES)
     // ==========================================
     function saveToRegistry(hu, updates) {
         const sap = sapMaster.find(i => i.hu === hu);
@@ -424,18 +424,29 @@ const NovusSettings = (() => {
         
         sessionRegistry.set(hu, merged);
         
-        // Re-render the appropriate view
+        // Target specifically the card that was just updated to prevent lag
+        const cardEl = document.getElementById(`hu-card-${hu}`);
+        
         if (isFresh) {
-            if (activeFreshProduct) showFreshDetail(activeFreshProduct);
+            if (activeFreshProduct) {
+                if (cardEl) {
+                    cardEl.outerHTML = createHUCard(merged);
+                } else {
+                    showFreshDetail(activeFreshProduct);
+                }
+            }
             updateFreshOverview();
         } else {
-            renderHUList();
+            if (cardEl) {
+                cardEl.outerHTML = createHUCard(merged);
+            } else {
+                renderHUList(); // Fallback if card isn't in DOM yet
+            }
         }
     }
 
     function confirmItem(hu) { 
-        const inputEl = document.querySelector(`.active .qty-val-${hu}`);
-        const val = parseInt(inputEl.value, 10) || 0;
+        const val = parseInt(document.getElementById(`qty-${hu}`).value, 10) || 0;
         const isFresh = document.getElementById('screen-fresh').classList.contains('active');
         const sap = sapMaster.find(i => i.hu === hu);
         const scanBin = isFresh ? sap.sapBin : currentBins[currentBinIdx];
@@ -477,7 +488,6 @@ const NovusSettings = (() => {
     function renderHUList() {
         const container = document.getElementById('hu-list');
         const bin = currentBins[currentBinIdx];
-        container.innerHTML = '';
         document.getElementById('count-title').innerText = bin;
 
         const expected = sapMaster.filter(i => i.sapBin === bin);
@@ -486,9 +496,12 @@ const NovusSettings = (() => {
         const allItems = [...expected];
         movementsHere.forEach(m => { if(!allItems.find(i => i.hu === m.hu)) allItems.push(m); });
 
+        // Batch rendering prevents lag on initial load
+        let htmlStr = '';
         allItems.forEach(item => {
-            container.innerHTML += createHUCard(item);
+            htmlStr += createHUCard(item);
         });
+        container.innerHTML = htmlStr;
     }
 
     // ==========================================
@@ -504,7 +517,7 @@ const NovusSettings = (() => {
 
     function updateFreshOverview() {
         const overview = document.getElementById('fresh-overview');
-        overview.innerHTML = '';
+        let htmlStr = '';
         
         FRESH_PRODUCTS.forEach(prod => {
             const sapItem = sapMaster.find(i => i.product === prod);
@@ -517,35 +530,29 @@ const NovusSettings = (() => {
                 if (reg && reg.scanQty > 0) totalFound++;
             });
 
-            const card = document.createElement('div');
-            card.className = 'hu-card'; 
-            card.style.cursor = 'pointer';
-            
-            if (totalFound === expectedHUs.length && expectedHUs.length > 0) {
-                card.style.borderColor = 'var(--green)';
-            } else if (totalFound > 0) {
-                card.style.borderColor = 'var(--amber)';
-            }
-            
-            card.onclick = () => showFreshDetail(prod);
-            
-            card.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:flex-start">
-                    <div style="flex:1; padding-right:12px;">
-                        <div class="hu-meta-label">Product</div>
-                        <div style="font-size:20px; font-weight:900">${prod}</div>
-                        <div style="font-size:11px; color:var(--text-2); margin-top:4px; line-height:1.3;">${desc}</div>
-                    </div>
-                    <div style="text-align:right">
-                        <div style="font-size:32px; font-weight:900; color:${totalFound === expectedHUs.length && expectedHUs.length > 0 ? 'var(--green)' : 'var(--amber)'}">
-                            ${totalFound} <span style="font-size:16px; color:var(--text-3)">/ ${expectedHUs.length}</span>
+            let borderColor = '';
+            if (totalFound === expectedHUs.length && expectedHUs.length > 0) borderColor = 'var(--green)';
+            else if (totalFound > 0) borderColor = 'var(--amber)';
+
+            htmlStr += `
+                <div class="hu-card" style="cursor:pointer; border-color:${borderColor};" onclick="showFreshDetail('${prod}')">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start">
+                        <div style="flex:1; padding-right:12px;">
+                            <div class="hu-meta-label">Product</div>
+                            <div style="font-size:20px; font-weight:900">${prod}</div>
+                            <div style="font-size:11px; color:var(--text-2); margin-top:4px; line-height:1.3;">${desc}</div>
                         </div>
-                        <div class="hu-meta-label">Pallets Found</div>
+                        <div style="text-align:right">
+                            <div style="font-size:32px; font-weight:900; color:${totalFound === expectedHUs.length && expectedHUs.length > 0 ? 'var(--green)' : 'var(--amber)'}">
+                                ${totalFound} <span style="font-size:16px; color:var(--text-3)">/ ${expectedHUs.length}</span>
+                            </div>
+                            <div class="hu-meta-label">Pallets Found</div>
+                        </div>
                     </div>
                 </div>
             `;
-            overview.appendChild(card);
         });
+        overview.innerHTML = htmlStr;
     }
 
     function showFreshDetail(product) {
