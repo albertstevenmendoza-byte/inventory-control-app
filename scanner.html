@@ -238,6 +238,9 @@ const NovusSettings = (() => {
                 <span class="ns-switch-option" data-val="dark">🌙 Dark</span>
                 <span class="ns-switch-option" data-val="light">☀️ Light</span>
                 <div class="ns-switch-slider" id="ns-switch-slider"></div></div></div></div>
+          <div class="ns-section"><div class="ns-section-title">Data</div>
+            <button class="ns-danger-btn" onclick="if(confirm('Clear all local data and reload?')){ localStorage.removeItem('novus_sap'); localStorage.removeItem('novus_done'); localStorage.removeItem('novus_queue'); if(typeof sessionRegistry !== 'undefined') sessionRegistry.clear(); window.location.reload(); }">🗑 Clear Local Data & Reload</button>
+            <div class="ns-hint" style="margin-top:6px">App v2.2 · Plant 1730</div></div>
         </div>
         <div class="ns-footer"><button class="ns-save-btn" onclick="NovusSettings._save()">Save & Close</button></div>
       </div>`;
@@ -330,8 +333,8 @@ const NovusSettings = (() => {
     // ==========================================
     async function pullSAPData() {
         try {
-            // Fetching the root API_URL returns sapData AND the report
-            const res = await fetch(API_URL);
+            // Added cache-buster to fetch
+            const res = await fetch(API_URL + '?t=' + Date.now());
             const data = await res.json();
             
             sapMaster = data.sapData || [];
@@ -354,7 +357,8 @@ const NovusSettings = (() => {
 
     async function pollLightweight() {
         try {
-            const res = await fetch(API_URL + '?type=poll');
+            // Added cache-buster to fetch
+            const res = await fetch(API_URL + '?type=poll&t=' + Date.now());
             const data = await res.json();
             const report = data.report || [];
             
