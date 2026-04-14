@@ -77,7 +77,7 @@
         .search-field { width: 100%; padding: 16px 16px 16px 44px; border-radius: var(--radius); border: 1.5px solid var(--border); background: var(--surface); color: var(--text); font-size: 16px; outline: none; }
         .search-icon { position: absolute; left: 30px; top: 34px; color: var(--text-3); }
         .bin-strip { display: flex; gap: 6px; overflow-x: auto; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); scrollbar-width: none; }
-        .strip-dot { min-width: 50px; height: 32px; border-radius: 8px; background: var(--surface-2); color: var(--text-2); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; }
+        .strip-dot { min-width: 50px; height: 32px; border-radius: 8px; background: var(--surface-2); color: var(--text-2); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; border: 1px solid transparent; transition: all 0.2s;}
         .strip-dot.active { background: var(--accent); color: white; }
 
         /* ===== TOAST ===== */
@@ -130,7 +130,7 @@
         <button onclick="switchScreen('setup')" class="hdr-btn">← Back</button>
         <div class="bin-nav-cluster">
             <button id="btn-prev" class="nav-arrow" onclick="prevBin()">←</button>
-            <h1 id="count-title" class="mono" style="font-size: 16px; width: 65px; text-align: center;"></h1>
+            <h1 id="count-title" class="mono" style="font-size: 16px; width: 85px; text-align: center; display:flex; align-items:center; justify-content:center; gap:4px;"></h1>
             <button id="btn-next-top" class="nav-arrow" onclick="nextBin()">→</button>
         </div>
         <div class="sync-dot"></div>
@@ -297,11 +297,12 @@ const NovusSettings = (() => {
     const FRESH_PRODUCTS = ["3305704","3307506","3307509","3307515","3307518","3307525","3307710","3308356","3309009","3309016","3309017","3309019","3309138","3309139"];
     const API_URL = 'https://script.google.com/macros/s/AKfycbwZ1Dhmf6cK_hWV2xLKYmwEImUvifIRCPqVm0Fz4E7gjvfcpyzoqhAFIgvgwrjBretc/exec';
     
-    // Generate a unique session ID for idempotency checks on the backend
     const SESSION_ID = 'sess_' + Math.random().toString(36).substr(2, 9);
     
     let sapMaster = [];
     let sessionRegistry = new Map(); 
+    let countedBins = new Set(); // Tracks bins that have been successfully synced to the backend
+    
     let currentAisle = "";
     let currentBinIdx = 0;
     let currentBins = [];
@@ -312,6 +313,9 @@ const NovusSettings = (() => {
         renderAisleGrid();
         pullSAPData();
 
+        // Start live polling for collaborative counts
+        setInterval(pollLightweight, 15000);
+
         document.getElementById('hub-search').addEventListener('keypress', e => {
             if(e.key === 'Enter') { handleGateway(e.target.value.trim().toUpperCase()); e.target.value = ''; }
         });
@@ -319,6 +323,48 @@ const NovusSettings = (() => {
             if(e.key === 'Enter') { processFreshScan(e.target.value.trim().toUpperCase()); e.target.value = ''; }
         });
     });
+
+    // ==========================================
+    // BACKEND SYNC & POLLING
+    // ==========================================
+    async function pullSAPData() {
+        try {
+            // Fetching the root API_URL returns sapData AND the report
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            
+            sapMaster = data.sapData || [];
+            const report = data.report || [];
+            
+            // Extract all bins that have already been audited
+            countedBins = new Set(report.map(r => r.scanBin).filter(Boolean));
+            
+            document.querySelectorAll('.sync-dot').forEach(d => d.classList.remove('offline'));
+            
+            // Re-render if they are currently on the count screen
+            if (document.getElementById('screen-count').classList.contains('active')) {
+                updateBinView();
+            }
+        } catch(e) { document.querySelectorAll('.sync-dot').forEach(d => d.classList.add('offline')); }
+    }
+
+    async function pollLightweight() {
+        try {
+            const res = await fetch(API_URL + '?type=poll');
+            const data = await res.json();
+            const report = data.report || [];
+            
+            countedBins = new Set(report.map(r => r.scanBin).filter(Boolean));
+            
+            if (document.getElementById('screen-count').classList.contains('active')) {
+                renderBinStrip(); 
+                
+                const currentBin = currentBins[currentBinIdx];
+                const titleEl = document.getElementById('count-title');
+                titleEl.innerHTML = `${currentBin} ${countedBins.has(currentBin) ? '<span style="color:var(--green); font-size:14px; margin-left:4px">✓</span>' : ''}`;
+            }
+        } catch(e) {} // Fail silently on background poll
+    }
 
     function handleGateway(input) {
         if (!input) return;
@@ -402,7 +448,6 @@ const NovusSettings = (() => {
         const sap = sapMaster.find(i => i.hu === hu);
         const isFresh = document.getElementById('screen-fresh').classList.contains('active');
         
-        // If in Fresh mode, default the bin to where SAP expects it unless moved
         const currentBin = isFresh ? sap.sapBin : currentBins[currentBinIdx];
         
         const current = sessionRegistry.get(hu) || { 
@@ -424,24 +469,17 @@ const NovusSettings = (() => {
         
         sessionRegistry.set(hu, merged);
         
-        // Target specifically the card that was just updated to prevent lag
         const cardEl = document.getElementById(`hu-card-${hu}`);
         
         if (isFresh) {
             if (activeFreshProduct) {
-                if (cardEl) {
-                    cardEl.outerHTML = createHUCard(merged);
-                } else {
-                    showFreshDetail(activeFreshProduct);
-                }
+                if (cardEl) cardEl.outerHTML = createHUCard(merged);
+                else showFreshDetail(activeFreshProduct);
             }
             updateFreshOverview();
         } else {
-            if (cardEl) {
-                cardEl.outerHTML = createHUCard(merged);
-            } else {
-                renderHUList(); // Fallback if card isn't in DOM yet
-            }
+            if (cardEl) cardEl.outerHTML = createHUCard(merged);
+            else renderHUList(); 
         }
     }
 
@@ -488,7 +526,9 @@ const NovusSettings = (() => {
     function renderHUList() {
         const container = document.getElementById('hu-list');
         const bin = currentBins[currentBinIdx];
-        document.getElementById('count-title').innerText = bin;
+        
+        const isCounted = countedBins.has(bin);
+        document.getElementById('count-title').innerHTML = `${bin} ${isCounted ? '<span style="color:var(--green); font-size:14px; margin-left:4px">✓</span>' : ''}`;
 
         const expected = sapMaster.filter(i => i.sapBin === bin);
         const movementsHere = Array.from(sessionRegistry.values()).filter(i => i.foundIn === bin && i.sapBin !== bin);
@@ -496,7 +536,6 @@ const NovusSettings = (() => {
         const allItems = [...expected];
         movementsHere.forEach(m => { if(!allItems.find(i => i.hu === m.hu)) allItems.push(m); });
 
-        // Batch rendering prevents lag on initial load
         let htmlStr = '';
         allItems.forEach(item => {
             htmlStr += createHUCard(item);
@@ -630,10 +669,21 @@ const NovusSettings = (() => {
         strip.innerHTML = '';
         const start = Math.max(0, currentBinIdx - 2);
         const end = Math.min(currentBins.length, start + 10);
+        
         for(let i=start; i<end; i++) {
+            const bin = currentBins[i];
+            const isCounted = countedBins.has(bin);
+            
             const dot = document.createElement('div');
             dot.className = `strip-dot ${i === currentBinIdx ? 'active' : ''}`;
-            dot.innerText = currentBins[i].slice(-3);
+            
+            if (isCounted && i !== currentBinIdx) {
+                dot.style.background = 'var(--green-bg)';
+                dot.style.color = 'var(--green)';
+                dot.style.border = '1px solid var(--green-border)';
+            }
+            
+            dot.innerHTML = `${bin.slice(-3)}${isCounted ? '<span style="font-size:9px; margin-left:3px">✓</span>' : ''}`;
             dot.onclick = () => { currentBinIdx = i; updateBinView(); };
             strip.appendChild(dot);
         }
@@ -659,15 +709,6 @@ const NovusSettings = (() => {
         setTimeout(() => t.classList.remove('show'), 2000);
     }
     window.toast = showToast; 
-
-    async function pullSAPData() {
-        try {
-            const res = await fetch(API_URL + '?type=sapdata');
-            const data = await res.json();
-            sapMaster = data.sapData;
-            document.querySelectorAll('.sync-dot').forEach(d => d.classList.remove('offline'));
-        } catch(e) { document.querySelectorAll('.sync-dot').forEach(d => d.classList.add('offline')); }
-    }
 
     function renderAisleGrid() {
         const grid = document.getElementById('aisle-grid');
@@ -704,7 +745,10 @@ const NovusSettings = (() => {
 
             // Gather all items evaluated for this specific bin
             itemsToSync = Array.from(sessionRegistry.values()).filter(r => r.foundIn === binName || r.sapBin === binName);
-            if (itemsToSync.length === 0) return true; // Empty bin, nothing to do
+            if (itemsToSync.length === 0) {
+                countedBins.add(binName); // Mark empty bins as counted too
+                return true; 
+            }
         }
 
         const itemsToLog = itemsToSync.map(record => ({
@@ -736,7 +780,11 @@ const NovusSettings = (() => {
             const result = await res.json();
             
             if (result.success || result.skipped) {
-                if (isFresh) sessionRegistry.clear();
+                if (isFresh) {
+                    sessionRegistry.clear();
+                } else {
+                    countedBins.add(binName); // Immediately mark as counted locally
+                }
                 return true;
             } else {
                 showToast("Server error: " + (result.error || "Unknown"), "red");
