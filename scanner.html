@@ -333,32 +333,37 @@ const NovusSettings = (() => {
     // ==========================================
     async function pullSAPData() {
         try {
-            // Added cache-buster to fetch
-            const res = await fetch(API_URL + '?t=' + Date.now());
-            const data = await res.json();
+            showToast("Syncing SAP...", "blue");
             
-            sapMaster = data.sapData || [];
-            const report = data.report || [];
+            // 1. Fetch Heavy SAP Data
+            const resSAP = await fetch(API_URL + '?type=sapdata&t=' + Date.now(), { redirect: 'follow' });
+            const sapJSON = await resSAP.json();
+            sapMaster = sapJSON.sapData || [];
+
+            // 2. Fetch Lightweight Report Data (for tracking what's already counted)
+            const resPoll = await fetch(API_URL + '?type=poll&t=' + Date.now(), { redirect: 'follow' });
+            const pollJSON = await resPoll.json();
+            const report = pollJSON.report || [];
             
-            // Extract all bins that have already been audited
             countedBins = new Set(report.map(r => r.scanBin).filter(Boolean));
-            
-            // Extract Fresh SKUs that have already been audited
             countedFreshProducts = new Set(report.map(r => r.prod).filter(p => FRESH_PRODUCTS.includes(p)));
             
             document.querySelectorAll('.sync-dot').forEach(d => d.classList.remove('offline'));
+            showToast("System Ready", "green");
             
             // Re-render if they are currently on the count screen
             if (document.getElementById('screen-count').classList.contains('active')) {
                 updateBinView();
             }
-        } catch(e) { document.querySelectorAll('.sync-dot').forEach(d => d.classList.add('offline')); }
+        } catch(e) { 
+            document.querySelectorAll('.sync-dot').forEach(d => d.classList.add('offline'));
+            showToast("Offline Mode", "amber");
+        }
     }
 
     async function pollLightweight() {
         try {
-            // Added cache-buster to fetch
-            const res = await fetch(API_URL + '?type=poll&t=' + Date.now());
+            const res = await fetch(API_URL + '?type=poll&t=' + Date.now(), { redirect: 'follow' });
             const data = await res.json();
             const report = data.report || [];
             
