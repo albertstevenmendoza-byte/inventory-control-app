@@ -150,9 +150,12 @@
         <div class="sync-dot"></div>
     </div>
     <div class="search-container">
-        <input type="text" id="fresh-scan-input" class="search-field" style="border-color:var(--amber)" placeholder="Scan any pallet...">
+        <input type="text" id="fresh-scan-input" class="search-field" style="border-color:var(--amber)" placeholder="Scan any pallet or SKU...">
     </div>
-    <div class="scroll-area" id="fresh-list"></div>
+    <div class="scroll-area" id="fresh-list" style="padding-top:0;">
+        <div id="fresh-overview" style="padding-top:16px;"></div>
+        <div id="fresh-detail" style="display:none; padding-top:16px;"></div>
+    </div>
     <div class="bottom-bar">
         <button class="primary-btn" style="background:var(--amber)" onclick="submitFreshAudit()">Submit Fresh Audit</button>
     </div>
@@ -303,6 +306,7 @@ const NovusSettings = (() => {
     let currentAisle = "";
     let currentBinIdx = 0;
     let currentBins = [];
+    let activeFreshSKU = null; // Tracks if a specific SKU detail view is open
 
     document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('name-display').innerText = NovusSettings.getUser();
@@ -337,6 +341,9 @@ const NovusSettings = (() => {
         updateBinView();
     }
 
+    // ==========================================
+    // AISLE AUDIT RENDERING
+    // ==========================================
     function renderHUList() {
         const container = document.getElementById('hu-list');
         const bin = currentBins[currentBinIdx];
@@ -365,8 +372,12 @@ const NovusSettings = (() => {
                     <span class="hu-id">${item.hu}</span>
                     <span class="hu-status ${statusClass}">${statusLabel}</span>
                 </div>
-                <div class="hu-meta">
-                    <div style="flex:2"><div class="hu-meta-label">Product</div><div class="hu-meta-value">${item.product}</div></div>
+                <div class="hu-meta" style="margin-bottom:8px;">
+                    <div style="flex:2">
+                        <div class="hu-meta-label">Product</div>
+                        <div class="hu-meta-value">${item.product}</div>
+                        <div style="font-size:10px; color:var(--text-2); margin-top:2px; line-height:1.3;">${item.desc || ''}</div>
+                    </div>
                     <div style="flex:1"><div class="hu-meta-label">SAP Qty</div><div class="hu-meta-value mono">${item.sapQty}</div></div>
                 </div>
                 ${movedElsewhere ? `<div style="font-size:11px; color:var(--purple); font-weight:700; margin-bottom:12px">📍 Found earlier in ${movedElsewhere.foundIn}</div>` : ''}
@@ -420,31 +431,153 @@ const NovusSettings = (() => {
         if (dest && dest.trim() !== '') { saveToRegistry(hu, { scanBin: dest.trim().toUpperCase() }); showToast(`Routed to ${dest.trim().toUpperCase()}`, "purple"); }
     }
 
+    // ==========================================
+    // FRESH AUDIT RENDERING & LOGIC
+    // ==========================================
     function initFreshMode() {
-        const list = document.getElementById('fresh-list');
-        list.innerHTML = '';
+        const overview = document.getElementById('fresh-overview');
+        const detail = document.getElementById('fresh-detail');
+        overview.innerHTML = '';
+        detail.innerHTML = '';
+        detail.style.display = 'none';
+        overview.style.display = 'block';
+
         FRESH_SKUS.forEach(sku => {
+            const sapItem = sapMaster.find(i => i.product === sku);
+            const desc = sapItem ? sapItem.desc : "Product description unavailable";
+            
             const card = document.createElement('div');
-            card.className = 'hu-card'; card.id = `fresh-${sku}`;
-            card.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center"><div><div class="hu-meta-label">SKU</div><div style="font-size:20px; font-weight:900">${sku}</div></div><div style="text-align:right"><div id="tally-${sku}" style="font-size:32px; font-weight:900; color:var(--amber)">0</div><div class="hu-meta-label">Total Found</div></div></div>`;
-            list.appendChild(card);
+            card.className = 'hu-card'; 
+            card.id = `fresh-sku-${sku}`;
+            card.style.cursor = 'pointer';
+            card.onclick = () => showFreshDetail(sku);
+            
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:flex-start">
+                    <div style="flex:1; padding-right:12px;">
+                        <div class="hu-meta-label">SKU</div>
+                        <div style="font-size:20px; font-weight:900">${sku}</div>
+                        <div style="font-size:11px; color:var(--text-2); margin-top:4px; line-height:1.3;">${desc}</div>
+                    </div>
+                    <div style="text-align:right">
+                        <div id="tally-${sku}" style="font-size:32px; font-weight:900; color:var(--amber)">0</div>
+                        <div class="hu-meta-label">Total Found</div>
+                    </div>
+                </div>
+            `;
+            overview.appendChild(card);
+            updateFreshUI(sku); // Set initial tally
         });
         switchScreen('fresh');
+    }
+
+    function showFreshDetail(sku) {
+        activeFreshSKU = sku;
+        document.getElementById('fresh-overview').style.display = 'none';
+        const detail = document.getElementById('fresh-detail');
+        detail.style.display = 'block';
+        
+        const sapItem = sapMaster.find(i => i.product === sku);
+        const desc = sapItem ? sapItem.desc : "";
+        const expectedHUs = sapMaster.filter(i => i.product === sku);
+        
+        let html = `
+            <button onclick="hideFreshDetail()" class="hdr-btn" style="padding: 8px 16px; margin-bottom: 16px; width: auto; font-size: 12px; display:inline-flex;">← Back to SKUs</button>
+            <div style="margin-bottom: 16px;">
+                <div style="font-size: 22px; font-weight: 900; color: var(--accent);">${sku}</div>
+                <div style="font-size: 13px; color: var(--text-2); margin-top:2px;">${desc}</div>
+                <div style="font-size: 11px; color: var(--text-3); margin-top:6px; font-weight:700;">Expected Pallets: ${expectedHUs.length}</div>
+            </div>
+        `;
+        
+        if(expectedHUs.length === 0) {
+            html += `<div style="text-align:center; padding: 20px; color: var(--text-3);">No pallets expected in SAP for this SKU.</div>`;
+        } else {
+            expectedHUs.forEach(item => {
+                const reg = sessionRegistry.get(item.hu);
+                const isFound = reg && reg.scanQty > 0;
+                const statusClass = isFound ? 'ok' : 'pending';
+                const statusLabel = isFound ? 'FOUND' : 'PENDING';
+                
+                html += `
+                    <div class="hu-card ${statusClass}" id="fresh-hu-${item.hu}">
+                        <div class="hu-header">
+                            <span class="hu-id">${item.hu}</span>
+                            <span class="hu-status ${statusClass}" id="fresh-status-${item.hu}">${statusLabel}</span>
+                        </div>
+                        <div class="hu-meta" style="margin-bottom:0;">
+                            <div style="flex:1"><div class="hu-meta-label">Expected Bin</div><div class="hu-meta-value mono">${item.sapBin}</div></div>
+                            <div style="flex:1"><div class="hu-meta-label">SAP Qty</div><div class="hu-meta-value mono">${item.sapQty}</div></div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        detail.innerHTML = html;
+    }
+
+    function hideFreshDetail() {
+        activeFreshSKU = null;
+        document.getElementById('fresh-detail').style.display = 'none';
+        document.getElementById('fresh-overview').style.display = 'block';
     }
 
     function processFreshScan(input) {
         const sap = sapMaster.find(i => i.hu === input || i.product === input);
         if (sap && FRESH_SKUS.includes(sap.product)) {
             const sku = sap.product;
-            const reg = sessionRegistry.get(input) || { scanQty: 0 };
-            sessionRegistry.set(input, { ...sap, scanQty: reg.scanQty + 1, status: 'OK' });
-            document.getElementById(`tally-${sku}`).innerText = Array.from(sessionRegistry.values()).filter(i => i.product === sku).reduce((s,i) => s+i.scanQty, 0);
-            document.getElementById(`fresh-${sku}`).style.borderColor = 'var(--amber)';
+            
+            if (sap.hu === input) {
+                // Specific HU scanned
+                sessionRegistry.set(input, { ...sap, scanQty: sap.sapQty, status: 'OK', type: 'ok', scanBin: 'FRESH' });
+                showToast(`Found Pallet ${input}`, "green");
+            } else {
+                // Generic SKU barcode scanned
+                const reg = sessionRegistry.get(input) || { ...sap, scanQty: 0 };
+                sessionRegistry.set(input, { ...sap, scanQty: reg.scanQty + 1, status: 'OK', type: 'ok', scanBin: 'FRESH' });
+                showToast(`Added Pallet for ${sku}`, "amber");
+            }
+            
+            updateFreshUI(sku);
             if(NovusSettings.get('hapticFeedback') && navigator.vibrate) navigator.vibrate(50);
-            showToast(`Added ${sku}`, "amber");
-        } else { showToast("Invalid Item", "red"); if(navigator.vibrate) navigator.vibrate([100,50,100]); }
+        } else { 
+            showToast("Invalid Item or Not in FRESH List", "red"); 
+            if(navigator.vibrate) navigator.vibrate([100,50,100]); 
+        }
     }
 
+    function updateFreshUI(sku) {
+        // Calculate total pallets found (specific HUs + generic SKU scans)
+        let total = 0;
+        Array.from(sessionRegistry.values()).forEach(reg => {
+            if(reg.product === sku) {
+                if (reg.hu === sku) total += reg.scanQty; // generic SKU tally counts each scan as 1
+                else if (reg.scanQty > 0) total += 1;     // specific HU counts as 1 pallet found
+            }
+        });
+        
+        // Update Overview Tally
+        const tallyEl = document.getElementById(`tally-${sku}`);
+        const skuCard = document.getElementById(`fresh-sku-${sku}`);
+        if(tallyEl) tallyEl.innerText = total;
+        if(skuCard && total > 0) skuCard.style.borderColor = 'var(--green)'; 
+
+        // Update Specific HU Card if Detail view is open
+        if (activeFreshSKU === sku) {
+            Array.from(sessionRegistry.values()).forEach(reg => {
+                if(reg.product === sku && reg.hu !== sku && reg.scanQty > 0) {
+                    const huCard = document.getElementById(`fresh-hu-${reg.hu}`);
+                    const huStatus = document.getElementById(`fresh-status-${reg.hu}`);
+                    if(huCard) huCard.className = 'hu-card ok';
+                    if(huStatus) { huStatus.className = 'hu-status ok'; huStatus.innerText = 'FOUND'; }
+                }
+            });
+        }
+    }
+
+    // ==========================================
+    // UTILS & NAVIGATION
+    // ==========================================
     function switchScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(`screen-${id}`).classList.add('active'); }
     function renderBinStrip() {
         const strip = document.getElementById('bin-strip');
@@ -501,7 +634,7 @@ const NovusSettings = (() => {
     }
 
     // ==========================================
-    // 3. AUTO-SYNC & NAVIGATION LOGIC
+    // AUTO-SYNC LOGIC
     // ==========================================
     async function syncBinData(binName, isFresh = false) {
         let itemsToSync = [];
@@ -613,6 +746,10 @@ const NovusSettings = (() => {
         if (success) {
             showToast("Fresh Audit Complete", "green");
             switchScreen('setup');
+            
+            // Reset the detail view if it was open
+            hideFreshDetail();
+            initFreshMode(); 
         }
     }
 </script>
