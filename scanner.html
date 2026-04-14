@@ -3,42 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Novus Ops — Cycle Counter 2.0</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    <title>Cycle Counter — Novus Ops</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Base Ecosystem Variables (overridden by NovusSettings) */
         :root {
-            --bg: #f5f5f7;
-            --surface: #ffffff;
-            --surface-2: #f0f0f3;
-            --surface-3: #e8e8ec;
-            --border: #dcdce2;
-            --text: #1a1a1f;
-            --text-2: #6b6b78;
-            --text-3: #9898a6;
-            --accent: #3b6cf5;
-            --accent-glow: rgba(59,108,245,0.08);
-            --green: #16a34a;
-            --green-bg: #f0fdf4;
-            --green-border: #bbf7d0;
-            --red: #dc2626;
-            --red-bg: #fef2f2;
-            --red-border: #fecaca;
-            --amber: #d97706;
-            --amber-bg: #fffbeb;
-            --amber-border: #fde68a;
-            --purple: #7c3aed;
-            --purple-bg: #f5f3ff;
-            --purple-border: #ddd6fe;
-            --cyan: #0891b2;
-            --cyan-bg: #ecfeff;
-            --cyan-border: #a5f3fc;
-            --radius: 16px;
-            --radius-sm: 10px;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+            --bg: #0f1117; --surface: #181a23; --surface-2: #1f2230; --surface-3: #2a2d3a;
+            --border: #313546; --text: #eceef4; --text-2: #9ba1b5; --text-3: #6c7189;
+            --accent: #5b9aff; --accent-glow: rgba(91,154,255,0.1);
+            --green: #34d399; --green-bg: rgba(52,211,153,0.1); --green-border: rgba(52,211,153,0.25);
+            --red: #f87171; --red-bg: rgba(248,113,113,0.1); --red-border: rgba(248,113,113,0.25);
+            --amber: #fbbf24; --amber-bg: rgba(251,191,36,0.1); --amber-border: rgba(251,191,36,0.25);
+            --purple: #a78bfa; --purple-bg: rgba(167,139,250,0.1); --purple-border: rgba(167,139,250,0.25);
+            --cyan: #22d3ee; --cyan-bg: rgba(34,211,238,0.1); --cyan-border: rgba(34,211,238,0.25);
+            --radius: 14px; --radius-sm: 10px;
+            --shadow-sm: 0 4px 12px rgba(0,0,0,0.1);
         }
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); overscroll-behavior: none; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
-        .mono { font-family: 'IBM Plex Mono', monospace; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); overscroll-behavior: none; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
         button { font-family: inherit; border: none; cursor: pointer; -webkit-user-select: none; user-select: none; transition: transform 0.1s; }
         button:active { transform: scale(0.96); }
         input { font-family: inherit; }
@@ -50,22 +33,16 @@
         /* ===== HEADER ===== */
         .app-header { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-shrink: 0; background: var(--surface); box-shadow: var(--shadow-sm); }
         .app-header h1 { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; }
-        .header-right { display: flex; align-items: center; gap: 10px; }
+        .hdr-btn { background: var(--surface-2); color: var(--text-2); padding: 8px 14px; border-radius: 10px; font-size: 11px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; }
+        .header-right { display: flex; align-items: center; gap: 8px; }
         .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
         .sync-dot.offline { background: var(--red); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 50% { opacity: 0.3; } }
 
         /* ===== BIN NAVIGATION ===== */
         .bin-nav-cluster { display: flex; align-items: center; justify-content: center; gap: 8px; }
         .nav-arrow { background: var(--surface-3); color: var(--text); width: 36px; height: 36px; border-radius: 8px; font-size: 18px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
         .nav-arrow:disabled { opacity: 0.3; pointer-events: none; }
-
-        /* ===== PHASE INDICATOR ===== */
-        .phase-bar { display: flex; gap: 2px; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
-        .phase-step { flex: 1; height: 4px; border-radius: 2px; background: var(--surface-3); transition: background 0.4s; }
-        .phase-step.done { background: var(--green); }
-        .phase-step.active { background: var(--accent); }
-        .phase-label { display: flex; justify-content: space-between; padding: 0 16px 8px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-3); }
-        .phase-label span.active { color: var(--accent); }
 
         /* ===== HU CARDS ===== */
         .scroll-area { flex: 1; overflow-y: auto; padding: 16px 16px 200px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
@@ -76,7 +53,7 @@
         .hu-card.adjusted { border-color: var(--amber-border); background: var(--amber-bg); }
 
         .hu-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-        .hu-id { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700; color: var(--accent); background: var(--accent-glow); padding: 4px 10px; border-radius: 6px; }
+        .hu-id { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: var(--accent); background: var(--accent-glow); padding: 4px 10px; border-radius: 6px; }
         .hu-status { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; padding: 4px 10px; border-radius: 6px; }
         
         .hu-meta { display: flex; gap: 16px; margin-bottom: 12px; }
@@ -86,47 +63,55 @@
         /* ===== QTY STEPPER ===== */
         .qty-row { display: flex; align-items: center; gap: 6px; background: var(--surface-2); border-radius: var(--radius-sm); padding: 8px; margin-bottom: 10px; }
         .qty-stepper { width: 44px; height: 44px; border-radius: var(--radius-sm); background: var(--surface-3); color: var(--text); font-size: 20px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
-        .qty-input { flex: 1; background: transparent; border: none; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 24px; font-weight: 700; color: var(--accent); outline: none; }
+        .qty-input { flex: 1; background: transparent; border: none; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; color: var(--accent); outline: none; }
 
         /* ===== BOTTOM BAR ===== */
-        .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 16px calc(env(safe-area-inset-bottom, 16px) + 12px); background: rgba(255,255,255,0.95); backdrop-filter: blur(24px); border-top: 1px solid var(--border); z-index: 50; display: flex; gap: 8px; }
+        .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 16px calc(env(safe-area-inset-bottom, 16px) + 12px); background: rgba(15,17,23,0.95); backdrop-filter: blur(24px); border-top: 1px solid var(--border); z-index: 50; display: flex; gap: 8px; }
         .primary-btn { flex: 3; padding: 18px 0; border-radius: var(--radius); font-size: 14px; font-weight: 800; text-transform: uppercase; background: var(--green); color: white; transition: background 0.2s; }
         .secondary-btn { flex: 1; padding: 18px 0; border-radius: var(--radius); font-size: 14px; background: var(--surface-3); color: var(--text-2); font-weight: 800; }
 
         /* ===== HUB SPECIFICS ===== */
         .aisle-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 16px; }
         .aisle-btn { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 20px 0; text-align: center; font-size: 24px; font-weight: 900; }
-        
         .search-container { padding: 16px; position: relative; }
-        .search-field { width: 100%; padding: 16px 16px 16px 44px; border-radius: var(--radius); border: 1.5px solid var(--border); background: var(--surface); font-size: 16px; outline: none; }
+        .search-field { width: 100%; padding: 16px 16px 16px 44px; border-radius: var(--radius); border: 1.5px solid var(--border); background: var(--surface); color: var(--text); font-size: 16px; outline: none; }
         .search-icon { position: absolute; left: 30px; top: 34px; color: var(--text-3); }
-
-        /* ===== BIN STRIP ===== */
         .bin-strip { display: flex; gap: 6px; overflow-x: auto; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); scrollbar-width: none; }
         .strip-dot { min-width: 50px; height: 32px; border-radius: 8px; background: var(--surface-2); color: var(--text-2); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; }
         .strip-dot.active { background: var(--accent); color: white; }
 
-        /* ===== MODALS ===== */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
-        .modal-sheet { background: var(--surface); border-radius: var(--radius) var(--radius) 0 0; width: 100%; padding: 24px 20px; animation: sheet-up 0.3s ease-out; }
-        @keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 20px; background: var(--accent); color: white; font-weight: 700; z-index: 1000; display: none; }
+        /* ===== TOAST ===== */
+        .toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); padding: 10px 20px; border-radius: 12px; font-size: 12px; font-weight: 700; z-index: 999; pointer-events: none; opacity: 0; transition: opacity .3s; }
+        .toast.show { opacity: 1; }
+        .toast.green { background: var(--green-bg); color: var(--green); border: 1px solid rgba(52,211,153,.25); }
+        .toast.amber { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(251,191,36,.25); }
+        .toast.red { background: var(--red-bg); color: var(--red); border: 1px solid rgba(248,113,113,.25); }
+        .toast.blue { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(91,154,255,.25); }
     </style>
 </head>
 <body>
 
-<div id="toast" class="toast"></div>
+<div id="toast" class="toast"><span id="toast-text"></span></div>
 
 <div id="screen-setup" class="screen active">
     <div class="app-header">
-        <h1>Novus Ops</h1>
+        <a href="index.html" class="hdr-btn">← Home</a>
+        <h1>Cycle Counter</h1>
         <div class="header-right">
             <div id="sync-dot" class="sync-dot"></div>
-            <button class="name-btn">👤 <span id="name-display">Operator</span></button>
+            <button class="hdr-btn" style="font-size:14px; padding:6px 10px;" onclick="NovusSettings.openModal()">⚙</button>
         </div>
     </div>
     <div class="scroll-area">
+        
+        <div style="padding: 16px 16px 0; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <div style="font-size:10px; font-weight:700; color:var(--text-3); text-transform:uppercase;">Auditor</div>
+                <div id="name-display" style="font-weight:800; color:var(--accent);">Operator</div>
+            </div>
+            <button onclick="syncToServer()" style="background:var(--accent); color:white; padding:8px 16px; border-radius:8px; font-size:11px; font-weight:800;">⬆ Sync Counts</button>
+        </div>
+
         <div class="search-container">
             <span class="search-icon">🔍</span>
             <input type="text" id="hub-search" class="search-field" placeholder="Scan SKU, Bin, or type 'FRESH'...">
@@ -136,14 +121,14 @@
         <div class="aisle-grid" id="aisle-grid"></div>
 
         <div style="padding: 0 16px">
-            <button onclick="initFreshMode()" style="width:100%; padding:20px; border-radius:var(--radius); background:linear-gradient(135deg, var(--amber), #d97706); color:white; font-weight:900; font-size:15px">START FRESH AUDIT</button>
+            <button onclick="initFreshMode()" style="width:100%; padding:20px; border-radius:var(--radius); background:linear-gradient(135deg, var(--amber), #b45309); color:white; font-weight:900; font-size:15px">START FRESH AUDIT</button>
         </div>
     </div>
 </div>
 
 <div id="screen-count" class="screen">
     <div class="app-header">
-        <button onclick="switchScreen('setup')" style="background:none; font-weight:700; color:var(--accent); font-size: 13px;">← EXIT</button>
+        <button onclick="switchScreen('setup')" class="hdr-btn">← Back</button>
         <div class="bin-nav-cluster">
             <button id="btn-prev" class="nav-arrow" onclick="prevBin()">←</button>
             <h1 id="count-title" class="mono" style="font-size: 16px; width: 65px; text-align: center;"></h1>
@@ -151,110 +136,194 @@
         </div>
         <div class="sync-dot"></div>
     </div>
-    <div class="phase-bar">
-        <div id="p1" class="phase-step active"></div>
-        <div id="p2" class="phase-step"></div>
-        <div id="p3" class="phase-step"></div>
-    </div>
-    <div class="phase-label">
-        <span id="l1" class="active">Verify</span>
-        <span id="l2">Extras</span>
-        <span id="l3">Review</span>
-    </div>
     <div class="bin-strip" id="bin-strip"></div>
     <div class="scroll-area" id="hu-list">
         </div>
     <div class="bottom-bar">
-        <button class="secondary-btn" onclick="manualJump()">Jump</button>
+        <button class="secondary-btn" onclick="syncToServer()">Sync ⬆</button>
         <button class="primary-btn" id="btn-next" onclick="nextBin()">Next Bin →</button>
     </div>
 </div>
 
 <div id="screen-fresh" class="screen">
     <div class="app-header">
-        <button onclick="switchScreen('setup')" style="background:none; font-weight:700; color:var(--amber)">← EXIT</button>
-        <h1 id="fresh-title">FRESH Tally</h1>
+        <button onclick="switchScreen('setup')" class="hdr-btn">← Back</button>
+        <h1 id="fresh-title" style="color:var(--amber)">FRESH Tally</h1>
         <div class="sync-dot"></div>
     </div>
     <div class="search-container">
         <input type="text" id="fresh-scan-input" class="search-field" style="border-color:var(--amber)" placeholder="Scan any pallet...">
     </div>
-    <div class="scroll-area" id="fresh-list">
-        </div>
+    <div class="scroll-area" id="fresh-list"></div>
     <div class="bottom-bar">
-        <button class="primary-btn" style="background:var(--amber)" onclick="finalizeFresh()">Finalize Audit</button>
-    </div>
-</div>
-
-<div id="modal-cc-trigger" class="modal-overlay">
-    <div class="modal-sheet">
-        <div style="text-align:center; margin-bottom:20px">
-            <div style="font-size:48px">👻</div>
-            <h2 style="font-weight:900">Ghost Item Detected</h2>
-            <p style="color:var(--text-2); font-size:14px">HU <span id="ghost-hu" class="mono" style="color:var(--accent); font-weight:700"></span> is not in SAP.</p>
-        </div>
-        <p style="text-align:center; font-size:13px; color:var(--text-2); margin-bottom:24px">Would you like to pivot to a global Product Audit for this item?</p>
-        <div style="display:flex; gap:10px">
-            <button class="secondary-btn" style="flex:1" onclick="closeGhostModal()">Dismiss</button>
-            <button class="primary-btn" style="flex:2; background:var(--accent)" onclick="pivotToProduct()">Start Audit</button>
-        </div>
+        <button class="primary-btn" style="background:var(--amber)" onclick="syncToServer()">Submit Fresh Audit</button>
     </div>
 </div>
 
 <script>
-    /**
-     * STATE & CONFIG
-     */
+const NovusSettings = (() => {
+  const STORAGE_KEY = 'novus_settings';
+  const DEFAULTS = { userName: '', theme: 'dark', pollInterval: 10, hapticFeedback: true, compactMode: false };
+
+  const LIGHT_VARS = {
+    '--bg': '#f8f9fb', '--surface': '#ffffff', '--surface-2': '#f1f3f5', '--surface-3': '#e5e7eb',
+    '--border': '#d1d5dc', '--text': '#111827', '--text-2': '#374151', '--text-3': '#6b7280',
+    '--accent': '#2563eb', '--accent-dim': 'rgba(37,99,235,.07)',
+    '--green': '#059669', '--green-bg': 'rgba(5,150,105,.08)', '--green-border': 'rgba(5,150,105,.25)',
+    '--red': '#dc2626', '--red-bg': 'rgba(220,38,38,.07)', '--red-border': 'rgba(220,38,38,.25)',
+    '--amber': '#b45309', '--amber-bg': 'rgba(180,83,9,.07)', '--amber-border': 'rgba(180,83,9,.25)',
+    '--purple': '#7c3aed', '--purple-bg': 'rgba(124,58,237,.07)', '--purple-border': 'rgba(124,58,237,.25)',
+    '--cyan': '#0e7490', '--cyan-bg': 'rgba(14,116,144,.07)', '--cyan-border': 'rgba(14,116,144,.25)'
+  };
+
+  const DARK_VARS = {
+    '--bg': '#0f1117', '--surface': '#181a23', '--surface-2': '#1f2230', '--surface-3': '#2a2d3a',
+    '--border': '#313546', '--text': '#eceef4', '--text-2': '#9ba1b5', '--text-3': '#6c7189',
+    '--accent': '#5b9aff', '--accent-dim': 'rgba(91,154,255,.1)',
+    '--green': '#34d399', '--green-bg': 'rgba(52,211,153,.1)', '--green-border': 'rgba(52,211,153,.25)',
+    '--red': '#f87171', '--red-bg': 'rgba(248,113,113,.1)', '--red-border': 'rgba(248,113,113,.25)',
+    '--amber': '#fbbf24', '--amber-bg': 'rgba(251,191,36,.1)', '--amber-border': 'rgba(251,191,36,.25)',
+    '--purple': '#a78bfa', '--purple-bg': 'rgba(167,139,250,.1)', '--purple-border': 'rgba(167,139,250,.25)',
+    '--cyan': '#22d3ee', '--cyan-bg': 'rgba(34,211,238,.1)', '--cyan-border': 'rgba(34,211,238,.25)'
+  };
+
+  function loadAll() {
+    try { const r = localStorage.getItem(STORAGE_KEY); return r ? { ...DEFAULTS, ...JSON.parse(r) } : { ...DEFAULTS }; }
+    catch { return { ...DEFAULTS }; }
+  }
+  function saveAll(s) { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
+
+  let _cache = loadAll();
+  const legacyName = localStorage.getItem('novus_name');
+  if (legacyName && !_cache.userName) { _cache.userName = legacyName; saveAll(_cache); }
+
+  function get(key) { return _cache[key] !== undefined ? _cache[key] : DEFAULTS[key]; }
+  function set(key, val) {
+    _cache[key] = val; saveAll(_cache);
+    if (key === 'userName') {
+        localStorage.setItem('novus_name', val);
+        const disp = document.getElementById('name-display');
+        if(disp) disp.innerText = val || 'Operator';
+    }
+    if (key === 'theme') applyTheme();
+  }
+  function getUser() { return get('userName') || 'Operator'; }
+  function applyTheme() {
+    const vars = get('theme') === 'light' ? LIGHT_VARS : DARK_VARS;
+    Object.entries(vars).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+    document.body.setAttribute('data-theme', get('theme'));
+    
+    // Adjust bottom bar blur color based on theme
+    const bb = document.querySelector('.bottom-bar');
+    if (bb) bb.style.background = get('theme') === 'light' ? 'rgba(255,255,255,0.95)' : 'rgba(15,17,23,0.95)';
+  }
+
+  let _modalInjected = false;
+  function _injectModal() {
+    if (_modalInjected) return;
+    _modalInjected = true;
+    const overlay = document.createElement('div');
+    overlay.id = 'novus-settings-overlay';
+    overlay.innerHTML = `
+      <div class="ns-modal">
+        <div class="ns-header"><h3>⚙ Settings</h3><button class="ns-close" onclick="NovusSettings.closeModal()">✕</button></div>
+        <div class="ns-body">
+          <div class="ns-section"><div class="ns-section-title">Identity</div>
+            <label class="ns-field-label">Your Name / ID</label>
+            <input type="text" class="ns-input" id="ns-username" placeholder="Enter your name...">
+            <div class="ns-hint">Attached to all audit payloads and reports</div></div>
+          <div class="ns-section"><div class="ns-section-title">Appearance</div>
+            <div class="ns-toggle-row"><div><div class="ns-toggle-label">Theme</div><div class="ns-hint" style="margin-top:2px">Dark or light mode</div></div>
+              <div class="ns-theme-switch" id="ns-theme-switch" onclick="NovusSettings._toggleTheme()">
+                <span class="ns-switch-option" data-val="dark">🌙 Dark</span>
+                <span class="ns-switch-option" data-val="light">☀️ Light</span>
+                <div class="ns-switch-slider" id="ns-switch-slider"></div></div></div></div>
+        </div>
+        <div class="ns-footer"><button class="ns-save-btn" onclick="NovusSettings._save()">Save & Close</button></div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const style = document.createElement('style');
+    style.textContent = `
+      #novus-settings-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;padding:20px}
+      #novus-settings-overlay.open{display:flex}
+      .ns-modal{background:var(--surface);width:100%;max-width:480px;border-radius:16px;border:1.5px solid var(--border);display:flex;flex-direction:column;max-height:90vh;overflow:hidden}
+      .ns-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+      .ns-header h3{font-size:16px;font-weight:800;color:var(--text)}
+      .ns-close{background:none;border:none;color:var(--text-3);font-size:18px;font-weight:900;cursor:pointer}
+      .ns-body{padding:0;overflow-y:auto;flex:1}
+      .ns-section{padding:16px 20px;border-bottom:1px solid var(--border)}.ns-section:last-child{border-bottom:none}
+      .ns-section-title{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin-bottom:12px}
+      .ns-field-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);display:block;margin-bottom:6px}
+      .ns-input{width:100%;padding:12px 14px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-weight:600;color:var(--text);outline:none;font-family:inherit}
+      .ns-input:focus{border-color:var(--accent)}
+      .ns-hint{font-size:9px;color:var(--text-3);margin-top:4px}
+      .ns-toggle-row{display:flex;justify-content:space-between;align-items:center}
+      .ns-toggle-label{font-size:12px;font-weight:700;color:var(--text)}
+      .ns-theme-switch{display:flex;position:relative;background:var(--surface-2);border-radius:8px;border:1px solid var(--border);overflow:hidden;cursor:pointer;user-select:none}
+      .ns-switch-option{padding:6px 14px;font-size:10px;font-weight:800;color:var(--text-3);position:relative;z-index:2;transition:color .2s}
+      .ns-switch-option.active{color:#fff}
+      .ns-switch-slider{position:absolute;top:2px;left:2px;width:calc(50% - 2px);height:calc(100% - 4px);background:var(--accent);border-radius:6px;transition:transform .2s ease;z-index:1}
+      .ns-switch-slider.right{transform:translateX(100%)}
+      .ns-footer{padding:12px 20px;border-top:1px solid var(--border)}
+      .ns-save-btn{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit}`;
+    document.body.appendChild(style);
+  }
+
+  function openModal() {
+    _injectModal();
+    document.getElementById('novus-settings-overlay').classList.add('open');
+    document.getElementById('ns-username').value = get('userName');
+    _updateThemeSwitch();
+  }
+  function closeModal() { const o = document.getElementById('novus-settings-overlay'); if (o) o.classList.remove('open'); }
+  function _updateThemeSwitch() {
+    const s = document.getElementById('ns-switch-slider'); const opts = document.querySelectorAll('.ns-switch-option');
+    if (!s) return; s.classList.toggle('right', get('theme') === 'light');
+    opts.forEach(o => o.classList.toggle('active', o.dataset.val === get('theme')));
+  }
+  function _toggleTheme() { set('theme', get('theme') === 'dark' ? 'light' : 'dark'); _updateThemeSwitch(); }
+  function _save() {
+    set('userName', document.getElementById('ns-username').value.trim());
+    closeModal(); 
+    if(typeof showToast === 'function') showToast('Settings saved', 'green');
+  }
+
+  applyTheme();
+  return { get, set, getUser, applyTheme, openModal, closeModal, _toggleTheme, _save };
+})();
+</script>
+
+<script>
     const FRESH_SKUS = ["3305704","3307506","3307509","3307515","3307518","3307525","3307710","3308356","3309009","3309016","3309017","3309019","3309138","3309139"];
     const API_URL = 'https://script.google.com/macros/s/AKfycbwZ1Dhmf6cK_hWV2xLKYmwEImUvifIRCPqVm0Fz4E7gjvfcpyzoqhAFIgvgwrjBretc/exec';
     
+    // Generate a unique session ID for idempotency checks on the backend
+    const SESSION_ID = 'sess_' + Math.random().toString(36).substr(2, 9);
+    
     let sapMaster = [];
-    let sessionRegistry = new Map(); // Global State (HU -> Record)
+    let sessionRegistry = new Map(); 
     let currentAisle = "";
     let currentBinIdx = 0;
     let currentBins = [];
-    let activeGhostHU = "";
 
-    // Init
     document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('name-display').innerText = NovusSettings.getUser();
         renderAisleGrid();
         pullSAPData();
 
-        // Command Bar Logic
         document.getElementById('hub-search').addEventListener('keypress', e => {
-            if(e.key === 'Enter') {
-                handleGateway(e.target.value.trim().toUpperCase());
-                e.target.value = '';
-            }
+            if(e.key === 'Enter') { handleGateway(e.target.value.trim().toUpperCase()); e.target.value = ''; }
         });
-
-        // Fresh Mode Scanner
         document.getElementById('fresh-scan-input').addEventListener('keypress', e => {
-            if(e.key === 'Enter') {
-                processFreshScan(e.target.value.trim().toUpperCase());
-                e.target.value = '';
-            }
+            if(e.key === 'Enter') { processFreshScan(e.target.value.trim().toUpperCase()); e.target.value = ''; }
         });
     });
 
-    /**
-     * 1. GATEWAY & NAVIGATION
-     */
     function handleGateway(input) {
         if (!input) return;
         if (input === 'FRESH') return initFreshMode();
-        
-        const huMatch = sapMaster.find(i => i.hu === input);
-        if (huMatch) return initProductAudit(huMatch.product);
-
-        const skuMatch = sapMaster.filter(i => i.product === input);
-        if (skuMatch.length > 0) return initProductAudit(input);
-
-        if (input.match(/^W[A-P][0-9]{2}[A-C]$/)) {
-            startAisleAudit(input.charAt(1), input);
-            return;
-        }
-        showToast("No SAP Match Found", "red");
+        if (input.match(/^W[A-P][0-9]{2}[A-C]$/)) return startAisleAudit(input.charAt(1), input);
+        showToast("Use Aisle Grid for structured counts", "amber");
     }
 
     function startAisleAudit(aisle, targetBin = null) {
@@ -270,9 +339,6 @@
         updateBinView();
     }
 
-    /**
-     * 2. RECONCILIATION UI 
-     */
     function renderHUList() {
         const container = document.getElementById('hu-list');
         const bin = currentBins[currentBinIdx];
@@ -291,11 +357,8 @@
 
             const card = document.createElement('div');
             card.className = `hu-card ${reg ? reg.status.toLowerCase() : ''}`;
-            
             const statusLabel = reg ? reg.status : (movedElsewhere ? 'MOVED' : 'PENDING');
             const statusClass = reg ? reg.status.toLowerCase() : (movedElsewhere ? 'move' : 'pending');
-
-            // Dynamic UI states
             const currentQty = reg ? reg.scanQty : item.sapQty;
             const isAdj = currentQty !== item.sapQty;
 
@@ -308,17 +371,13 @@
                     <div style="flex:2"><div class="hu-meta-label">Product</div><div class="hu-meta-value">${item.product}</div></div>
                     <div style="flex:1"><div class="hu-meta-label">SAP Qty</div><div class="hu-meta-value mono">${item.sapQty}</div></div>
                 </div>
-                
                 ${movedElsewhere ? `<div style="font-size:11px; color:var(--purple); font-weight:700; margin-bottom:12px">📍 Found earlier in ${movedElsewhere.foundIn}</div>` : ''}
-                
                 ${reg && reg.note ? `<div style="font-size:12px; padding:8px; background:var(--surface-3); border-radius:6px; margin-bottom:12px; font-style:italic;">💬 ${reg.note}</div>` : ''}
-                
                 <div class="qty-row">
                     <button class="qty-stepper" onclick="adjQty('${item.hu}', -1)">−</button>
                     <input type="number" class="qty-input" id="qty-${item.hu}" value="${currentQty}" onchange="setQty('${item.hu}', this.value)">
                     <button class="qty-stepper" onclick="adjQty('${item.hu}', 1)">+</button>
                 </div>
-
                 <div style="display:flex; gap:6px; flex-wrap:wrap;">
                     <button class="primary-btn" style="flex:2; padding:12px; font-size:13px; background:${isAdj ? 'var(--amber)' : 'var(--green)'}" onclick="confirmItem('${item.hu}')">
                         ${isAdj ? 'Confirm Adj' : 'Confirm'}
@@ -332,123 +391,44 @@
         });
     }
 
-    /**
-     * 3. STATE CONTROLLER (GAS Backend formatting)
-     */
     function saveToRegistry(hu, updates) {
         const sap = sapMaster.find(i => i.hu === hu);
         const currentBin = currentBins[currentBinIdx];
-        
-        // Base object defaults to SAP expected values
-        const current = sessionRegistry.get(hu) || {
-            ...sap,
-            scanQty: sap.sapQty,
-            scanBin: currentBin, // defaults to physical bin being counted
-            foundIn: currentBin,
-            note: '',
-            type: 'ok',
-            status: 'PENDING'
-        };
-        
+        const current = sessionRegistry.get(hu) || { ...sap, scanQty: sap.sapQty, scanBin: currentBin, foundIn: currentBin, note: '', type: 'ok', status: 'PENDING' };
         const merged = { ...current, ...updates };
         
-        // Evaluate Data Matrix for GAS Backend
         if (merged.status === 'MISSING' || merged.scanQty === 0) {
-            merged.type = 'miss';
-            merged.status = 'MISSING';
-            merged.scanQty = 0; // Enforce 0 if marked missing
+            merged.type = 'miss'; merged.status = 'MISSING'; merged.scanQty = 0;
         } else {
             const isMoved = merged.scanBin !== merged.sapBin;
             const isAdj = merged.scanQty !== merged.sapQty;
-            
-            if (isMoved && isAdj) {
-                merged.type = 'move_adj';
-                merged.status = 'MOVEMENT';
-            } else if (isMoved) {
-                merged.type = 'move';
-                merged.status = 'MOVEMENT';
-            } else if (isAdj) {
-                merged.type = 'adj';
-                merged.status = 'ADJUSTED';
-            } else {
-                merged.type = 'ok';
-                merged.status = 'OK';
-            }
+            if (isMoved && isAdj) { merged.type = 'move_adj'; merged.status = 'MOVEMENT'; }
+            else if (isMoved) { merged.type = 'move'; merged.status = 'MOVEMENT'; }
+            else if (isAdj) { merged.type = 'adj'; merged.status = 'ADJUSTED'; }
+            else { merged.type = 'ok'; merged.status = 'OK'; }
         }
-        
         sessionRegistry.set(hu, merged);
         renderHUList();
     }
 
-    // --- UI Action Wrappers ---
-
-    function confirmItem(hu) {
-        // Reads whatever is currently in the input field to lock it in
-        const inputVal = parseInt(document.getElementById(`qty-${hu}`).value, 10) || 0;
-        saveToRegistry(hu, { scanQty: inputVal, scanBin: currentBins[currentBinIdx] });
-    }
-
-    function adjQty(hu, delta) {
-        const sap = sapMaster.find(i => i.hu === hu);
-        const reg = sessionRegistry.get(hu);
-        const currentQty = reg ? reg.scanQty : sap.sapQty;
-        saveToRegistry(hu, { scanQty: Math.max(0, currentQty + delta) });
-    }
-
-    function setQty(hu, val) {
-        saveToRegistry(hu, { scanQty: parseInt(val, 10) || 0 });
-    }
-
-    function markMissing(hu) {
-        saveToRegistry(hu, { status: 'MISSING' });
-    }
-
-    function addNote(hu) {
-        const reg = sessionRegistry.get(hu);
-        const currentNote = reg ? reg.note : '';
-        const note = prompt(`Enter audit note for HU ${hu}:`, currentNote);
-        
-        if (note !== null) { // if they didn't hit cancel
-            saveToRegistry(hu, { note: note.trim() });
-        }
-    }
-
+    function confirmItem(hu) { saveToRegistry(hu, { scanQty: parseInt(document.getElementById(`qty-${hu}`).value, 10) || 0, scanBin: currentBins[currentBinIdx] }); }
+    function adjQty(hu, delta) { const cur = sessionRegistry.get(hu); saveToRegistry(hu, { scanQty: Math.max(0, (cur ? cur.scanQty : sapMaster.find(i=>i.hu===hu).sapQty) + delta) }); }
+    function setQty(hu, val) { saveToRegistry(hu, { scanQty: parseInt(val, 10) || 0 }); }
+    function markMissing(hu) { saveToRegistry(hu, { status: 'MISSING' }); }
+    function addNote(hu) { const note = prompt("Enter note:", sessionRegistry.get(hu)?.note || ''); if (note !== null) saveToRegistry(hu, { note: note.trim() }); }
     function initiateMovement(hu) {
         const sap = sapMaster.find(i => i.hu === hu);
-        const reg = sessionRegistry.get(hu);
-        const currentDest = reg ? reg.scanBin : sap.sapBin;
-        
-        const dest = prompt(`Transfer HU ${hu}\nCurrently expected in: ${sap.sapBin}\n\nEnter physical destination bin:`, currentDest);
-        
-        if (dest && dest.trim() !== '') {
-            saveToRegistry(hu, { scanBin: dest.trim().toUpperCase() });
-            showToast(`Routed to ${dest.trim().toUpperCase()}`, "purple");
-        }
+        const dest = prompt(`Transfer HU ${hu}\nExpected: ${sap.sapBin}\nEnter new bin:`, sessionRegistry.get(hu)?.scanBin || sap.sapBin);
+        if (dest && dest.trim() !== '') { saveToRegistry(hu, { scanBin: dest.trim().toUpperCase() }); showToast(`Routed to ${dest.trim().toUpperCase()}`, "purple"); }
     }
 
-
-    /**
-     * 4. FRESH MODE (RAPID TALLY)
-     */
     function initFreshMode() {
         const list = document.getElementById('fresh-list');
         list.innerHTML = '';
         FRESH_SKUS.forEach(sku => {
             const card = document.createElement('div');
-            card.className = 'hu-card';
-            card.id = `fresh-${sku}`;
-            card.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center">
-                    <div>
-                        <div class="hu-meta-label">SKU</div>
-                        <div style="font-size:20px; font-weight:900">${sku}</div>
-                    </div>
-                    <div style="text-align:right">
-                        <div id="tally-${sku}" style="font-size:32px; font-weight:900; color:var(--amber)">0</div>
-                        <div class="hu-meta-label">Total Found</div>
-                    </div>
-                </div>
-            `;
+            card.className = 'hu-card'; card.id = `fresh-${sku}`;
+            card.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center"><div><div class="hu-meta-label">SKU</div><div style="font-size:20px; font-weight:900">${sku}</div></div><div style="text-align:right"><div id="tally-${sku}" style="font-size:32px; font-weight:900; color:var(--amber)">0</div><div class="hu-meta-label">Total Found</div></div></div>`;
             list.appendChild(card);
         });
         switchScreen('fresh');
@@ -460,25 +440,14 @@
             const sku = sap.product;
             const reg = sessionRegistry.get(input) || { scanQty: 0 };
             sessionRegistry.set(input, { ...sap, scanQty: reg.scanQty + 1, status: 'OK' });
-            
-            // UI Update
-            const total = Array.from(sessionRegistry.values()).filter(i => i.product === sku).reduce((s,i) => s+i.scanQty, 0);
-            document.getElementById(`tally-${sku}`).innerText = total;
+            document.getElementById(`tally-${sku}`).innerText = Array.from(sessionRegistry.values()).filter(i => i.product === sku).reduce((s,i) => s+i.scanQty, 0);
             document.getElementById(`fresh-${sku}`).style.borderColor = 'var(--amber)';
+            if(NovusSettings.get('hapticFeedback') && navigator.vibrate) navigator.vibrate(50);
             showToast(`Added ${sku}`, "amber");
-        } else {
-            showToast("Invalid Item", "red");
-        }
+        } else { showToast("Invalid Item", "red"); if(navigator.vibrate) navigator.vibrate([100,50,100]); }
     }
 
-    /**
-     * UI UTILS & NAVIGATION
-     */
-    function switchScreen(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(`screen-${id}`).classList.add('active');
-    }
-
+    function switchScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(`screen-${id}`).classList.add('active'); }
     function renderBinStrip() {
         const strip = document.getElementById('bin-strip');
         strip.innerHTML = '';
@@ -492,71 +461,106 @@
             strip.appendChild(dot);
         }
     }
-
-    function nextBin() { 
-        if(currentBinIdx < currentBins.length - 1) { 
-            currentBinIdx++; 
-            updateBinView(); 
-        } 
-    }
-
-    function prevBin() {
-        if(currentBinIdx > 0) {
-            currentBinIdx--;
-            updateBinView();
-        }
-    }
-
+    function nextBin() { if(currentBinIdx < currentBins.length - 1) { currentBinIdx++; updateBinView(); } }
+    function prevBin() { if(currentBinIdx > 0) { currentBinIdx--; updateBinView(); } }
     function updateBinView() {
-        renderHUList(); 
-        renderBinStrip();
-        
-        const prevBtn = document.getElementById('btn-prev');
-        const nextBtnTop = document.getElementById('btn-next-top');
-        const nextBtnBot = document.getElementById('btn-next'); 
-        
-        // Disable arrows at the boundaries
-        if (prevBtn) prevBtn.disabled = currentBinIdx === 0;
-        if (nextBtnTop) nextBtnTop.disabled = currentBinIdx === currentBins.length - 1;
-        
-        // Visual indicator that the aisle is complete
-        if (nextBtnBot) {
-            if (currentBinIdx === currentBins.length - 1) {
-                nextBtnBot.innerText = "Finish Aisle ✓";
-                nextBtnBot.style.background = "var(--purple)";
-            } else {
-                nextBtnBot.innerText = "Next Bin →";
-                nextBtnBot.style.background = "var(--green)";
-            }
+        renderHUList(); renderBinStrip();
+        const pBtn = document.getElementById('btn-prev'), nTop = document.getElementById('btn-next-top'), nBot = document.getElementById('btn-next');
+        if(pBtn) pBtn.disabled = currentBinIdx === 0;
+        if(nTop) nTop.disabled = currentBinIdx === currentBins.length - 1;
+        if(nBot) {
+            if (currentBinIdx === currentBins.length - 1) { nBot.innerText = "Finish Aisle ✓"; nBot.style.background = "var(--purple)"; } 
+            else { nBot.innerText = "Next Bin →"; nBot.style.background = "var(--green)"; }
         }
     }
 
     function showToast(msg, color) {
         const t = document.getElementById('toast');
-        t.innerText = msg;
-        t.style.background = `var(--${color})`;
-        t.style.display = 'block';
-        setTimeout(() => t.style.display = 'none', 2000);
+        document.getElementById('toast-text').innerText = msg;
+        t.className = `toast ${color} show`;
+        setTimeout(() => t.classList.remove('show'), 2000);
     }
+    window.toast = showToast; // Expose for Settings Modal
 
     async function pullSAPData() {
         try {
             const res = await fetch(API_URL + '?type=sapdata');
             const data = await res.json();
             sapMaster = data.sapData;
-            showToast("SAP Synced", "green");
-        } catch(e) { showToast("Offline", "amber"); }
+            document.querySelectorAll('.sync-dot').forEach(d => d.classList.remove('offline'));
+        } catch(e) { document.querySelectorAll('.sync-dot').forEach(d => d.classList.add('offline')); }
     }
 
     function renderAisleGrid() {
         const grid = document.getElementById('aisle-grid');
         "ABCDEFGHJKLMNP".split("").forEach(l => {
             const btn = document.createElement('div');
-            btn.className = 'aisle-btn';
-            btn.innerText = l;
+            btn.className = 'aisle-btn'; btn.innerText = l;
             btn.onclick = () => startAisleAudit(l);
             grid.appendChild(btn);
         });
+    }
+
+    // ==========================================
+    // 3. THE API POST LOOP
+    // ==========================================
+    async function syncToServer() {
+        if (sessionRegistry.size === 0) {
+            showToast("No counts to sync", "amber");
+            return;
+        }
+
+        showToast("Syncing to server...", "blue");
+
+        // Format the Map into the array structure the backend expects
+        const itemsToLog = Array.from(sessionRegistry.values()).map(record => ({
+            hu: record.hu,
+            product: record.product,
+            desc: record.desc,
+            batch: record.batch,
+            sapBin: record.sapBin,
+            sapQty: record.sapQty,
+            countQty: record.scanQty,
+            type: record.type,     // Contains the calculated state (ok, adj, move, miss)
+            note: record.note
+        }));
+
+        // Send the payload
+        try {
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                redirect: 'follow',
+                body: JSON.stringify({
+                    action: 'logAudit',
+                    user: NovusSettings.getUser(),
+                    bin: currentBins[currentBinIdx] || "FRESH", // Fallback for Fresh Audit
+                    sessionId: SESSION_ID,
+                    items: itemsToLog
+                })
+            });
+            
+            const result = await res.json();
+            
+            if (result.success) {
+                showToast(`Successfully synced ${result.logged || itemsToLog.length} items!`, "green");
+                sessionRegistry.clear(); // Clear the local registry upon success
+                
+                // Return to hub based on where they synced from
+                if(document.getElementById('screen-fresh').classList.contains('active') || 
+                   document.getElementById('btn-next')?.innerText.includes("Finish")) {
+                    switchScreen('setup');
+                } else {
+                    renderHUList(); // Re-render if they sync mid-aisle
+                }
+            } else if (result.skipped) {
+                showToast("Already synced (Idempotency check)", "blue");
+            } else {
+                showToast("Server error: " + (result.error || "Unknown"), "red");
+            }
+        } catch (err) {
+            showToast("Network Error: Could not reach server", "red");
+        }
     }
 </script>
 </body>
