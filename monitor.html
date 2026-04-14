@@ -6,7 +6,6 @@
 <title>Control Center — Novus Ops</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js" onerror="window._mermaidFailed=true"></script>
 <style>
 :root{--bg:#0f1117;--surface:#181a23;--surface-2:#1f2230;--surface-3:#2a2d3a;--border:#313546;--text:#eceef4;--text-2:#9ba1b5;--text-3:#6c7189;--accent:#5b9aff;--accent-dim:rgba(91,154,255,.1);--green:#34d399;--green-bg:rgba(52,211,153,.1);--red:#f87171;--red-bg:rgba(248,113,113,.1);--amber:#fbbf24;--amber-bg:rgba(251,191,36,.1);--purple:#a78bfa;--purple-bg:rgba(167,139,250,.1);--cyan:#22d3ee;--cyan-bg:rgba(34,211,238,.1);--radius:14px}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -22,1377 +21,173 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);ove
 .freshness{padding:5px 12px;border-radius:8px;font-size:10px;font-weight:700}
 .freshness.fresh{background:var(--green-bg);color:var(--green)}.freshness.stale{background:var(--amber-bg);color:var(--amber)}
 .freshness.old{background:var(--red-bg);color:var(--red)}.freshness.none{background:var(--surface-2);color:var(--text-3)}
-.live-pill{display:flex;align-items:center;gap:6px;padding:5px 12px;background:var(--surface-2);border-radius:8px;font-size:10px;font-weight:700;color:var(--text-2)}
-.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite}
-@keyframes pulse{50%{opacity:.3}}
-.home-link{background:var(--surface-2);color:var(--text-2);padding:6px 14px;border-radius:8px;font-size:10px;font-weight:700;text-decoration:none}
-.gear-btn{background:var(--surface-2);color:var(--text-2);padding:6px 10px;border-radius:8px;font-size:14px;border:none;cursor:pointer}
-.gear-btn:hover{background:var(--accent-dim);color:var(--accent)}
 .metrics-row{display:flex;gap:1px;background:var(--border);border-bottom:1px solid var(--border);flex-shrink:0}
 .metric{flex:1;background:var(--surface);padding:12px 16px}
 .m-label{display:block;font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3)}
 .m-val{display:block;font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;margin-top:2px}
-.m-val small{font-size:9px;font-weight:600;color:var(--text-3)}
-.green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}.cyan{color:var(--cyan)}.purple{color:var(--purple)}
 .panes{flex:1;display:flex;overflow:hidden}
 .rail{width:280px;border-right:1px solid var(--border);background:var(--surface);overflow-y:auto;flex-shrink:0}
-.rail::-webkit-scrollbar{width:4px}.rail::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:2px}
 .rail-section{padding:14px 16px;border-bottom:1px solid var(--border)}
 .rail-section h3{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);margin-bottom:10px}
 .upload-zone{display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px;border:2px dashed var(--border);border-radius:12px;cursor:pointer;transition:all .2s;text-align:center}
 .upload-zone:hover{border-color:var(--accent);background:var(--accent-dim)}
-.upload-zone.uploading{border-color:var(--amber);background:var(--amber-bg);pointer-events:none}
-.upload-zone.success{border-color:var(--green);background:var(--green-bg)}
-.upload-zone.error{border-color:var(--red);background:var(--red-bg)}
-.uz-icon{font-size:20px}.uz-label{font-size:10px;font-weight:700;color:var(--text-2)}
-.upload-meta{font-size:9px;color:var(--text-3);margin-top:8px;line-height:1.6}
-.upload-meta strong{color:var(--text-2)}
-.assign-row{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
-.aisle-pick{padding:6px 10px;border-radius:8px;background:var(--surface-2);border:1.5px solid var(--border);font-size:11px;font-weight:800;color:var(--text-3);cursor:pointer}
-.aisle-pick.on{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
-.assign-input{width:100%;padding:8px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text);outline:none;font-family:inherit;margin-top:6px}
-.assign-input:focus{border-color:var(--accent)}
-.assign-actions{display:flex;gap:4px;margin-top:8px}
-.assign-btn{padding:6px 12px;border-radius:8px;font-size:10px;font-weight:800;text-transform:uppercase;cursor:pointer;border:none}
+.assign-btn{width:100%;padding:10px;border-radius:8px;font-size:10px;font-weight:800;text-transform:uppercase;cursor:pointer;border:none;margin-top:8px}
 .assign-btn.push{background:var(--accent);color:#fff}
-.assign-btn.clear{background:var(--surface-3);color:var(--text-3)}
 .main-pane{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.status-pills{display:flex;gap:6px;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;flex-wrap:wrap}
-.pill{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:8px;background:var(--surface-2);cursor:pointer;border:1.5px solid transparent;transition:all 0.2s}
-.pill:hover{filter:brightness(1.2)}
+.status-pills{display:flex;gap:6px;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0}
+.pill{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:8px;background:var(--surface-2);cursor:pointer;border:1.5px solid transparent}
 .pill.active{border-color:var(--accent);background:var(--accent-dim)}
-.pill-count{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px}
-.pill-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text-3)}
 .table-wrap{flex:1;overflow:auto}
 table{width:100%;border-collapse:collapse;font-size:11px}
-thead{position:sticky;top:0;background:var(--surface);z-index:5}
-th{padding:10px 12px;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-3);text-align:left;border-bottom:2px solid var(--border)}
-td{padding:7px 12px;border-bottom:1px solid var(--border);font-weight:500}
-tr:hover{background:var(--surface-2)}
+th{padding:10px 12px;font-size:8px;font-weight:800;text-transform:uppercase;color:var(--text-3);text-align:left;border-bottom:2px solid var(--border);position:sticky;top:0;background:var(--surface)}
+td{padding:7px 12px;border-bottom:1px solid var(--border)}
 .status-tag{font-size:8px;font-weight:800;text-transform:uppercase;padding:3px 8px;border-radius:5px}
 .status-tag.ok{background:var(--green-bg);color:var(--green)}
-.status-tag.miss,.status-tag.missing,.status-tag.missing_temp{background:var(--red-bg);color:var(--red)}
+.status-tag.miss,.status-tag.missing{background:var(--red-bg);color:var(--red)}
 .status-tag.adj{background:var(--amber-bg);color:var(--amber)}
 .status-tag.unexpected{background:var(--cyan-bg);color:var(--cyan)}
-.status-tag.move{background:var(--purple-bg);color:var(--purple)}
-.status-tag.move_adj{background:var(--surface-2);color:var(--purple);border:1px dashed var(--purple)}
-.status-tag.found_moved{background:var(--green-bg);color:var(--green);border:1px dashed var(--green)}
-.empty-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-3)}
-.empty-main span{font-size:48px;margin-bottom:16px;opacity:.4}
-.empty-main h2{font-size:16px;font-weight:800;color:var(--text-2)}
-.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:12px;font-size:12px;font-weight:700;z-index:999;pointer-events:none;opacity:0;transition:opacity .3s}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:12px;font-size:12px;font-weight:700;z-index:999;opacity:0;transition:opacity .3s}
 .toast.show{opacity:1}
-.toast.green{background:var(--green-bg);color:var(--green);border:1px solid rgba(34,197,94,.25)}
-.toast.blue{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(79,140,255,.2)}
-.toast.red{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.25)}
-.toast.amber{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(245,158,11,.25)}
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(5px);z-index:100;align-items:center;justify-content:center;padding:20px}
-.modal-overlay.open{display:flex}
-.modal-box{background:var(--surface);width:100%;max-width:700px;border-radius:var(--radius);border:1.5px solid var(--border);display:flex;flex-direction:column;max-height:90vh}
-.modal-header{padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
-.modal-header h3{font-size:14px;font-weight:800}
-.modal-close{background:none;color:var(--text-3);font-size:16px;font-weight:900;border:none;cursor:pointer}
-.modal-body{padding:16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1}
-.modal-footer{padding:16px;border-top:1px solid var(--border);display:flex;gap:8px}
-.modal-footer button{flex:1;padding:12px;border-radius:8px;font-size:11px;font-weight:800;text-transform:uppercase;cursor:pointer;border:none}
-.sop-card{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px}
-.sop-card-header{display:flex;justify-content:space-between;align-items:flex-start}
-.sop-title{font-size:16px;font-weight:800;margin:6px 0 2px;color:var(--accent)}
-.sop-date{font-size:10px;color:var(--text-2)}
-.sop-body{background:var(--surface);padding:14px;border-radius:8px;font-size:12px;color:var(--text);white-space:pre-wrap;border:1px solid var(--border);line-height:1.5}
-.mermaid-container{background:var(--surface);padding:16px;border-radius:8px;border:1px solid var(--border);overflow-x:auto}
-.slide-deck{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
-.slide-viewport{position:relative;aspect-ratio:16/9;background:var(--bg);overflow:hidden}
-.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;opacity:0;transition:opacity .35s,transform .35s;transform:translateX(30px)}
-.slide.active{opacity:1;transform:translateX(0)}
-.slide.exit{opacity:0;transform:translateX(-30px)}
-.slide h2{font-size:28px;font-weight:900;margin-bottom:12px;background:linear-gradient(135deg,var(--text) 30%,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.slide p{font-size:15px;color:var(--text-2);line-height:1.6;max-width:80%}
-.slide-number{position:absolute;top:12px;right:16px;font-size:10px;font-weight:700;color:var(--text-3);font-family:'JetBrains Mono',monospace}
-.slide-controls{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-top:1px solid var(--border);background:var(--surface-2)}
-.slide-nav-btn{padding:8px 20px;border-radius:8px;background:var(--surface-3);color:var(--text-2);font-size:11px;font-weight:800;border:none;cursor:pointer}
-.slide-nav-btn:hover{background:var(--accent);color:#fff}
-.slide-nav-btn:disabled{opacity:.3;cursor:default}
-.slide-nav-btn:disabled:hover{background:var(--surface-3);color:var(--text-2)}
-.slide-progress{display:flex;gap:4px}
-.slide-pip{width:8px;height:8px;border-radius:50%;background:var(--surface-3)}
-.slide-pip.active{background:var(--accent)}
-.slide-editor-list{display:flex;flex-direction:column;gap:8px}
-.slide-editor-item{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px;display:flex;gap:8px;align-items:flex-start}
-.slide-editor-item .slide-num{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:800;color:var(--accent);min-width:28px;text-align:center;padding-top:4px}
-.slide-editor-item .slide-fields{flex:1;display:flex;flex-direction:column;gap:4px}
-.slide-editor-item input,.slide-editor-item textarea{width:100%;padding:6px 8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;font-family:inherit;outline:none}
-.slide-editor-item input:focus,.slide-editor-item textarea:focus{border-color:var(--accent)}
-.slide-editor-item textarea{resize:vertical;min-height:40px}
-.slide-remove-btn{background:none;color:var(--red);font-size:14px;font-weight:900;border:none;cursor:pointer;padding:4px}
-/* Pagination */
-.pager{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--surface);border-top:1px solid var(--border);flex-shrink:0}
-.pager-info{font-size:10px;font-weight:700;color:var(--text-3);font-family:'JetBrains Mono',monospace}
-.pager-btns{display:flex;gap:4px}
-.pager-btn{padding:6px 14px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);font-size:10px;font-weight:800;cursor:pointer;font-family:inherit}
-.pager-btn:hover{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
-.pager-btn:disabled{opacity:.3;cursor:default;background:var(--surface-2);border-color:var(--border);color:var(--text-3)}
-
-/* Safety incident cards */
-.inc-card{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px;cursor:pointer;transition:border-color .15s,transform .15s}
-.inc-card:hover{border-color:var(--accent);transform:translateY(-1px)}
-.inc-card:active{transform:scale(.99)}
-.inc-top{display:flex;justify-content:space-between;align-items:center}
-.inc-sev,.inc-status{font-size:8px;font-weight:800;text-transform:uppercase;padding:3px 10px;border-radius:6px}
-.inc-sev.low{background:var(--green-bg);color:var(--green)}
-.inc-sev.medium{background:var(--amber-bg);color:var(--amber)}
-.inc-sev.high{background:var(--red-bg);color:var(--red)}
-.inc-sev.critical{background:var(--red-bg);color:#991b1b;font-weight:900}
-.inc-status.open{background:var(--red-bg);color:var(--red)}
-.inc-status.resolved{background:var(--green-bg);color:var(--green)}
-.inc-loc{font-size:12px;font-weight:700}
-.inc-desc{font-size:11px;color:var(--text-2);line-height:1.4}
-.inc-desc.truncated{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.inc-footer{display:flex;justify-content:space-between;margin-top:8px;font-size:9px;color:var(--text-3);font-weight:600}
-.inc-resolution{font-size:10px;color:var(--green);background:var(--green-bg);padding:6px 10px;border-radius:6px;margin-top:2px}
-.inc-view-btn{font-size:9px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px}
-.safety-stat-row{display:flex;gap:8px;margin-bottom:16px}
-.safety-stat{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
-.safety-stat .s-val{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700}
-.safety-stat .s-label{font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);margin-top:3px}
-
-/* Safety detail modal */
-.sd-header{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
-.sd-header .inc-sev,.sd-header .inc-status{font-size:9px;padding:4px 12px}
-.sd-timestamp{font-size:11px;color:var(--text-3);font-weight:600;margin-left:auto;font-family:'JetBrains Mono',monospace}
-.sd-section{margin-top:16px}
-.sd-section-title{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);margin-bottom:8px;display:flex;align-items:center;gap:6px}
-.sd-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.sd-meta-item{background:var(--surface-2);padding:12px;border-radius:10px;border:1px solid var(--border)}
-.sd-meta-label{font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);margin-bottom:4px}
-.sd-meta-val{font-size:14px;font-weight:700;color:var(--text)}
-.sd-text-block{background:var(--surface-2);padding:14px;border-radius:10px;border:1px solid var(--border);font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;word-break:break-word}
-.sd-text-block.empty{color:var(--text-3);font-style:italic;font-size:12px}
-.sd-resolution-block{background:var(--green-bg);border:1px solid rgba(52,211,153,.2);padding:14px;border-radius:10px;font-size:13px;color:var(--green);line-height:1.6;white-space:pre-wrap}
-.sd-photo-frame{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;overflow:hidden;text-align:center;padding:8px}
-.sd-photo-frame img{max-width:100%;max-height:400px;border-radius:6px;object-fit:contain}
-.sd-photo-empty{padding:32px;color:var(--text-3);font-size:11px;font-weight:600}
-.sd-id{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-3);background:var(--surface-2);padding:3px 8px;border-radius:4px}
+.toast.green{background:var(--green-bg);color:var(--green)}
 </style>
 </head>
 <body>
 
 <div id="toast" class="toast"><span id="toast-text"></span></div>
 
-<div class="modal-overlay" id="training-modal">
-  <div class="modal-box" style="max-width:750px">
-    <div class="modal-header">
-      <h3 id="modal-title">Edit Training Module</h3>
-      <button class="modal-close" onclick="closeTrainingEditor()">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="sop-id">
-      <div>
-        <label class="m-label">Title</label>
-        <input type="text" id="sop-title" class="assign-input" placeholder="e.g. Near Miss Reporting Procedure">
-      </div>
-      <div style="display:flex; gap:12px;">
-        <div style="flex:1;">
-          <label class="m-label">Category</label>
-          <select id="sop-category" class="assign-input">
-            <option value="Safety">Safety</option>
-            <option value="Cycle Count">Cycle Count</option>
-            <option value="SAP Navigation">SAP Navigation</option>
-            <option value="Warehouse">Warehouse</option>
-            <option value="Quality">Quality</option>
-          </select>
-        </div>
-        <div style="flex:1;">
-          <label class="m-label">Content Type</label>
-          <select id="sop-type" class="assign-input" onchange="toggleEditorSections()">
-            <option value="Text">Standard Text</option>
-            <option value="Link">External Link / Video</option>
-            <option value="Flowchart">Flowchart (Mermaid)</option>
-            <option value="Slides">Slide Deck (PPT Style)</option>
-          </select>
-        </div>
-      </div>
-      <div id="editor-text-section">
-        <label class="m-label">Content Body / URL</label>
-        <textarea id="sop-body" class="assign-input" rows="8" style="resize:vertical;" placeholder="Enter guidelines or paste a link..."></textarea>
-      </div>
-      <div id="editor-mermaid-section" style="display:none">
-        <label class="m-label">Flowchart Definition (Mermaid Syntax)</label>
-        <textarea id="sop-mermaid" class="assign-input mono" rows="10" style="resize:vertical;font-size:11px;line-height:1.4" placeholder="flowchart TD
-    A[Start] --> B{Decision}
-    B -->|Yes| C[Action]
-    B -->|No| D[Other]"></textarea>
-        <div style="margin-top:8px">
-          <button class="assign-btn" style="background:var(--cyan-bg);color:var(--cyan);border:1px solid rgba(6,182,212,.3);padding:8px 16px" onclick="previewMermaid()">▶ Preview</button>
-        </div>
-        <div id="mermaid-preview" style="margin-top:12px"></div>
-      </div>
-      <div id="editor-slides-section" style="display:none">
-        <label class="m-label">Slides</label>
-        <div class="slide-editor-list" id="slide-editor-list"></div>
-        <button class="assign-btn" style="width:100%;margin-top:8px;padding:10px;background:var(--surface-3);color:var(--text);border:1px solid var(--border)" onclick="addSlideEditor()">+ Add Slide</button>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button style="background:var(--surface-3);color:var(--text-3)" onclick="closeTrainingEditor()">Cancel</button>
-      <button id="btn-delete-sop" style="background:var(--red-bg);color:var(--red)" onclick="deleteTrainingModule()">Delete</button>
-      <button style="background:var(--accent);color:#fff;flex:2" onclick="saveTrainingModule()">Save & Publish</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="slide-viewer-modal">
-  <div style="width:100%;max-width:900px">
-    <div class="slide-deck">
-      <div class="slide-viewport" id="slide-viewport"></div>
-      <div class="slide-controls">
-        <button class="slide-nav-btn" id="slide-prev" onclick="slideNav(-1)">← Previous</button>
-        <div class="slide-progress" id="slide-progress"></div>
-        <button class="slide-nav-btn" id="slide-next" onclick="slideNav(1)">Next →</button>
-      </div>
-    </div>
-    <div style="text-align:center;margin-top:12px">
-      <button class="slide-nav-btn" onclick="closeSlideViewer()" style="background:var(--red-bg);color:var(--red)">✕ Close</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="safety-detail-modal">
-  <div class="modal-box" style="max-width:620px">
-    <div class="modal-header">
-      <h3 style="display:flex;align-items:center;gap:8px">🦺 Incident Report <span class="sd-id" id="sd-id"></span></h3>
-      <button class="modal-close" onclick="closeSafetyDetail()">✕</button>
-    </div>
-    <div class="modal-body" id="sd-body" style="gap:0">
-      </div>
-    <div class="modal-footer">
-      <button style="background:var(--surface-3);color:var(--text)" onclick="closeSafetyDetail()">Close</button>
-    </div>
-  </div>
-</div>
-
 <div class="dashboard">
   <header class="topbar">
-    <div class="topbar-left">
-      <span class="logo">📊</span>
-      <div><h1>Control Center</h1><span class="topbar-sub">Plant 1730</span></div>
-    </div>
-    <div class="topbar-right">
-      <div class="freshness none" id="freshness-badge">📋 Loading...</div>
-      <div class="live-pill"><div class="live-dot"></div> Live</div>
-      <button class="gear-btn" onclick="NovusSettings.openModal()" title="Settings">⚙</button>
-      <a href="index.html" class="home-link">← Home</a>
-    </div>
+    <div class="topbar-left"><span class="logo">📊</span><div><h1>Control Center</h1><span class="topbar-sub">Plant 1730</span></div></div>
+    <div class="topbar-right"><div class="freshness none" id="freshness-badge">📋 Loading...</div></div>
   </header>
 
   <div class="metrics-row">
     <div class="metric"><span class="m-label">SAP Items</span><span class="m-val" id="m-items">—</span></div>
-    <div class="metric"><span class="m-label">Bins Counted</span><span class="m-val" id="m-bins">—</span></div>
     <div class="metric"><span class="m-label">Total Audited</span><span class="m-val" id="m-total">—</span></div>
-    <div class="metric"><span class="m-label">OK</span><span class="m-val green" id="m-ok">—</span></div>
-    <div class="metric"><span class="m-label">Pending</span><span class="m-val amber" id="m-pending">—</span></div>
-    <div class="metric"><span class="m-label">Bin Acc.</span><span class="m-val green" id="m-bin-acc">—</span></div>
-    <div class="metric"><span class="m-label">Inv. Acc.</span><span class="m-val green" id="m-inv-acc">—</span></div>
-    <div class="metric"><span class="m-label">Open Actions</span><span class="m-val red" id="m-open">—</span></div>
+    <div class="metric"><span class="m-label">OK</span><span class="m-val" id="m-ok" style="color:var(--green)">—</span></div>
+    <div class="metric"><span class="m-label">Adjustments</span><span class="m-val" id="m-adj" style="color:var(--amber)">—</span></div>
+    <div class="metric"><span class="m-label">Missing</span><span class="m-val" id="m-miss" style="color:var(--red)">—</span></div>
   </div>
 
   <div class="panes">
     <aside class="rail">
       <div class="rail-section">
         <h3>SAP Data Feed</h3>
-        <label class="upload-zone" id="upload-zone">
-          <input type="file" accept=".xlsx,.xls,.csv" id="file-input" hidden>
-          <span class="uz-icon" id="uz-icon">📂</span>
-          <span class="uz-label" id="uz-label">Drop SAP Export (.xlsx)</span>
+        <label class="upload-zone">
+          <input type="file" accept=".xlsx,.xls" id="file-input" hidden>
+          <span id="uz-label">Drop SAP Export (.xlsx)</span>
         </label>
-        <div class="upload-meta" id="upload-meta"></div>
       </div>
       <div class="rail-section">
-        <h3>Aisle Assignments</h3>
-        <div class="assign-row" id="aisle-picker"></div>
-        <input type="text" class="assign-input" id="prod-assign" placeholder="Product # (for product count)">
-        <div class="assign-actions">
-          <button class="assign-btn push" onclick="pushAssignments()">Push to Team</button>
-          <button class="assign-btn clear" onclick="clearAssignments()">Clear</button>
-        </div>
-      </div>
-      <div class="rail-section">
-        <h3>Training & SOPs</h3>
-        <button class="assign-btn" onclick="toggleTrainingView()" style="width:100%;padding:10px;font-size:11px;background:var(--surface-3);color:var(--text);border:1px solid var(--border)">📚 View & Manage Training</button>
-      </div>
-      <div class="rail-section">
-        <h3>Safety & Incidents</h3>
-        <button class="assign-btn" onclick="toggleSafetyView()" style="width:100%;padding:10px;font-size:11px;background:var(--surface-3);color:var(--text);border:1px solid var(--border)">🦺 View Reports</button>
-        <div style="margin-top:6px;font-size:9px;color:var(--text-3)" id="safety-summary">Loading...</div>
-      </div>
-      <div class="rail-section">
-        <h3>Reconciliation</h3>
-        <button class="assign-btn" onclick="finalizeReconciliation()" style="width:100%;padding:10px;font-size:11px;background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.25)">🔒 Finalize Missing Items</button>
-        <div style="font-size:9px;color:var(--text-3);margin-top:6px;line-height:1.4">
-          Converts <strong style="color:var(--amber)">missing_temp</strong> → confirmed <strong style="color:var(--red)">missing</strong>. Run after full cycle count.
-        </div>
-      </div>
-      <div class="rail-section">
-        <h3>Export</h3>
-        <button class="assign-btn push" onclick="exportAudit()" style="width:100%;padding:10px;font-size:11px">📥 Export Audit Data</button>
+        <h3>Actions</h3>
+        <button class="assign-btn push" onclick="exportAudit()">📥 Export Audit Data</button>
+        <button class="assign-btn" style="background:var(--red-bg);color:var(--red)" onclick="finalizeReconciliation()">🔒 Finalize Missing</button>
       </div>
     </aside>
 
     <main class="main-pane">
-      <div id="view-audit" style="display:flex; flex-direction:column; height:100%;">
-        <div class="status-pills" id="status-pills"></div>
-        <div class="table-wrap" id="table-wrap">
-          <div class="empty-main"><span>📡</span><h2>Upload SAP data & start counting</h2></div>
-        </div>
-      </div>
-      <div id="view-training" style="display:none; flex-direction:column; height:100%; background:var(--bg);">
-        <div class="status-pills" style="justify-content:space-between;">
-          <h2 style="font-size:14px;font-weight:800;display:flex;align-items:center;">Training & SOP Library</h2>
-          <button class="assign-btn push" onclick="openTrainingEditor()">+ New SOP</button>
-        </div>
-        <div class="table-wrap" style="padding:16px;">
-          <div id="training-list-container" style="display:flex;flex-direction:column;gap:12px;"></div>
-        </div>
-      </div>
-      <div id="view-safety" style="display:none; flex-direction:column; height:100%; background:var(--bg);">
-        <div class="status-pills" style="justify-content:space-between;">
-          <h2 style="font-size:14px;font-weight:800;display:flex;align-items:center;">🦺 Safety & Incident Reports</h2>
-          <div style="display:flex;gap:6px;" id="safety-filter-pills"></div>
-        </div>
-        <div class="table-wrap" style="padding:16px;">
-          <div id="safety-list-container" style="display:flex;flex-direction:column;gap:8px;"></div>
-        </div>
-      </div>
+      <div class="status-pills" id="status-pills"></div>
+      <div class="table-wrap" id="table-wrap"></div>
     </main>
   </div>
 </div>
 
 <script>
-const NovusSettings = (() => {
-  const STORAGE_KEY = 'novus_settings';
-  const DEFAULTS = { userName: '', theme: 'dark', pollInterval: 10, hapticFeedback: true, compactMode: false };
-
-  const LIGHT_VARS = {
-    '--bg': '#f8f9fb', '--surface': '#ffffff', '--surface-2': '#f1f3f5', '--surface-3': '#e5e7eb',
-    '--border': '#d1d5dc', '--text': '#111827', '--text-2': '#374151', '--text-3': '#6b7280',
-    '--accent': '#2563eb', '--accent-dim': 'rgba(37,99,235,.07)',
-    '--green': '#059669', '--green-bg': 'rgba(5,150,105,.08)',
-    '--red': '#dc2626', '--red-bg': 'rgba(220,38,38,.07)',
-    '--amber': '#b45309', '--amber-bg': 'rgba(180,83,9,.07)',
-    '--purple': '#7c3aed', '--purple-bg': 'rgba(124,58,237,.07)',
-    '--cyan': '#0e7490', '--cyan-bg': 'rgba(14,116,144,.07)'
-  };
-
-  const DARK_VARS = {
-    '--bg': '#0f1117', '--surface': '#181a23', '--surface-2': '#1f2230', '--surface-3': '#2a2d3a',
-    '--border': '#313546', '--text': '#eceef4', '--text-2': '#9ba1b5', '--text-3': '#6c7189',
-    '--accent': '#5b9aff', '--accent-dim': 'rgba(91,154,255,.1)',
-    '--green': '#34d399', '--green-bg': 'rgba(52,211,153,.1)',
-    '--red': '#f87171', '--red-bg': 'rgba(248,113,113,.1)',
-    '--amber': '#fbbf24', '--amber-bg': 'rgba(251,191,36,.1)',
-    '--purple': '#a78bfa', '--purple-bg': 'rgba(167,139,250,.1)',
-    '--cyan': '#22d3ee', '--cyan-bg': 'rgba(34,211,238,.1)'
-  };
-
-  function loadAll() {
-    try { const r = localStorage.getItem(STORAGE_KEY); return r ? { ...DEFAULTS, ...JSON.parse(r) } : { ...DEFAULTS }; }
-    catch { return { ...DEFAULTS }; }
-  }
-  function saveAll(s) { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
-
-  let _cache = loadAll();
-  const legacyName = localStorage.getItem('novus_name');
-  if (legacyName && !_cache.userName) { _cache.userName = legacyName; saveAll(_cache); }
-
-  function get(key) { return _cache[key] !== undefined ? _cache[key] : DEFAULTS[key]; }
-  function set(key, val) {
-    _cache[key] = val; saveAll(_cache);
-    if (key === 'userName') localStorage.setItem('novus_name', val);
-    if (key === 'theme') applyTheme();
-  }
-  function getUser() { return get('userName') || ''; }
-  function applyTheme() {
-    const vars = get('theme') === 'light' ? LIGHT_VARS : DARK_VARS;
-    Object.entries(vars).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
-    document.body.setAttribute('data-theme', get('theme'));
-  }
-
-  let _modalInjected = false;
-  function _injectModal() {
-    if (_modalInjected) return;
-    _modalInjected = true;
-    const overlay = document.createElement('div');
-    overlay.id = 'novus-settings-overlay';
-    overlay.innerHTML = `
-      <div class="ns-modal">
-        <div class="ns-header"><h3>⚙ Settings</h3><button class="ns-close" onclick="NovusSettings.closeModal()">✕</button></div>
-        <div class="ns-body">
-          <div class="ns-section"><div class="ns-section-title">Identity</div>
-            <label class="ns-field-label">Your Name / ID</label>
-            <input type="text" class="ns-input" id="ns-username" placeholder="Enter your name...">
-            <div class="ns-hint">Attached to all audit payloads and reports</div></div>
-          <div class="ns-section"><div class="ns-section-title">Appearance</div>
-            <div class="ns-toggle-row"><div><div class="ns-toggle-label">Theme</div><div class="ns-hint" style="margin-top:2px">Dark or light mode</div></div>
-              <div class="ns-theme-switch" id="ns-theme-switch" onclick="NovusSettings._toggleTheme()">
-                <span class="ns-switch-option" data-val="dark">🌙 Dark</span>
-                <span class="ns-switch-option" data-val="light">☀️ Light</span>
-                <div class="ns-switch-slider" id="ns-switch-slider"></div></div></div></div>
-          <div class="ns-section"><div class="ns-section-title">Preferences</div>
-            <div class="ns-toggle-row"><div><div class="ns-toggle-label">Haptic Feedback</div><div class="ns-hint" style="margin-top:2px">Vibrate on taps (mobile)</div></div>
-              <label class="ns-checkbox"><input type="checkbox" id="ns-haptic" onchange="NovusSettings.set('hapticFeedback',this.checked)"><span class="ns-check-slider"></span></label></div>
-            <div class="ns-toggle-row" style="margin-top:10px"><div><div class="ns-toggle-label">Compact Mode</div><div class="ns-hint" style="margin-top:2px">Smaller spacing</div></div>
-              <label class="ns-checkbox"><input type="checkbox" id="ns-compact" onchange="NovusSettings.set('compactMode',this.checked)"><span class="ns-check-slider"></span></label></div></div>
-          <div class="ns-section"><div class="ns-section-title">Data</div>
-            <button class="ns-danger-btn" onclick="if(confirm('Clear all local data and reload?')){ localStorage.removeItem('novus_sap'); localStorage.removeItem('novus_done'); localStorage.removeItem('novus_queue'); if(typeof sessionRegistry !== 'undefined') sessionRegistry.clear(); window.location.reload(); }">🗑 Clear Local Data & Reload</button>
-            <div class="ns-hint" style="margin-top:6px">App v2.2 · Plant 1730</div></div>
-        </div>
-        <div class="ns-footer"><button class="ns-save-btn" onclick="NovusSettings._save()">Save & Close</button></div>
-      </div>`;
-    document.body.appendChild(style);
-    const style = document.createElement('style');
-    style.textContent = `
-      #novus-settings-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center;padding:20px}
-      #novus-settings-overlay.open{display:flex}
-      .ns-modal{background:var(--surface);width:100%;max-width:480px;border-radius:16px;border:1.5px solid var(--border);display:flex;flex-direction:column;max-height:90vh;overflow:hidden}
-      .ns-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
-      .ns-header h3{font-size:16px;font-weight:800;color:var(--text)}
-      .ns-close{background:none;border:none;color:var(--text-3);font-size:18px;font-weight:900;cursor:pointer}
-      .ns-body{padding:0;overflow-y:auto;flex:1}
-      .ns-section{padding:16px 20px;border-bottom:1px solid var(--border)}.ns-section:last-child{border-bottom:none}
-      .ns-section-title{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin-bottom:12px}
-      .ns-field-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);display:block;margin-bottom:6px}
-      .ns-input{width:100%;padding:12px 14px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-weight:600;color:var(--text);outline:none;font-family:inherit}
-      .ns-input:focus{border-color:var(--accent)}
-      .ns-hint{font-size:9px;color:var(--text-3);margin-top:4px}
-      .ns-toggle-row{display:flex;justify-content:space-between;align-items:center}
-      .ns-toggle-label{font-size:12px;font-weight:700;color:var(--text)}
-      .ns-theme-switch{display:flex;position:relative;background:var(--surface-2);border-radius:8px;border:1px solid var(--border);overflow:hidden;cursor:pointer;user-select:none}
-      .ns-switch-option{padding:6px 14px;font-size:10px;font-weight:800;color:var(--text-3);position:relative;z-index:2;transition:color .2s}
-      .ns-switch-option.active{color:#fff}
-      .ns-switch-slider{position:absolute;top:2px;left:2px;width:calc(50% - 2px);height:calc(100% - 4px);background:var(--accent);border-radius:6px;transition:transform .2s ease;z-index:1}
-      .ns-switch-slider.right{transform:translateX(100%)}
-      .ns-checkbox{position:relative;width:44px;height:24px;flex-shrink:0}
-      .ns-checkbox input{opacity:0;width:0;height:0}
-      .ns-check-slider{position:absolute;inset:0;background:var(--surface-3);border-radius:12px;cursor:pointer;transition:background .2s}
-      .ns-check-slider::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform .2s}
-      .ns-checkbox input:checked+.ns-check-slider{background:var(--accent)}
-      .ns-checkbox input:checked+.ns-check-slider::after{transform:translateX(20px)}
-      .ns-danger-btn{width:100%;padding:10px;background:var(--red-bg);color:var(--red);border:1px solid rgba(248,113,113,.25);border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit}
-      .ns-footer{padding:12px 20px;border-top:1px solid var(--border)}
-      .ns-save-btn{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit}`;
-    document.body.appendChild(style);
-  }
-
-  function openModal() {
-    _injectModal();
-    document.getElementById('novus-settings-overlay').classList.add('open');
-    document.getElementById('ns-username').value = get('userName');
-    document.getElementById('ns-haptic').checked = get('hapticFeedback');
-    document.getElementById('ns-compact').checked = get('compactMode');
-    _updateThemeSwitch();
-  }
-  function closeModal() { const o = document.getElementById('novus-settings-overlay'); if (o) o.classList.remove('open'); }
-  function _updateThemeSwitch() {
-    const s = document.getElementById('ns-switch-slider'); const opts = document.querySelectorAll('.ns-switch-option');
-    if (!s) return; s.classList.toggle('right', get('theme') === 'light');
-    opts.forEach(o => o.classList.toggle('active', o.dataset.val === get('theme')));
-  }
-  function _toggleTheme() { set('theme', get('theme') === 'dark' ? 'light' : 'dark'); _updateThemeSwitch(); }
-  function _save() {
-    set('userName', document.getElementById('ns-username').value.trim());
-    closeModal(); _toast('Settings saved');
-    window.dispatchEvent(new CustomEvent('novus-settings-changed'));
-  }
-  function _toast(msg) {
-    if (typeof window.toast === 'function') { window.toast(msg, 'green'); return; }
-    const t = document.getElementById('toast');
-    if (t) { const x = document.getElementById('toast-text'); if (x) x.textContent = msg; t.className = 'toast green show'; setTimeout(() => t.classList.remove('show'), 2000); }
-  }
-
-  applyTheme();
-  return { get, set, getUser, applyTheme, openModal, closeModal, _toggleTheme, _save, _toast };
-})();
-</script>
-
-<script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbwZ1Dhmf6cK_hWV2xLKYmwEImUvifIRCPqVm0Fz4E7gjvfcpyzoqhAFIgvgwrjBretc/exec';
-const AISLE_ROWS = 'ABCDEFGHJKLMNP'.split('');
-let sapMeta = null, report = [], assignments = [];
-let assignAisles = new Set();
-let currentStatusFilter = 'all';
-const PAGE_SIZE = 50;
-let currentPage = 0;
+let report = [];
 
-window.toast = function(msg, color) {
+function toast(msg, color) {
   const t = document.getElementById('toast');
   document.getElementById('toast-text').textContent = msg;
-  t.className = `toast ${color || 'blue'} show`;
+  t.className = `toast ${color || 'green'} show`;
   setTimeout(() => t.classList.remove('show'), 2500);
-};
-
-if (typeof mermaid !== 'undefined') {
-  try {
-    mermaid.initialize({
-      startOnLoad: false, theme: 'dark',
-      themeVariables: {
-        darkMode: true, primaryColor: '#5b9aff', primaryTextColor: '#eceef4',
-        primaryBorderColor: '#313546', lineColor: '#6c7189', secondaryColor: '#1f2230',
-        tertiaryColor: '#2a2d3a', fontFamily: 'DM Sans, sans-serif', fontSize: '13px',
-      },
-      flowchart: { curve: 'basis', padding: 16 },
-    });
-  } catch (e) { console.warn('Mermaid init failed:', e); }
 }
 
-fetchFullDashboard();
-initAislePicker();
-setInterval(pollLightweight, 10000);
-
-async function fetchFullDashboard() {
-  const badge = document.getElementById('freshness-badge');
-  badge.className = 'freshness none';
-  badge.textContent = '📋 Connecting to API...';
-
+async function fetchData() {
   try {
-    const res = await fetch(API_URL + '?t=' + Date.now(), { redirect: 'follow' });
-    const text = await res.text();
-    let data;
-    try { data = JSON.parse(text); } catch (parseErr) {
-      badge.textContent = '❌ API returned HTML (not JSON)';
-      toast('API returned invalid data — check Apps Script deployment', 'red');
-      return;
-    }
-
-    if (data.error) {
-      badge.textContent = '❌ Server error';
-      toast('Server error: ' + data.error, 'red');
-    }
-
-    sapMeta = data.sapMeta;
+    const res = await fetch(API_URL + '?t=' + Date.now());
+    const data = await res.json();
     report = data.report || [];
-    assignments = data.assignments || [];
-
-    try { updateFreshness(); } catch (e) {}
-    try { updateMetrics(); } catch (e) {}
-    try { renderPills(); } catch (e) {}
-    try { renderTable(); } catch (e) {}
-
-  } catch (err) {
-    badge.textContent = '❌ Cannot reach API';
-    toast('Cannot reach API — check connection or Apps Script URL', 'red');
-  }
+    updateMetrics(data.sapMeta);
+    renderPills();
+    renderTable('all');
+  } catch (e) { toast('Connection Error', 'red'); }
 }
 
-let _pollFailCount = 0;
-async function pollLightweight() {
-  try {
-    const res = await fetch(API_URL + '?type=poll&t=' + Date.now(), { redirect: 'follow' });
-    const text = await res.text();
-    let data;
-    try { data = JSON.parse(text); } catch {
-      _pollFailCount++;
-      return;
-    }
-    _pollFailCount = 0;
-
-    if (data.error) return;
-
-    sapMeta = data.sapMeta;
-    report = data.report || [];
-    assignments = data.assignments || [];
-
-    updateFreshness(); 
-    updateMetrics(); 
-    renderPills(); 
-    renderTable(); 
-  } catch (err) {
-    _pollFailCount++;
-  }
-  
-  // Poll for safety data so the dashboard stays live
-  try {
-    const sRes = await fetch(API_URL + '?type=safety&t=' + Date.now(), { redirect: 'follow' });
-    const sData = await sRes.json();
-    safetyData = sData.incidents || [];
-    updateSafetySummary();
-    if(document.getElementById('view-safety').style.display === 'flex') {
-       renderSafetyView();
-    }
-  } catch (e) {}
-}
-
-document.getElementById('file-input').addEventListener('change', async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  const zone = document.getElementById('upload-zone');
-  zone.classList.add('uploading');
-  document.getElementById('uz-icon').textContent = '⏳';
-  document.getElementById('uz-label').textContent = 'Parsing...';
-
-  try {
-    const data = await file.arrayBuffer();
-    const wb = XLSX.read(new Uint8Array(data), { type: 'array' });
-    const sheet = wb.Sheets[wb.SheetNames[0]];
-    
-    // 1. Read as an array of arrays to completely bypass SAP's empty metadata rows
-    const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-
-    if (rawData.length === 0) throw new Error('Sheet is empty');
-
-    // 2. Find the actual Header Row using Density Scoring
-    let headerRowIdx = 0;
-    let maxScore = 0;
-    const targetKeywords = ['bin', 'storage', 'hu', 'handling', 'unit', 'material', 'product', 'batch', 'qty', 'quantity', 'description'];
-
-    for (let i = 0; i < Math.min(30, rawData.length); i++) {
-        let score = 0;
-        const rowString = rawData[i].join(' ').toLowerCase();
-        targetKeywords.forEach(kw => {
-            if (rowString.includes(kw)) score++;
-        });
-        if (score > maxScore) {
-            maxScore = score;
-            headerRowIdx = i;
-        }
-    }
-
-    const headers = rawData[headerRowIdx];
-    const dataRows = rawData.slice(headerRowIdx + 1);
-
-    console.log("SAP Importer: Target Header Row Detected at Index", headerRowIdx);
-    console.log("SAP Importer: Headers", headers);
-
-    // 3. Map actual columns by dynamically finding indices
-    const getColIdx = (aliases) => {
-        const normAliases = aliases.map(a => a.toLowerCase().replace(/[\s_.\-\/]/g, ''));
-        // Try exact match first
-        for (let i = 0; i < headers.length; i++) {
-            if (!headers[i]) continue;
-            const h = String(headers[i]).toLowerCase().replace(/[\s_.\-\/]/g, '');
-            if (normAliases.includes(h)) return i;
-        }
-        // Try partial match (safe fallback)
-        for (let i = 0; i < headers.length; i++) {
-            if (!headers[i]) continue;
-            const h = String(headers[i]).toLowerCase().replace(/[\s_.\-\/]/g, '');
-            if (normAliases.some(a => a.length >= 3 && h.includes(a))) return i;
-        }
-        return -1;
-    };
-
-    const idx = {
-        bin: getColIdx(['Storage Bin','Bin','storage_bin','Stge Bin','StorageBin','Stor. Bin','SBin']),
-        hu: getColIdx(['Handling Unit','HU','handling_unit','HandlingUnit','Hndlg Unit','HndlgUnit']),
-        prod: getColIdx(['Product','Material','SKU','product','Matl','Material Number','MaterialNumber']),
-        batch: getColIdx(['Batch','batch','Btch']),
-        desc: getColIdx(['Product Short Description','Description','desc','Material Description','MaterialDescription','Matl Desc','Short Text']),
-        qty: getColIdx(['Quantity','Qty','quantity','Available stock','Avail. Stock','Total Stock','TotalStock','Unrestricted']),
-        unit: getColIdx(['Unit','UOM','Base Unit','BaseUnit','Unit of Measure','BUn']),
-        stype: getColIdx(['Stock Type','stock_type','Stock Typ','StockType','StkType']),
-        grdt: getColIdx(['Goods Receipt Date','GR Date','gr_date','GRDate','Goods Rcpt Date']),
-        sled: getColIdx(['Shelf Life Expiration Date','SLED','Expiration','ShelfLifeExpDate','SLED/BBD'])
-    };
-
-    console.log("SAP Importer: Column Mapping", idx);
-
-    const rows = dataRows.map(r => {
-        return [
-            idx.bin > -1 ? String(r[idx.bin] || '').trim().toUpperCase() : '',
-            idx.hu > -1 ? String(r[idx.hu] || '').trim() : '',
-            idx.prod > -1 ? String(r[idx.prod] || '').trim() : '',
-            idx.batch > -1 ? String(r[idx.batch] || '').trim() : '',
-            idx.desc > -1 ? String(r[idx.desc] || '').trim() : '',
-            idx.qty > -1 ? parseFloat(r[idx.qty]) || 0 : 0,
-            idx.unit > -1 ? String(r[idx.unit] || 'LB').trim() : 'LB',
-            idx.stype > -1 ? String(r[idx.stype] || 'F2').trim() : 'F2',
-            idx.grdt > -1 ? String(r[idx.grdt] || '').trim() : '',
-            idx.sled > -1 ? String(r[idx.sled] || '').trim() : '',
-        ];
-    }).filter(r => String(r[0]).trim().length > 0 && String(r[1]).trim().length > 0);
-
-    if (rows.length === 0) {
-      zone.classList.remove('uploading');
-      zone.classList.add('error');
-      document.getElementById('uz-icon').textContent = '⚠️';
-      document.getElementById('uz-label').textContent = '0 valid rows (need Bin + HU)';
-      setTimeout(() => { resetUploadZone(); }, 5000);
-      e.target.value = '';
-      return;
-    }
-
-    document.getElementById('uz-label').textContent = `Uploading ${rows.length} rows...`;
-    
-    console.log(`SAP Importer: Executing POST with ${rows.length} rows`);
-    
-    const res = await fetch(API_URL + '?t=' + Date.now(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      redirect: 'follow',
-      body: JSON.stringify({ action: 'uploadSAPData', rows, uploader: NovusSettings.getUser() || 'Control Center', filename: file.name }),
-    });
-    
-    const resText = await res.text();
-    let result;
-    try { result = JSON.parse(resText); } catch { throw new Error('Server returned invalid response'); }
-
-    if (result.success) {
-      zone.classList.remove('uploading');
-      zone.classList.add('success');
-      document.getElementById('uz-icon').textContent = '✅';
-      document.getElementById('uz-label').textContent = `${result.rowCount} items loaded`;
-      toast(`SAP import: ${result.rowCount} items loaded from ${file.name}`, 'green');
-      setTimeout(resetUploadZone, 4000);
-      fetchFullDashboard();
-    } else {
-      throw new Error(result.error || 'Upload returned failure');
-    }
-  } catch (err) {
-    toast('Upload failed: ' + err.message, 'red');
-    zone.classList.remove('uploading');
-    zone.classList.add('error');
-    document.getElementById('uz-icon').textContent = '❌';
-    document.getElementById('uz-label').textContent = err.message.substring(0, 40);
-    setTimeout(resetUploadZone, 4000);
-  }
-  e.target.value = '';
-});
-
-function resetUploadZone() {
-  const zone = document.getElementById('upload-zone');
-  zone.classList.remove('success', 'uploading', 'error');
-  document.getElementById('uz-icon').textContent = '📂';
-  document.getElementById('uz-label').textContent = 'Drop SAP Export (.xlsx)';
-}
-
-function updateFreshness() {
-  const badge = document.getElementById('freshness-badge');
-  const meta = document.getElementById('upload-meta');
-  if (!sapMeta || !sapMeta.timestamp) {
-    badge.className = 'freshness none'; badge.textContent = '📋 No SAP Data';
-    meta.innerHTML = ''; return;
-  }
-  const ts = new Date(sapMeta.timestamp);
-  const mins = Math.round((Date.now() - ts) / 60000);
-  const hrs = Math.round(mins / 60);
-  const count = (sapMeta.rowCount || 0).toLocaleString();
-  document.getElementById('m-items').textContent = count;
-  if (mins < 120) { badge.className = 'freshness fresh'; badge.textContent = `📋 Fresh (${mins}m) · ${count}`; }
-  else if (hrs < 8) { badge.className = 'freshness stale'; badge.textContent = `📋 ${hrs}h ago · ${count}`; }
-  else { badge.className = 'freshness old'; badge.textContent = `⚠ ${hrs}h old · ${count}`; }
-  meta.innerHTML = `<strong>Last upload:</strong> ${ts.toLocaleString()}<br><strong>By:</strong> ${sapMeta.uploader}<br><strong>File:</strong> ${sapMeta.filename || '—'}`;
-}
-
-function updateMetrics() {
-  const total = report.length;
-  const ok = report.filter(r => r.type === 'ok').length;
-  const pending = report.filter(r => r.type === 'missing_temp').length;
-  const disc = total - ok;
-  
-  // Calculate Bin Accuracy vs Inventory Accuracy
-  const binsData = {};
-  report.forEach(r => {
-    if (r.scanBin) {
-      if (!binsData[r.scanBin]) binsData[r.scanBin] = [];
-      binsData[r.scanBin].push(r);
-    }
-  });
-  
-  const totalBins = Object.keys(binsData).length;
-  let perfectBins = 0;
-  
-  Object.values(binsData).forEach(items => {
-    if (items.every(i => i.type === 'ok')) {
-      perfectBins++;
-    }
-  });
-
-  const binAcc = totalBins > 0 ? Math.round((perfectBins / totalBins) * 10000) / 100 : 0;
-  const invAcc = total > 0 ? Math.round((ok / total) * 10000) / 100 : 0;
-
-  document.getElementById('m-bins').textContent = totalBins;
-  document.getElementById('m-total').textContent = total;
-  document.getElementById('m-ok').textContent = ok;
-  document.getElementById('m-pending').textContent = pending;
-  
-  const binAccEl = document.getElementById('m-bin-acc');
-  const invAccEl = document.getElementById('m-inv-acc');
-  if(binAccEl) binAccEl.textContent = binAcc + '%';
-  if(invAccEl) invAccEl.textContent = invAcc + '%';
-  
-  document.getElementById('m-open').textContent = disc;
+function updateMetrics(meta) {
+  if (!meta) return;
+  document.getElementById('m-items').textContent = meta.rowCount || 0;
+  document.getElementById('m-total').textContent = report.length;
+  document.getElementById('m-ok').textContent = report.filter(r => r.type === 'ok').length;
+  document.getElementById('m-adj').textContent = report.filter(r => r.type === 'adj').length;
+  document.getElementById('m-miss').textContent = report.filter(r => r.type === 'miss' || r.type === 'missing').length;
+  document.getElementById('freshness-badge').textContent = `📋 Updated: ${new Date(meta.timestamp).toLocaleTimeString()}`;
 }
 
 function renderPills() {
-  const categories = [
-    { key: 'all', label: 'ALL ITEMS', color: '' },
-    { key: 'ok', label: 'OK', color: 'green' },
-    { key: 'adj', label: 'ADJUSTMENTS', color: 'amber' },
-    { key: 'move', label: 'MOVEMENTS', color: 'purple' },
-    { key: 'move_adj', label: 'MOVE + ADJ', color: 'purple' },
-    { key: 'missing_temp', label: 'PENDING MISSING', color: 'amber' },
-    { key: 'missing', label: 'CONFIRMED MISSING', color: 'red' },
-    { key: 'found_moved', label: 'FOUND (RESOLVED)', color: 'green' },
-    { key: 'unexpected', label: 'SYS TRIGGER', color: 'cyan' }
-  ];
-  const counts = { all: report.length };
-  report.forEach(r => { counts[r.type] = (counts[r.type] || 0) + 1; });
-  document.getElementById('status-pills').innerHTML = categories.map(cat => {
-    const count = counts[cat.key] || 0;
-    if (count === 0 && cat.key !== 'all') return '';
-    const isActive = currentStatusFilter === cat.key ? 'active' : '';
-    return `<div class="pill ${isActive}" onclick="filterTable('${cat.key}')">
-              <span class="pill-count ${cat.color}">${count}</span>
-              <span class="pill-label">${cat.label}</span>
-            </div>`;
-  }).join('');
+  const counts = { all: report.length, ok: 0, adj: 0, miss: 0, unexpected: 0 };
+  report.forEach(r => { if(counts[r.type] !== undefined) counts[r.type]++; else if(r.type==='missing') counts.miss++; });
+  const html = `
+    <div class="pill active" onclick="renderTable('all')"><span>${counts.all}</span> ALL</div>
+    <div class="pill" onclick="renderTable('ok')"><span>${counts.ok}</span> OK</div>
+    <div class="pill" onclick="renderTable('adj')"><span>${counts.adj}</span> ADJ</div>
+    <div class="pill" onclick="renderTable('miss')"><span>${counts.miss}</span> MISS</div>
+    <div class="pill" onclick="renderTable('unexpected')"><span>${counts.unexpected}</span> EXTRA</div>
+  `;
+  document.getElementById('status-pills').innerHTML = html;
 }
 
-function filterTable(status) { currentStatusFilter = status; currentPage = 0; renderPills(); renderTable(); }
-
-function renderTable() {
-  const filtered = currentStatusFilter === 'all' ? report : report.filter(r => r.type === currentStatusFilter);
-  const wrap = document.getElementById('table-wrap');
-
-  if (filtered.length === 0) {
-    wrap.innerHTML = report.length === 0
-      ? '<div class="empty-main"><span>📡</span><h2>No audit data yet</h2></div>'
-      : `<div class="empty-main"><span>🔍</span><h2>No ${currentStatusFilter.toUpperCase()} items</h2></div>`;
-    return;
-  }
-
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  if (currentPage >= totalPages) currentPage = totalPages - 1;
-  if (currentPage < 0) currentPage = 0;
-
-  const start = currentPage * PAGE_SIZE;
-  const pageItems = filtered.slice(start, start + PAGE_SIZE);
-
-  const tagLabels = {
-    ok:'OK', adj:'ADJUSTED', move:'MOVED', move_adj:'MOVE+ADJ',
-    missing_temp:'PENDING', missing:'MISSING', found_moved:'FOUND',
-    unexpected:'SYS TRIGGER', resolved_recount:'RE-COUNTED'
-  };
-
-  const rowsHTML = pageItems.map(r => {
-    if (r.type === 'bin_finalized') return ''; // Hide background markers
-    const variance = (r.scanQty || 0) - (r.sapQty || 0);
-    const vClass = variance < 0 ? 'red' : variance > 0 ? 'amber' : '';
-    let timeStr = '—';
-    try { timeStr = new Date(r.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } catch {}
-    return `<tr>
-      <td style="font-size:9px;color:var(--text-3)">${timeStr}</td>
-      <td>${r.user || '—'}</td>
-      <td class="mono" style="color:var(--accent);font-weight:700">${r.scanBin || '—'}</td>
-      <td class="mono" style="font-size:10px">${String(r.hu || '').slice(-6)}</td>
-      <td>${r.prod || '—'}</td>
-      <td class="mono">${r.sapQty ?? '—'}</td>
-      <td class="mono">${r.scanQty ?? '—'}</td>
-      <td class="mono ${vClass}">${variance > 0 ? '+' : ''}${variance}</td>
-      <td><span class="status-tag ${r.type}">${tagLabels[r.type] || r.type}</span></td>
-      <td style="font-size:9px;color:var(--text-3);max-width:120px;overflow:hidden;text-overflow:ellipsis">${r.note || ''}</td>
-    </tr>`;
-  }).join('');
-
-  const pagerHTML = filtered.length > PAGE_SIZE ? `
-    <div class="pager">
-      <span class="pager-info">${start + 1}–${Math.min(start + PAGE_SIZE, filtered.length)} of ${filtered.length}</span>
-      <div class="pager-btns">
-        <button class="pager-btn" onclick="goPage(0)" ${currentPage === 0 ? 'disabled' : ''}>⟨⟨</button>
-        <button class="pager-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 0 ? 'disabled' : ''}>← Prev</button>
-        <button class="pager-btn" onclick="goPage(${currentPage + 1})" ${currentPage >= totalPages - 1 ? 'disabled' : ''}>Next →</button>
-        <button class="pager-btn" onclick="goPage(${totalPages - 1})" ${currentPage >= totalPages - 1 ? 'disabled' : ''}>⟩⟩</button>
-      </div>
-    </div>` : '';
-
-  wrap.innerHTML = `<table>
-    <thead><tr>
-      <th>Time</th><th>User</th><th>Bin</th><th>HU</th><th>Product</th>
-      <th>SAP Qty</th><th>Count Qty</th><th>Variance</th><th>Status</th><th>Note</th>
-    </tr></thead>
-    <tbody>${rowsHTML}</tbody>
-  </table>${pagerHTML}`;
+function renderTable(filter) {
+  const filtered = filter === 'all' ? report : report.filter(r => r.type === filter || (filter==='miss' && r.type==='missing'));
+  const html = `
+    <table>
+      <thead><tr><th>Time</th><th>User</th><th>Bin</th><th>HU</th><th>Product</th><th>SAP</th><th>Count</th><th>Status</th></tr></thead>
+      <tbody>
+        ${filtered.map(r => `
+          <tr>
+            <td>${new Date(r.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
+            <td>${r.user} ${r.photoUrl ? '📷' : ''}</td>
+            <td class="mono">${r.scanBin}</td>
+            <td class="mono">${String(r.hu || '').slice(-6)}</td>
+            <td>${r.prod}</td>
+            <td>${r.sapQty}</td>
+            <td>${r.scanQty}</td>
+            <td><span class="status-tag ${r.type}">${r.type}</span></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>`;
+  document.getElementById('table-wrap').innerHTML = html;
 }
 
-function goPage(page) {
-  currentPage = page;
-  renderTable();
-  const wrap = document.getElementById('table-wrap');
-  if (wrap) wrap.scrollTop = 0;
-}
-
-async function finalizeReconciliation() {
-  const pendingCount = report.filter(r => r.type === 'missing_temp').length;
-  if (pendingCount === 0) { toast('No pending items to finalize', 'blue'); return; }
-  if (!confirm(`This will permanently mark ${pendingCount} item(s) as MISSING.\n\nOnly proceed if the full cycle count is complete.`)) return;
-  toast('Finalizing...', 'blue');
-  try {
+document.getElementById('file-input').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array'});
+    const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1}).slice(1);
+    const rows = data.map(r => [r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9]]);
+    toast('Uploading...', 'amber');
     const res = await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      redirect: 'follow',
-      body: JSON.stringify({ action: 'finalizeReconciliation', user: NovusSettings.getUser() || 'Control Center' }),
+      body: JSON.stringify({ action: 'uploadSAPData', rows, uploader: 'Admin', filename: file.name })
     });
-    const text = await res.text();
-    let result;
-    try { result = JSON.parse(text); } catch {
-      toast('Server returned invalid response', 'red'); return;
-    }
-    if (result.success) { toast(`${result.finalized} items finalized`, 'green'); pollLightweight(); }
-    else { toast('Finalization error: ' + (result.error || 'unknown'), 'red'); }
-  } catch (err) { toast('Finalization failed: ' + err.message, 'red'); }
-}
-
-function initAislePicker() {
-  const c = document.getElementById('aisle-picker');
-  AISLE_ROWS.forEach(r => {
-    const btn = document.createElement('button');
-    btn.className = 'aisle-pick'; btn.textContent = r;
-    btn.onclick = () => { assignAisles.has(r) ? assignAisles.delete(r) : assignAisles.add(r); btn.classList.toggle('on'); };
-    c.appendChild(btn);
-  });
-}
-
-async function pushAssignments() {
-  const list = [];
-  assignAisles.forEach(r => list.push({ type: 'aisle', value: `W${r}`, description: `W${r} Full aisle` }));
-  const prod = document.getElementById('prod-assign').value.trim();
-  if (prod) list.push({ type: 'product', value: prod, description: `Product: ${prod}` });
-  if (!list.length) return;
-  try {
-    await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, redirect: 'follow', body: JSON.stringify({ action: 'setAssignments', assignments: list, assignedBy: NovusSettings.getUser() || 'Control Center' }) });
-    toast('Assignments pushed', 'green');
-    assignAisles.clear();
-    document.querySelectorAll('.aisle-pick').forEach(b => b.classList.remove('on'));
-    document.getElementById('prod-assign').value = '';
-  } catch { toast('Push failed', 'red'); }
-}
-
-async function clearAssignments() {
-  try {
-    await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, redirect: 'follow', body: JSON.stringify({ action: 'setAssignments', assignments: [], assignedBy: NovusSettings.getUser() || 'Control Center' }) });
-    toast('Assignments cleared', 'blue');
-  } catch {}
-}
-
-function exportAudit() {
-  if (!report.length) { toast('No data to export', 'red'); return; }
-  const now = new Date();
-  const weekNum = Math.ceil(((now - new Date(now.getFullYear(),0,1)) / 86400000 + new Date(now.getFullYear(),0,1).getDay() + 1) / 7);
-  const rows = report.map((r, i) => [
-    now.getFullYear(), now.getMonth() + 1, weekNum, i + 1,
-    new Date(r.timestamp).toLocaleDateString(),
-    '', r.scanBin, r.hu, r.prod, r.desc,
-    r.scanQty, r.batch || '', r.unit || 'LB', '', '', '', r.type
-  ]);
-  const ws = XLSX.utils.aoa_to_sheet([
-    ['Year','Month','Week#','CT#','Date','SKU Type','Storage Bin','Handling Unit','Product','Product Short Description','Quantity','Batch','Unit','Stock Type','Goods Receipt Date','Shelf Life Expiration Date','Status'],
-    ...rows,
-  ]);
-  const wbOut = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wbOut, ws, 'Audit Data');
-  XLSX.writeFile(wbOut, `Cycle_Count_${now.toISOString().split('T')[0]}.xlsx`);
-  toast('Exported!', 'green');
-}
-
-let trainingData = [];
-let slideEditorData = [];
-
-function toggleTrainingView() {
-  const auditView = document.getElementById('view-audit');
-  const trainingView = document.getElementById('view-training');
-  document.getElementById('view-safety').style.display = 'none';
-  if (auditView.style.display !== 'none') {
-    auditView.style.display = 'none'; trainingView.style.display = 'flex'; loadTrainingData();
-  } else {
-    auditView.style.display = 'flex'; trainingView.style.display = 'none';
-  }
-}
-
-async function loadTrainingData() {
-  try {
-    const res = await fetch(API_URL + '?type=training&t=' + Date.now(), { redirect: 'follow' });
-    const text = await res.text();
-    let data;
-    try { data = JSON.parse(text); } catch { return; }
-    trainingData = data.categories || [];
-    renderTrainingList();
-  } catch (err) {}
-}
-
-function renderTrainingList() {
-  const container = document.getElementById('training-list-container');
-  if (trainingData.length === 0) {
-    container.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text-3)"><span style="font-size:42px;display:block;margin-bottom:10px">📚</span><p>No training modules yet.</p></div>';
-    return;
-  }
-  container.innerHTML = trainingData.map((sop, idx) => {
-    const catClass = sop.category === 'Safety' ? 'ok' : sop.category === 'Cycle Count' ? 'move' : 'adj';
-    let contentHTML = '';
-    if (sop.type === 'Link') {
-      contentHTML = `<div class="sop-body"><a href="${sop.body}" target="_blank" style="color:var(--accent);font-weight:700">🔗 Open External Link / Video</a></div>`;
-    } else if (sop.type === 'Flowchart' && sop.mermaid) {
-      contentHTML = `<div class="mermaid-container" id="mermaid-view-${idx}"></div>`;
-    } else if (sop.type === 'Slides' && sop.slides && sop.slides.length > 0) {
-      contentHTML = `<div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface);border-radius:8px;border:1px solid var(--border);cursor:pointer" onclick="openSlideViewer(${idx})">
-          <span style="font-size:28px">🎞️</span>
-          <div><div style="font-size:13px;font-weight:800;color:var(--accent)">Slide Deck — ${sop.slides.length} slides</div>
-          <div style="font-size:10px;color:var(--text-3);margin-top:2px">Click to view</div></div>
-          <span style="margin-left:auto;font-size:18px;color:var(--accent)">▶</span>
-        </div>`;
-    } else {
-      contentHTML = `<div class="sop-body">${sop.body}</div>`;
-    }
-    return `<div class="sop-card">
-      <div class="sop-card-header">
-        <div>
-          <span class="status-tag ${catClass}">${sop.category}</span>
-          <span class="status-tag" style="background:var(--surface-3);color:var(--text-3);margin-left:4px">${sop.type}</span>
-          <h3 class="sop-title">${sop.title}</h3>
-          <p class="sop-date">Updated: ${new Date(sop.updatedAt).toLocaleDateString()}</p>
-        </div>
-        <button class="assign-btn" style="background:var(--surface-3);color:var(--text);border:1px solid var(--border);padding:8px 14px" onclick="openTrainingEditor(${idx})">Edit</button>
-      </div>
-      ${contentHTML}
-    </div>`;
-  }).join('');
-  requestAnimationFrame(() => {
-    trainingData.forEach((sop, idx) => {
-      if (sop.type === 'Flowchart' && sop.mermaid) {
-        const el = document.getElementById(`mermaid-view-${idx}`);
-        if (el) renderMermaidInto(el, sop.mermaid, `mermaid-view-${idx}`);
-      }
-    });
-  });
-}
-
-async function renderMermaidInto(el, code, id) {
-  if (typeof mermaid === 'undefined') {
-    el.innerHTML = '<div style="color:var(--amber);font-size:11px;font-weight:700">⚠ Mermaid library not loaded — flowcharts unavailable</div>';
-    return;
-  }
-  try {
-    const { svg } = await mermaid.render(id + '-svg', code);
-    el.innerHTML = svg;
-  } catch (err) {
-    el.innerHTML = `<div style="color:var(--red);font-size:11px;font-weight:700">⚠ Parse error: ${err.message}</div><pre style="font-size:10px;color:var(--text-3);margin-top:8px;white-space:pre-wrap">${code}</pre>`;
-  }
-}
-
-function toggleEditorSections() {
-  const type = document.getElementById('sop-type').value;
-  document.getElementById('editor-text-section').style.display = (type === 'Text' || type === 'Link') ? 'block' : 'none';
-  document.getElementById('editor-mermaid-section').style.display = type === 'Flowchart' ? 'block' : 'none';
-  document.getElementById('editor-slides-section').style.display = type === 'Slides' ? 'block' : 'none';
-}
-
-async function previewMermaid() {
-  const code = document.getElementById('sop-mermaid').value.trim();
-  const preview = document.getElementById('mermaid-preview');
-  if (!code) { preview.innerHTML = ''; return; }
-  await renderMermaidInto(preview, code, 'mermaid-preview');
-}
-
-function renderSlideEditor() {
-  document.getElementById('slide-editor-list').innerHTML = slideEditorData.map((s, i) => `
-    <div class="slide-editor-item">
-      <span class="slide-num">${i + 1}</span>
-      <div class="slide-fields">
-        <input type="text" placeholder="Slide title" value="${escHtml(s.title)}" oninput="slideEditorData[${i}].title=this.value">
-        <textarea rows="3" placeholder="Slide body" oninput="slideEditorData[${i}].body=this.value">${escHtml(s.body)}</textarea>
-      </div>
-      <button class="slide-remove-btn" onclick="removeSlideEditor(${i})">✕</button>
-    </div>`).join('');
-}
-
-function addSlideEditor() { slideEditorData.push({ title: '', body: '' }); renderSlideEditor(); }
-function removeSlideEditor(idx) { slideEditorData.splice(idx, 1); renderSlideEditor(); }
-
-function openTrainingEditor(idx = null) {
-  document.getElementById('training-modal').classList.add('open');
-  if (idx !== null) {
-    const sop = trainingData[idx];
-    document.getElementById('sop-id').value = sop.id;
-    document.getElementById('sop-title').value = sop.title;
-    document.getElementById('sop-category').value = sop.category;
-    document.getElementById('sop-type').value = sop.type;
-    document.getElementById('sop-body').value = sop.body || '';
-    document.getElementById('sop-mermaid').value = sop.mermaid || '';
-    slideEditorData = (sop.slides || []).map(s => ({ ...s }));
-    document.getElementById('btn-delete-sop').style.display = 'block';
-    document.getElementById('modal-title').textContent = 'Edit Training Module';
-  } else {
-    document.getElementById('sop-id').value = Date.now().toString();
-    document.getElementById('sop-title').value = '';
-    document.getElementById('sop-body').value = '';
-    document.getElementById('sop-mermaid').value = '';
-    slideEditorData = [{ title: '', body: '' }];
-    document.getElementById('btn-delete-sop').style.display = 'none';
-    document.getElementById('modal-title').textContent = 'New Training Module';
-  }
-  toggleEditorSections(); renderSlideEditor();
-  document.getElementById('mermaid-preview').innerHTML = '';
-}
-
-function closeTrainingEditor() { document.getElementById('training-modal').classList.remove('open'); }
-
-function deleteTrainingModule() {
-  const id = document.getElementById('sop-id').value;
-  if (!id || !confirm('Delete this module?')) return;
-  trainingData = trainingData.filter(s => s.id !== id);
-  closeTrainingEditor(); renderTrainingList();
-  fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, redirect: 'follow', body: JSON.stringify({ action: 'saveTraining', categories: trainingData }) });
-  toast('Module deleted', 'amber');
-}
-
-async function saveTrainingModule() {
-  const id = document.getElementById('sop-id').value;
-  const type = document.getElementById('sop-type').value;
-  const newSop = {
-    id, title: document.getElementById('sop-title').value.trim(),
-    category: document.getElementById('sop-category').value, type,
-    body: document.getElementById('sop-body').value.trim(),
-    mermaid: document.getElementById('sop-mermaid').value.trim(),
-    slides: slideEditorData.filter(s => s.title || s.body),
-    updatedAt: new Date().toISOString()
+    const result = await res.json();
+    if(result.success) { toast('SAP Data Updated', 'green'); fetchData(); }
   };
-  if (!newSop.title) { toast('Title required', 'amber'); return; }
-  if (type === 'Flowchart' && !newSop.mermaid) { toast('Flowchart required', 'amber'); return; }
-  if (type === 'Slides' && newSop.slides.length === 0) { toast('Add at least one slide', 'amber'); return; }
-  if ((type === 'Text' || type === 'Link') && !newSop.body) { toast('Content required', 'amber'); return; }
-  const existingIdx = trainingData.findIndex(s => s.id === id);
-  if (existingIdx > -1) trainingData[existingIdx] = newSop; else trainingData.push(newSop);
-  closeTrainingEditor(); renderTrainingList(); toast('Saving...', 'blue');
-  try {
-    await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, redirect: 'follow', body: JSON.stringify({ action: 'saveTraining', categories: trainingData }) });
-    toast('Published', 'green');
-  } catch { toast('Sync failed', 'red'); }
-}
-
-let viewerSlides = [], viewerIdx = 0;
-
-function openSlideViewer(sopIdx) {
-  const sop = trainingData[sopIdx];
-  if (!sop?.slides?.length) return;
-  viewerSlides = sop.slides; viewerIdx = 0;
-  document.getElementById('slide-viewer-modal').classList.add('open');
-  renderSlideViewer();
-}
-function closeSlideViewer() { document.getElementById('slide-viewer-modal').classList.remove('open'); }
-
-function renderSlideViewer() {
-  document.getElementById('slide-viewport').innerHTML = viewerSlides.map((s, i) =>
-    `<div class="slide ${i === viewerIdx ? 'active' : ''}">
-      <span class="slide-number">${i + 1} / ${viewerSlides.length}</span>
-      <h2>${escHtml(s.title || 'Untitled')}</h2>
-      <p>${escHtml(s.body || '')}</p>
-    </div>`).join('');
-  document.getElementById('slide-progress').innerHTML = viewerSlides.map((_, i) =>
-    `<div class="slide-pip ${i === viewerIdx ? 'active' : ''}"></div>`).join('');
-  document.getElementById('slide-prev').disabled = viewerIdx === 0;
-  document.getElementById('slide-next').disabled = viewerIdx === viewerSlides.length - 1;
-}
-
-function slideNav(dir) {
-  const next = viewerIdx + dir;
-  if (next < 0 || next >= viewerSlides.length) return;
-  const cur = document.querySelector('.slide.active');
-  if (cur) { cur.classList.remove('active'); cur.classList.add('exit'); }
-  viewerIdx = next;
-  setTimeout(renderSlideViewer, 50);
-}
-
-document.addEventListener('keydown', (e) => {
-  if (!document.getElementById('slide-viewer-modal').classList.contains('open')) return;
-  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); slideNav(1); }
-  if (e.key === 'ArrowLeft') { e.preventDefault(); slideNav(-1); }
-  if (e.key === 'Escape') closeSlideViewer();
+  reader.readAsArrayBuffer(file);
 });
 
-function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-
-// ══════════════════════════════════════════
-// SAFETY & INCIDENT REPORTS
-// ══════════════════════════════════════════
-let safetyData = [];
-let safetyFilter = 'all';
-
-function toggleSafetyView() {
-  const auditView = document.getElementById('view-audit');
-  const trainingView = document.getElementById('view-training');
-  const safetyView = document.getElementById('view-safety');
-
-  if (safetyView.style.display !== 'flex') {
-    auditView.style.display = 'none';
-    trainingView.style.display = 'none';
-    safetyView.style.display = 'flex';
-    renderSafetyView();
-  } else {
-    safetyView.style.display = 'none';
-    auditView.style.display = 'flex';
-  }
+async function finalizeReconciliation() {
+  if(!confirm('Finalize all pending missing items?')) return;
+  const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'finalizeReconciliation' }) });
+  const data = await res.json();
+  toast(`Finalized ${data.finalized} items`, 'green');
+  fetchData();
 }
 
-function updateSafetySummary() {
-  const el = document.getElementById('safety-summary');
-  if (!el) return;
-  const open = safetyData.filter(i => i.status === 'open').length;
-  const total = safetyData.length;
-  if (total === 0) { el.textContent = 'No reports filed'; return; }
-  el.innerHTML = `<strong style="color:${open > 0 ? 'var(--red)' : 'var(--green)'}">${open} open</strong> · ${total} total`;
-}
-
-(async function initSafetySummary() {
-  try {
-    const res = await fetch(API_URL + '?type=safety&t=' + Date.now(), { redirect: 'follow' });
-    const data = await res.json();
-    safetyData = data.incidents || [];
-    updateSafetySummary();
-  } catch {}
-})();
-
-function renderSafetyView() {
-  const filters = [
-    { key: 'all', label: 'All', color: '' },
-    { key: 'open', label: 'Open', color: 'red' },
-    { key: 'resolved', label: 'Resolved', color: 'green' },
-  ];
-  const counts = { all: safetyData.length };
-  safetyData.forEach(i => { counts[i.status] = (counts[i.status] || 0) + 1; });
-
-  document.getElementById('safety-filter-pills').innerHTML = filters.map(f => {
-    const count = counts[f.key] || 0;
-    const active = safetyFilter === f.key ? 'active' : '';
-    return `<div class="pill ${active}" onclick="filterSafety('${f.key}')">
-              <span class="pill-count ${f.color}">${count}</span>
-              <span class="pill-label">${f.label}</span>
-            </div>`;
-  }).join('');
-
-  const filtered = safetyFilter === 'all' ? safetyData : safetyData.filter(i => i.status === safetyFilter);
-  const container = document.getElementById('safety-list-container');
-
-  if (filtered.length === 0) {
-    container.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text-3)"><span style="font-size:42px;display:block;margin-bottom:10px">🦺</span><p>No incidents to display</p></div>';
-    return;
-  }
-
-  const open = safetyData.filter(i => i.status === 'open').length;
-  const critical = safetyData.filter(i => i.severity === 'critical' || i.severity === 'high').length;
-  const resolved = safetyData.filter(i => i.status === 'resolved').length;
-
-  let html = `
-    <div class="safety-stat-row">
-      <div class="safety-stat"><div class="s-val red">${open}</div><div class="s-label">Open</div></div>
-      <div class="safety-stat"><div class="s-val amber">${critical}</div><div class="s-label">High / Critical</div></div>
-      <div class="safety-stat"><div class="s-val green">${resolved}</div><div class="s-label">Resolved</div></div>
-      <div class="safety-stat"><div class="s-val" style="color:var(--accent)">${safetyData.length}</div><div class="s-label">Total</div></div>
-    </div>`;
-
-  html += filtered.map((inc, idx) => {
-    const realIdx = safetyData.indexOf(inc);
-    const ts = inc.timestamp ? new Date(inc.timestamp).toLocaleDateString() : '—';
-    const hasPhoto = inc.photoUrl && inc.photoUrl.length > 10;
-    const hasResolution = inc.resolution && inc.resolution.trim().length > 0;
-
-    return `<div class="inc-card" onclick="openSafetyDetail(${realIdx})">
-      <div class="inc-top">
-        <div style="display:flex;gap:6px;align-items:center">
-          <span class="inc-sev ${inc.severity || 'low'}">${inc.severity || 'low'}</span>
-          <span class="inc-status ${inc.status || 'open'}">${inc.status || 'open'}</span>
-          ${hasPhoto ? '<span style="font-size:10px" title="Has photo evidence">📷</span>' : ''}
-          ${hasResolution ? '<span style="font-size:10px" title="Has resolution">✓</span>' : ''}
-        </div>
-        <span class="inc-view-btn">View Report →</span>
-      </div>
-      <div class="inc-loc">📍 ${escHtml(inc.location || 'No location')}</div>
-      <div class="inc-desc truncated">${escHtml(inc.description || '')}</div>
-      <div class="inc-footer">
-        <span>👤 ${escHtml(inc.reportedBy || 'Anonymous')}</span>
-        <span>${ts}</span>
-      </div>
-    </div>`;
-  }).join('');
-
-  container.innerHTML = html;
-}
-
-function openSafetyDetail(idx) {
-  const inc = safetyData[idx];
-  if (!inc) return;
-
-  document.getElementById('sd-id').textContent = inc.id || '—';
-
-  const ts = inc.timestamp ? new Date(inc.timestamp) : null;
-  const tsDisplay = ts ? `${ts.toLocaleDateString()} · ${ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : '—';
-
-  const hasPhoto = inc.photoUrl && inc.photoUrl.length > 10;
-  const isBase64 = hasPhoto && inc.photoUrl.startsWith('data:');
-  const isUrl = hasPhoto && (inc.photoUrl.startsWith('http://') || inc.photoUrl.startsWith('https://'));
-
-  let photoHTML = '';
-  if (isBase64) {
-    photoHTML = `<img src="${inc.photoUrl}" alt="Incident photo evidence">`;
-  } else if (isUrl) {
-    photoHTML = `<img src="${escHtml(inc.photoUrl)}" alt="Incident photo evidence" onerror="this.parentElement.innerHTML='<div class=sd-photo-empty>⚠ Image failed to load</div>'">`;
-  } else if (hasPhoto) {
-    photoHTML = `<img src="data:image/jpeg;base64,${inc.photoUrl}" alt="Incident photo evidence" onerror="this.parentElement.innerHTML='<div class=sd-photo-empty>⚠ Unrecognized image format</div>'">`;
-  }
-
-  document.getElementById('sd-body').innerHTML = `
-    <div class="sd-header">
-      <span class="inc-sev ${inc.severity || 'low'}">${escHtml(inc.severity || 'unknown')}</span>
-      <span class="inc-status ${inc.status || 'open'}">${escHtml(inc.status || 'open')}</span>
-      <span class="sd-timestamp">${tsDisplay}</span>
-    </div>
-    <div class="sd-section">
-      <div class="sd-section-title">📋 Report Details</div>
-      <div class="sd-meta-grid">
-        <div class="sd-meta-item">
-          <div class="sd-meta-label">Reported By</div>
-          <div class="sd-meta-val">${escHtml(inc.reportedBy || 'Anonymous')}</div>
-        </div>
-        <div class="sd-meta-item">
-          <div class="sd-meta-label">Location</div>
-          <div class="sd-meta-val">${escHtml(inc.location || 'Not specified')}</div>
-        </div>
-      </div>
-    </div>
-    <div class="sd-section">
-      <div class="sd-section-title">📝 Description</div>
-      <div class="sd-text-block ${inc.description ? '' : 'empty'}">${inc.description ? escHtml(inc.description) : 'No description provided'}</div>
-    </div>
-    <div class="sd-section">
-      <div class="sd-section-title">🔧 Resolution</div>
-      ${inc.resolution && inc.resolution.trim()
-        ? `<div class="sd-resolution-block">${escHtml(inc.resolution)}</div>`
-        : `<div class="sd-text-block empty">No resolution recorded yet</div>`
-      }
-    </div>
-    <div class="sd-section">
-      <div class="sd-section-title">📷 Photo Evidence</div>
-      <div class="sd-photo-frame">
-        ${hasPhoto ? photoHTML : '<div class="sd-photo-empty">No photo attached</div>'}
-      </div>
-    </div>
-  `;
-
-  document.getElementById('safety-detail-modal').classList.add('open');
-}
-
-function closeSafetyDetail() {
-  document.getElementById('safety-detail-modal').classList.remove('open');
-}
-
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && document.getElementById('safety-detail-modal').classList.contains('open')) {
-    closeSafetyDetail();
-  }
-});
-
-function filterSafety(key) {
-  safetyFilter = key;
-  renderSafetyView();
-}
+setInterval(fetchData, 15000);
+fetchData();
 </script>
 </body>
 </html>
