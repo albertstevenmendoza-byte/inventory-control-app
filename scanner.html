@@ -131,7 +131,7 @@
         <div class="bin-nav-cluster">
             <button id="btn-prev" class="nav-arrow" onclick="prevBin()">←</button>
             <h1 id="count-title" class="mono" style="font-size: 16px; width: 85px; text-align: center; display:flex; align-items:center; justify-content:center; gap:4px;"></h1>
-            <button id="btn-next-top" class="nav-arrow" onclick="nextBin()">→</button>
+            <button id="btn-next-top" class="nav-arrow" onclick="skipBin()">→</button>
         </div>
         <div class="sync-dot"></div>
     </div>
@@ -139,7 +139,8 @@
     <div class="scroll-area" id="hu-list">
         </div>
     <div class="bottom-bar">
-        <button class="primary-btn" id="btn-next" onclick="nextBin()">Next Bin →</button>
+        <button class="secondary-btn" style="flex: 1;" onclick="skipBin()">Skip</button>
+        <button class="primary-btn" id="btn-next" style="flex: 2;" onclick="finalizeBin()">Finalize & Next →</button>
     </div>
 </div>
 
@@ -304,8 +305,8 @@ const NovusSettings = (() => {
     
     let sapMaster = [];
     let sessionRegistry = new Map(); 
-    let countedBins = new Set(); // Tracks bins that have been successfully synced to the backend
-    let countedFreshProducts = new Set(); // Tracks Fresh SKUs that have already been audited in this cycle
+    let countedBins = new Set(); // Tracks bins that have been explicitly finalized
+    let countedFreshProducts = new Set(); 
     
     let currentAisle = "";
     let currentBinIdx = 0;
@@ -335,7 +336,6 @@ const NovusSettings = (() => {
         try {
             showToast("Syncing SAP...", "blue");
             
-            // Single bulletproof fetch to pull entire dashboard state safely
             const res = await fetch(API_URL + '?t=' + Date.now(), { redirect: 'follow' });
             const text = await res.text();
             
@@ -352,7 +352,8 @@ const NovusSettings = (() => {
             sapMaster = data.sapData || [];
             const report = data.report || [];
             
-            countedBins = new Set(report.map(r => r.scanBin).filter(Boolean));
+            // Only strictly finalized bins get the checkmark
+            countedBins = new Set(report.filter(r => r.type === 'bin_finalized').map(r => r.scanBin).filter(Boolean));
             countedFreshProducts = new Set(report.map(r => r.prod).filter(p => FRESH_PRODUCTS.includes(p)));
             
             document.querySelectorAll('.sync-dot').forEach(d => d.classList.remove('offline'));
@@ -376,7 +377,7 @@ const NovusSettings = (() => {
             const data = JSON.parse(text);
             const report = data.report || [];
             
-            countedBins = new Set(report.map(r => r.scanBin).filter(Boolean));
+            countedBins = new Set(report.filter(r => r.type === 'bin_finalized').map(r => r.scanBin).filter(Boolean));
             countedFreshProducts = new Set(report.map(r => r.prod).filter(p => FRESH_PRODUCTS.includes(p)));
             
             if (document.getElementById('screen-count').classList.contains('active')) {
@@ -731,14 +732,23 @@ const NovusSettings = (() => {
 
     function prevBin() { if(currentBinIdx > 0) { currentBinIdx--; updateBinView(); } }
     
+    function skipBin() {
+        if(currentBinIdx < currentBins.length - 1) { 
+            currentBinIdx++; 
+            updateBinView(); 
+        } else {
+            showToast("End of Aisle", "blue");
+        }
+    }
+
     function updateBinView() {
         renderHUList(); renderBinStrip();
-        const pBtn = document.getElementById('btn-prev'), nTop = document.getElementById('btn-next-top'), nBot = document.getElementById('btn-next');
+        const pBtn = document.getElementById('btn-prev'), nBot = document.getElementById('btn-next');
         if(pBtn) pBtn.disabled = currentBinIdx === 0;
-        if(nTop) nTop.disabled = currentBinIdx === currentBins.length - 1;
+        
         if(nBot) {
-            if (currentBinIdx === currentBins.length - 1) { nBot.innerText = "Finish Aisle ✓"; nBot.style.background = "var(--purple)"; } 
-            else { nBot.innerText = "Next Bin →"; nBot.style.background = "var(--green)"; }
+            if (currentBinIdx === currentBins.length - 1) { nBot.innerText = "Finalize Aisle ✓"; nBot.style.background = "var(--purple)"; } 
+            else { nBot.innerText = "Finalize & Next →"; nBot.style.background = "var(--green)"; }
         }
     }
 
@@ -765,6 +775,7 @@ const NovusSettings = (() => {
     // ==========================================
     async function syncBinData(binName, isFresh = false) {
         let itemsToSync = [];
+        let itemsToLog = [];
         
         if (isFresh) {
             itemsToSync = Array.from(sessionRegistry.values());
@@ -772,6 +783,17 @@ const NovusSettings = (() => {
                 showToast("No counts to submit", "amber");
                 return false;
             }
+            itemsToLog = itemsToSync.map(record => ({
+                hu: record.hu,
+                product: record.product,
+                desc: record.desc,
+                batch: record.batch,
+                sapBin: record.sapBin,
+                sapQty: record.sapQty,
+                countQty: record.scanQty,
+                type: record.type,
+                note: record.note
+            }));
         } else {
             // Auto-confirm any expected items the auditor didn't touch (Implicit OK)
             const expected = sapMaster.filter(i => i.sapBin === binName);
@@ -785,23 +807,32 @@ const NovusSettings = (() => {
 
             // Gather all items evaluated for this specific bin
             itemsToSync = Array.from(sessionRegistry.values()).filter(r => r.foundIn === binName || r.sapBin === binName);
-            if (itemsToSync.length === 0) {
-                countedBins.add(binName); // Mark empty bins as counted too
-                return true; 
-            }
-        }
+            
+            itemsToLog = itemsToSync.map(record => ({
+                hu: record.hu,
+                product: record.product,
+                desc: record.desc,
+                batch: record.batch,
+                sapBin: record.sapBin,
+                sapQty: record.sapQty,
+                countQty: record.scanQty,
+                type: record.type,
+                note: record.note
+            }));
 
-        const itemsToLog = itemsToSync.map(record => ({
-            hu: record.hu,
-            product: record.product,
-            desc: record.desc,
-            batch: record.batch,
-            sapBin: record.sapBin,
-            sapQty: record.sapQty,
-            countQty: record.scanQty,
-            type: record.type,
-            note: record.note
-        }));
+            // Push a system marker to explicitly declare this bin as finalized
+            itemsToLog.push({
+                hu: 'BIN_CLEAR',
+                product: 'SYSTEM',
+                desc: 'Bin Finalized',
+                batch: '',
+                sapBin: binName,
+                sapQty: 0,
+                countQty: 0,
+                type: 'bin_finalized',
+                note: `Finalized by ${NovusSettings.getUser()}`
+            });
+        }
 
         try {
             const res = await fetch(API_URL, {
@@ -821,7 +852,6 @@ const NovusSettings = (() => {
             
             if (result.success || result.skipped) {
                 if (isFresh) {
-                    // Locally mark these specific fresh products as counted so they disappear instantly
                     Array.from(sessionRegistry.values()).forEach(reg => {
                         if (FRESH_PRODUCTS.includes(reg.product)) {
                             countedFreshProducts.add(reg.product);
@@ -829,7 +859,7 @@ const NovusSettings = (() => {
                     });
                     sessionRegistry.clear();
                 } else {
-                    countedBins.add(binName); // Immediately mark as counted locally
+                    countedBins.add(binName); 
                 }
                 return true;
             } else {
@@ -842,7 +872,7 @@ const NovusSettings = (() => {
         }
     }
 
-    async function nextBin() { 
+    async function finalizeBin() { 
         const btn = document.getElementById('btn-next');
         const origText = btn.innerText;
         const origBg = btn.style.background;
