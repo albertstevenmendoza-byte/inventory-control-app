@@ -831,9 +831,14 @@ function renderPills() {
     { key: 'found_moved', label: 'FOUND (RESOLVED)', color: 'green' },
     { key: 'unexpected', label: 'SYS TRIGGER', color: 'cyan' }
   ];
-  const counts = { all: report.length };
-  report.forEach(r => { counts[r.type] = (counts[r.type] || 0) + 1; });
-  document.getElementById('status-pills').innerHTML = categories.map(cat => {
+  
+  // Filter the report for counts if the toggle is active
+  const visibleReport = hideResolved ? report.filter(r => r.type !== 'found_moved') : report;
+  const counts = { all: visibleReport.length };
+  
+  visibleReport.forEach(r => { counts[r.type] = (counts[r.type] || 0) + 1; });
+  
+  let html = categories.map(cat => {
     const count = counts[cat.key] || 0;
     if (count === 0 && cat.key !== 'all') return '';
     const isActive = currentStatusFilter === cat.key ? 'active' : '';
@@ -842,13 +847,31 @@ function renderPills() {
               <span class="pill-label">${cat.label}</span>
             </div>`;
   }).join('');
+
+  // Inject the toggle button at the end of the pills row
+  html += `
+    <div class="pill" style="margin-left:auto; border: 1.5px dashed var(--border);" onclick="toggleHideResolved()">
+      <span class="pill-label" style="color: ${hideResolved ? 'var(--text-3)' : 'var(--accent)'}">
+        ${hideResolved ? '👁️ SHOW RESOLVED' : '🙈 HIDE RESOLVED'}
+      </span>
+    </div>
+  `;
+  
+  document.getElementById('status-pills').innerHTML = html;
 }
 
 function filterTable(status) { currentStatusFilter = status; currentPage = 0; renderPills(); renderTable(); }
 
 function renderTable() {
-  const filtered = currentStatusFilter === 'all' ? report : report.filter(r => r.type === currentStatusFilter);
+  // Base the table off the toggle state
+  const baseReport = hideResolved ? report.filter(r => r.type !== 'found_moved') : report;
+  
+  // Apply the currently selected status pill filter
+  const filtered = currentStatusFilter === 'all' ? baseReport : baseReport.filter(r => r.type === currentStatusFilter);
+  
   const wrap = document.getElementById('table-wrap');
+
+  // ... [Keep the rest of your pagination and table rendering logic exactly the same] ...
 
   if (filtered.length === 0) {
     wrap.innerHTML = report.length === 0
