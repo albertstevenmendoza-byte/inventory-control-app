@@ -499,85 +499,52 @@ const NovusSettings = (() => {
 
     async function refreshData() {
         try {
-            showToast("Syncing SAP...", "blue");
+            showToast("Connecting to server...", "blue");
             
-            const res = await fetch(API_URL + '?t=' + Date.now(), { redirect: 'follow' });
-            const text = await res.text();
+            // Only ask for the 'ping' action
+            const res = await fetch(API_URL + '?action=ping&t=' + Date.now(), { redirect: 'follow' });
+            const data = await res.json();
             
-            let data;
-            try {
-                data = JSON.parse(text);
-            } catch(e) {
-                document.querySelectorAll('.sync-dot').forEach(d => d.classList.add('offline'));
-                showToast("API Error - Contact Admin", "red");
-                return;
-            }
-            
-            sapMaster = data.sapData || [];
-            localStorage.setItem('sap2', JSON.stringify(sapMaster));
-            
-            const report = data.report || [];
-            
-            countedBins = new Set(report.filter(r => r.type === 'bin_finalized').map(r => r.scanBin).filter(Boolean));
+            if (data.error) throw new Error(data.error);
+    
+            // Update just the progress trackers
+            countedBins = new Set(data.finalizedBins || []);
+            countedFreshProducts = new Set(data.freshDone || []);
             localStorage.setItem('doneBins2', JSON.stringify([...countedBins]));
             
-            countedFreshProducts = new Set(report.map(r => r.prod).filter(p => FRESH_PRODUCTS.includes(p)));
-            
             document.querySelectorAll('.sync-dot').forEach(d => d.classList.remove('offline'));
-            showToast(`Loaded ${sapMaster.length} SAP records`, "green");
+            showToast("Connected & Up to date", "green");
             
-            if (activeAuditMode === 'aisle') {
-                updateBinView();
-            } else if (activeAuditMode === 'fresh') {
-                updateFreshOverview();
-            } else if (activeAuditMode === 'hub') {
-                renderAisleGrid();
-            }
+            // Refresh UI state
+            if (activeAuditMode === 'aisle') updateBinView();
+            else if (activeAuditMode === 'fresh') updateFreshOverview();
+            else if (activeAuditMode === 'hub') renderAisleGrid();
+            
         } catch(e) { 
             document.querySelectorAll('.sync-dot').forEach(d => d.classList.add('offline'));
             showToast("Offline Mode", "amber");
         }
-    }
+}
 
     async function pollLightweight() {
-        try {
-            const res = await fetch(API_URL + '?type=poll&t=' + Date.now(), { redirect: 'follow' });
-            const text = await res.text();
-            const data = JSON.parse(text);
-            const report = data.report || [];
-            
-            countedBins = new Set(report.filter(r => r.type === 'bin_finalized').map(r => r.scanBin).filter(Boolean));
-            countedFreshProducts = new Set(report.map(r => r.prod).filter(p => FRESH_PRODUCTS.includes(p)));
-            localStorage.setItem('doneBins2', JSON.stringify([...countedBins]));
-            
-            if (activeAuditMode === 'aisle') {
-                renderBinStrip(); 
-                const currentBin = currentBins[currentBinIdx];
-                const titleEl = document.getElementById('count-title');
-                titleEl.innerHTML = `${currentBin} ${countedBins.has(currentBin) ? '<span style="color:var(--green); font-size:14px; margin-left:4px">✓</span>' : ''}`;
-            } else if (activeAuditMode === 'hub') {
-                renderAisleGrid();
-            }
-        } catch(e) {} 
-    }
-
-    function handleGateway(input) {
-        if (!input) return;
-        if (input === 'FRESH') return initFreshMode();
+    try {
+        const res = await fetch(API_URL + '?action=ping&t=' + Date.now(), { redirect: 'follow' });
+        const data = await res.json();
         
-        if (input.match(/^W[A-P][0-9]{2}[A-C]$/)) {
-            startAisleAudit(input.charAt(1), input);
-            return;
+        countedBins = new Set(data.finalizedBins || []);
+        countedFreshProducts = new Set(data.freshDone || []);
+        localStorage.setItem('doneBins2', JSON.stringify([...countedBins]));
+        
+        if (activeAuditMode === 'aisle') {
+            renderBinStrip(); 
+            const currentBin = currentBins[currentBinIdx];
+            const titleEl = document.getElementById('count-title');
+            titleEl.innerHTML = `${currentBin} ${countedBins.has(currentBin) ? '<span style="color:var(--green); font-size:14px; margin-left:4px">✓</span>' : ''}`;
+        } else if (activeAuditMode === 'hub') {
+            renderAisleGrid();
         }
-        
-        const skuMatch = sapMaster.filter(i => String(i.product).trim() === input);
-        if (skuMatch.length > 0) return initProductAudit(input);
-        
-        const huMatch = sapMaster.find(i => i.hu === input);
-        if (huMatch) return initProductAudit(huMatch.product);
-
-        showToast("No SAP Match Found", "amber");
-    }
+    } catch(e) {} 
+}
 
     function processBinScan(input) {
         if(!input) return;
@@ -787,18 +754,33 @@ const NovusSettings = (() => {
         }
     }
 
-    function startAisleAudit(aisle, targetBin = null) {
+    async function startAisleAudit(aisle, targetBin = null) {
         activeAuditMode = 'aisle';
         currentAisle = aisle;
         currentBins = [];
+        
+        // Generate bin list
         const max = (aisle === 'B' || aisle === 'C') ? 25 : 38;
         for(let i=0; i<=max; i++) {
             const num = String(i).padStart(2, '0');
             ["A","B","C"].forEach(s => currentBins.push(`W${aisle}${num}${s}`));
         }
         currentBinIdx = targetBin ? currentBins.indexOf(targetBin) : 0;
-        switchScreen('count');
-        updateBinView();
+    
+        // --- NEW FETCH LOGIC ---
+        showToast(`Loading Aisle ${aisle} data...`, "blue");
+        try {
+            const res = await fetch(`${API_URL}?action=getAisle&aisle=${aisle}`);
+            const data = await res.json();
+            
+            // This array now holds ~100 items instead of 50,000+
+            sapMaster = data.sapData || []; 
+            
+            switchScreen('count');
+            updateBinView();
+        } catch (err) {
+            showToast(`Failed to load Aisle ${aisle}`, "red");
+        }
     }
 
     function renderAisleHUList() {
@@ -931,20 +913,31 @@ const NovusSettings = (() => {
         }
     }
 
-    function initProductAudit(product) {
+    async function initProductAudit(product) {
         activeAuditMode = 'product';
         activeProductAudit = product;
         document.getElementById('product-display').innerText = product;
         
-        const expected = sapMaster.filter(i => i.product === activeProductAudit);
-        expected.forEach(sap => {
-            if (!sessionRegistry.has(sap.hu)) {
-                sessionRegistry.set(sap.hu, { ...sap, scanQty: sap.sapQty, scanBin: sap.sapBin, foundIn: sap.sapBin, note: '', type: 'ok', status: 'PENDING' });
-            }
-        });
-        
-        renderProductList();
-        switchScreen('product');
+        // --- NEW FETCH LOGIC ---
+        showToast(`Loading data for Product ${product}...`, "blue");
+        try {
+            const res = await fetch(`${API_URL}?action=getProduct&product=${product}`);
+            const data = await res.json();
+            
+            sapMaster = data.sapData || [];
+            
+            // Pre-fill the registry for verification
+            sapMaster.forEach(sap => {
+                if (!sessionRegistry.has(sap.hu)) {
+                    sessionRegistry.set(sap.hu, { ...sap, scanQty: sap.sapQty, scanBin: sap.sapBin, foundIn: sap.sapBin, note: '', type: 'ok', status: 'PENDING' });
+                }
+            });
+            
+            renderProductList();
+            switchScreen('product');
+        } catch (err) {
+            showToast("Failed to load product data", "red");
+        }
     }
 
     function renderProductList() {
