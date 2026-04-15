@@ -739,7 +739,7 @@ const NovusSettings = (() => {
     }
 
     function confirmItem(hu) { 
-        const val = parseInt(document.querySelector(`.qty-val-${hu}`).value, 10) || 0;
+        const val = parseFloat(document.querySelector(`.qty-val-${hu}`).value) || 0;
         const sap = sapMaster.find(i => i.hu === hu);
         let scanBin = sap.sapBin;
         if (activeAuditMode === 'aisle') scanBin = currentBins[currentBinIdx];
@@ -757,7 +757,7 @@ const NovusSettings = (() => {
     }
     
     function setQty(hu, val) { 
-        saveToRegistry(hu, { scanQty: parseInt(val, 10) || 0 }); 
+        saveToRegistry(hu, { scanQty: parseFloat(val) || 0 }); 
     }
     
     function markMissing(hu) { 
@@ -1279,7 +1279,7 @@ const NovusSettings = (() => {
     function submitAddedHu() {
         const hu = document.getElementById('add-hu-id').value.trim().toUpperCase();
         const prod = document.getElementById('add-hu-prod').value.trim().toUpperCase();
-        const qty = parseInt(document.getElementById('add-hu-qty').value, 10) || 0;
+        const qty = parseFloat(document.getElementById('add-hu-qty').value) || 0;
 
         if (!hu || !prod) {
             showToast("HU and Product are required", "red");
