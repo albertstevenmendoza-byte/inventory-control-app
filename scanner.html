@@ -686,6 +686,9 @@ const NovusSettings = (() => {
 
         const showBin = activeAuditMode === 'fresh' || activeAuditMode === 'product';
 
+        // Generate a visual badge for the Batch number if it exists
+        const batchBadge = item.batch ? `<div style="display:inline-block; margin-top:6px; font-size:10px; font-family:'IBM Plex Mono', monospace; font-weight:700; color:var(--text-2); background:var(--surface-2); padding:4px 8px; border-radius:4px; border:1px solid var(--border);">BATCH: ${item.batch}</div>` : '';
+
         return `
             <div class="hu-card ${statusClass}" id="hu-card-${item.hu}">
                 <div class="hu-header">
@@ -693,17 +696,18 @@ const NovusSettings = (() => {
                     <span class="hu-status ${statusClass}">${statusLabel}</span>
                 </div>
                 <div class="hu-meta">
-                    <div style="flex:2">
+                    <div style="flex:2; padding-right:12px;">
                         <div class="hu-meta-label">Product</div>
                         <div class="hu-meta-value">${item.product}</div>
                         <div style="font-size:10px; color:var(--text-2); margin-top:2px; line-height:1.3;">${item.desc || ''}</div>
+                        ${batchBadge}
                     </div>
                     ${showBin ? `
-                    <div style="flex:1">
+                    <div style="flex:1; text-align:right;">
                         <div class="hu-meta-label">Expected Bin</div>
                         <div class="hu-meta-value mono" style="font-size:14px; color:var(--accent)">${item.sapBin}</div>
                     </div>` : `
-                    <div style="flex:1">
+                    <div style="flex:1; text-align:right;">
                         <div class="hu-meta-label">SAP Qty</div>
                         <div class="hu-meta-value mono">${item.sapQty}</div>
                     </div>`}
