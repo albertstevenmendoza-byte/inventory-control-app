@@ -1067,33 +1067,16 @@ const NovusSettings = (() => {
         else switchScreen('setup');
     }
 
-    function initFreshMode() {
-        activeAuditMode = 'fresh';
-        hideFreshDetail();
-        updateFreshOverview();
-        document.getElementById('fresh-search-bar').style.display = 'block';
-        switchScreen('fresh');
-    }
-
-    function hideFreshDetail() {
-        activeFreshProduct = null;
-        document.getElementById('fresh-detail').style.display = 'none';
-        document.getElementById('fresh-overview').style.display = 'block';
-        document.getElementById('fresh-search-bar').style.display = 'block';
-    }
-
     async function initFreshMode() {
         activeAuditMode = 'fresh';
         hideFreshDetail();
         
-        // THE FIX: Reach out to the server to grab the Fresh product data
         showToast("Loading Fresh Data...", "blue");
         try {
-            // Assuming your backend supports an action like 'getFresh'
-            const res = await fetch(`${API_URL}?action=getFresh`);
+            // THE FIX: Added { redirect: 'follow' } so the browser doesn't block Google's redirect
+            const res = await fetch(`${API_URL}?action=getFresh`, { redirect: 'follow' });
             const data = await res.json();
             
-            // Populate sapMaster with the fresh items
             sapMaster = data.sapData || [];
             
             updateFreshOverview();
