@@ -674,16 +674,21 @@ const NovusSettings = (() => {
     }
 
     function createHUCardHTML(item) {
-        const reg = sessionRegistry.get(item.hu);
+        // FIX 1: Guard Clause. If the item is null/undefined, fail gracefully without breaking the loop.
+        if (!item) return '';
+    
+        // FIX 2: Type Safety. Force HU to be a string to prevent integer vs. string strict equality bugs.
+        const safeHU = item.hu ? String(item.hu) : '';
         
-        // FIX 1: Explicitly ensure item.hu is truthy to prevent undefined/null from matching broadly.
-        const movedElsewhere = (!reg && item.hu) 
-            ? Array.from(sessionRegistry.values()).find(r => r.hu === item.hu && r.status === 'MOVEMENT') 
+        // Check registry using both the raw and stringified HU just in case
+        const reg = sessionRegistry.get(safeHU) || sessionRegistry.get(item.hu);
+        
+        const movedElsewhere = (!reg && safeHU) 
+            ? Array.from(sessionRegistry.values()).find(r => String(r.hu) === safeHU && r.status === 'MOVEMENT') 
             : null;
         
         const statusLabel = reg ? reg.status : (movedElsewhere ? 'MOVED' : 'PENDING');
         
-        // FIX 2: Bulletproof the CSS mapping so 'MOVEMENT' and 'MOVED' explicitly map to 'move'
         let statusClass = 'pending';
         if (reg) {
             if (reg.status === 'MISSING (TEMP)') statusClass = 'miss';
@@ -693,51 +698,55 @@ const NovusSettings = (() => {
             statusClass = 'move';
         }
         
-        const currentQty = reg ? reg.scanQty : item.sapQty;
+        // Fallback to 0 if sapQty is missing to prevent 'undefined' math errors
+        const currentQty = reg ? reg.scanQty : (item.sapQty || 0);
         const isAdj = currentQty !== item.sapQty;
     
         const showBin = activeAuditMode === 'fresh' || activeAuditMode === 'product';
     
-        // Generate a visual badge for the Batch number if it exists
+        // FIX 3: Broad Net for Product Data. Checks multiple common API keys for the product number.
+        const productNum = item.product || item.material || item.matnr || item.sku || 'UNKNOWN PRODUCT';
+        const productDesc = item.desc || item.description || '';
+    
         const batchBadge = item.batch ? `<div style="display:inline-block; margin-top:6px; font-size:10px; font-family:'IBM Plex Mono', monospace; font-weight:700; color:var(--text-2); background:var(--surface-2); padding:4px 8px; border-radius:4px; border:1px solid var(--border);">BATCH: ${item.batch}</div>` : '';
     
         return `
-            <div class="hu-card ${statusClass}" id="hu-card-${item.hu}">
+            <div class="hu-card ${statusClass}" id="hu-card-${safeHU}">
                 <div class="hu-header">
-                    <span class="hu-id">HU ${item.hu}</span>
+                    <span class="hu-id">HU ${safeHU || 'UNKNOWN'}</span>
                     <span class="hu-status ${statusClass}">${statusLabel}</span>
                 </div>
                 <div class="hu-meta">
                     <div style="flex:2; padding-right:12px;">
                         <div class="hu-meta-label">Product</div>
-                        <div class="hu-meta-value">${item.product}</div>
-                        <div style="font-size:10px; color:var(--text-2); margin-top:2px; line-height:1.3;">${item.desc || ''}</div>
+                        <div class="hu-meta-value">${productNum}</div>
+                        <div style="font-size:10px; color:var(--text-2); margin-top:2px; line-height:1.3;">${productDesc}</div>
                         ${batchBadge}
                     </div>
                     ${showBin ? `
                     <div style="flex:1; text-align:right;">
                         <div class="hu-meta-label">Expected Bin</div>
-                        <div class="hu-meta-value mono" style="font-size:14px; color:var(--accent)">${item.sapBin}</div>
+                        <div class="hu-meta-value mono" style="font-size:14px; color:var(--accent)">${item.sapBin || 'N/A'}</div>
                     </div>` : `
                     <div style="flex:1; text-align:right;">
                         <div class="hu-meta-label">SAP Qty</div>
-                        <div class="hu-meta-value mono">${item.sapQty}</div>
+                        <div class="hu-meta-value mono">${item.sapQty || 0}</div>
                     </div>`}
                 </div>
-                ${movedElsewhere ? `<div style="font-size:11px; color:var(--purple); font-weight:700; margin-bottom:12px; background:var(--purple-bg); padding:6px 10px; border-radius:6px; border:1px solid var(--purple-border);">📍 Found earlier in ${movedElsewhere.foundIn}</div>` : ''}
+                ${movedElsewhere ? `<div style="font-size:11px; color:var(--purple); font-weight:700; margin-bottom:12px; background:var(--purple-bg); padding:6px 10px; border-radius:6px; border:1px solid var(--purple-border);">📍 Found earlier in ${movedElsewhere.foundIn || 'another location'}</div>` : ''}
                 ${(reg && reg.scanBin && reg.scanBin !== item.sapBin && showBin) ? `<div style="font-size:11px; color:var(--purple); font-weight:700; margin-bottom:12px; background:var(--purple-bg); padding:6px 10px; border-radius:6px; border:1px solid var(--purple-border);">📍 Scanned in ${reg.scanBin}</div>` : ''}
                 
                 <div class="qty-row">
-                    <button class="qty-stepper" onclick="adjQty('${item.hu}', -1)">−</button>
-                    <input type="number" class="qty-input qty-val-${item.hu}" value="${currentQty}" step="any" onchange="setQty('${item.hu}', this.value)">
-                    <button class="qty-stepper" onclick="adjQty('${item.hu}', 1)">+</button>
+                    <button class="qty-stepper" onclick="adjQty('${safeHU}', -1)">−</button>
+                    <input type="number" class="qty-input qty-val-${safeHU}" value="${currentQty}" step="any" onchange="setQty('${safeHU}', this.value)">
+                    <button class="qty-stepper" onclick="adjQty('${safeHU}', 1)">+</button>
                 </div>
                 <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                    <button class="primary-btn" style="flex:2; padding:12px; font-size:13px; min-height:48px; background:${isAdj ? 'var(--amber)' : 'var(--green)'}" onclick="confirmItem('${item.hu}')">
+                    <button class="primary-btn" style="flex:2; padding:12px; font-size:13px; min-height:48px; background:${isAdj ? 'var(--amber)' : 'var(--green)'}" onclick="confirmItem('${safeHU}')">
                         ${isAdj ? 'Confirm Adj' : 'Confirm'}
                     </button>
-                    <button class="secondary-btn" style="flex:1; padding:12px; font-size:12px; min-height:48px; color:var(--purple)" onclick="initiateMovement('${item.hu}')">Move</button>
-                    <button class="secondary-btn" style="flex:1; padding:12px; font-size:12px; min-height:48px; color:var(--red)" onclick="markMissing('${item.hu}')">Miss</button>
+                    <button class="secondary-btn" style="flex:1; padding:12px; font-size:12px; min-height:48px; color:var(--purple)" onclick="initiateMovement('${safeHU}')">Move</button>
+                    <button class="secondary-btn" style="flex:1; padding:12px; font-size:12px; min-height:48px; color:var(--red)" onclick="markMissing('${safeHU}')">Miss</button>
                 </div>
             </div>
         `;
