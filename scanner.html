@@ -74,7 +74,7 @@
 
         .hu-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 10px; transition: all 0.25s; box-shadow: var(--shadow-sm); }
         .hu-card.confirmed { border-color: var(--green-border); background: var(--green-bg); }
-        .hu-card.missing { border-color: var(--red-border); background: var(--red-bg); opacity: 0.65; }
+        .hu-card.miss { border-color: var(--red-border); background: var(--red-bg); opacity: 0.65; }
         .hu-card.adjusted { border-color: var(--amber-border); background: var(--amber-bg); }
         .hu-card.movement { border-color: var(--purple-border); background: var(--purple-bg); }
         .hu-card.extra { border-color: var(--cyan-border, rgba(34,211,238,0.25)); background: var(--cyan-bg, #ecfeff); }
@@ -632,7 +632,10 @@ const NovusSettings = (() => {
         const reg = sessionRegistry.get(item.hu);
         const movedElsewhere = !reg && Array.from(sessionRegistry.values()).find(r => r.hu === item.hu && r.status === 'MOVEMENT');
         const statusLabel = reg ? reg.status : (movedElsewhere ? 'MOVED' : 'PENDING');
-        const statusClass = reg ? reg.status.toLowerCase() : (movedElsewhere ? 'move' : 'pending');
+        
+        // CSS specific formatting handling to map missing_temp back to .miss class styling
+        const statusClass = reg ? (reg.status === 'MISSING (TEMP)' ? 'miss' : reg.status.toLowerCase()) : (movedElsewhere ? 'move' : 'pending');
+        
         const currentQty = reg ? reg.scanQty : item.sapQty;
         const isAdj = currentQty !== item.sapQty;
 
@@ -691,11 +694,19 @@ const NovusSettings = (() => {
         
         const merged = { ...current, ...updates };
         
+        // 3. The "Missing" Lifecycle - Phase 1 (Active Count)
         if (merged.status === 'MISSING' || merged.scanQty === 0) {
-            merged.type = 'miss'; merged.status = 'MISSING'; merged.scanQty = 0;
-        } else if (sap.sapBin === 'NONE' && merged.scanBin === 'NONE') {
-            merged.type = 'unexpected'; merged.status = 'UNEXPECTED'; 
-        } else {
+            merged.type = 'missing_temp'; 
+            merged.status = 'MISSING (TEMP)'; 
+            merged.scanQty = 0;
+        } 
+        // 4. The "Unexpected" State
+        else if (sap.sapBin === 'NONE' && merged.scanBin === 'NONE') {
+            merged.type = 'unexpected'; 
+            merged.status = 'UNEXPECTED'; 
+        } 
+        // 1 & 2. OK, Move, and Adjustments
+        else {
             const isMoved = merged.scanBin !== merged.sapBin;
             const isAdj = merged.scanQty !== merged.sapQty;
             if (isMoved && isAdj) { merged.type = 'move_adj'; merged.status = 'MOVEMENT'; }
