@@ -676,8 +676,10 @@ const NovusSettings = (() => {
     function createHUCardHTML(item) {
         if (!item) return '';
     
-        const safeHU = item.hu ? String(item.hu) : '';
-        const reg = sessionRegistry.get(safeHU) || sessionRegistry.get(item.hu);
+        const rawHU = item.hu || item.exidv || item.handlingUnit || item.venum || item.id;
+        const safeHU = rawHU ? String(rawHU) : '';
+        
+        const reg = sessionRegistry.get(safeHU) || sessionRegistry.get(rawHU);
         
         const movedElsewhere = (!reg && safeHU) 
             ? Array.from(sessionRegistry.values()).find(r => String(r.hu) === safeHU && r.status === 'MOVEMENT') 
@@ -697,7 +699,6 @@ const NovusSettings = (() => {
         const currentQty = reg ? reg.scanQty : (item.sapQty || 0);
         const isAdj = currentQty !== item.sapQty;
     
-        // FIX 4: Check for existing notes in the registry or base item data
         const currentNote = (reg && reg.notes) ? reg.notes : (item.notes || '');
     
         const showBin = activeAuditMode === 'fresh' || activeAuditMode === 'product';
@@ -720,16 +721,20 @@ const NovusSettings = (() => {
                         <div style="font-size:10px; color:var(--text-2); margin-top:2px; line-height:1.3;">${productDesc}</div>
                         ${batchBadge}
                     </div>
-                    ${showBin ? `
-                    <div style="flex:1; text-align:right;">
-                        <div class="hu-meta-label">Expected Bin</div>
-                        <div class="hu-meta-value mono" style="font-size:14px; color:var(--accent)">${item.sapBin || 'N/A'}</div>
-                    </div>` : `
-                    <div style="flex:1; text-align:right;">
-                        <div class="hu-meta-label">SAP Qty</div>
-                        <div class="hu-meta-value mono">${item.sapQty || 0}</div>
-                    </div>`}
+                    
+                    <div style="flex:1; text-align:right; display:flex; flex-direction:column; gap:8px;">
+                        ${showBin ? `
+                        <div>
+                            <div class="hu-meta-label">Expected Bin</div>
+                            <div class="hu-meta-value mono" style="font-size:14px; color:var(--accent)">${item.sapBin || 'N/A'}</div>
+                        </div>` : ''}
+                        <div>
+                            <div class="hu-meta-label">SAP Qty</div>
+                            <div class="hu-meta-value mono">${item.sapQty || 0}</div>
+                        </div>
+                    </div>
                 </div>
+                
                 ${movedElsewhere ? `<div style="font-size:11px; color:var(--purple); font-weight:700; margin-bottom:12px; background:var(--purple-bg); padding:6px 10px; border-radius:6px; border:1px solid var(--purple-border);">📍 Found earlier in ${movedElsewhere.foundIn || 'another location'}</div>` : ''}
                 ${(reg && reg.scanBin && reg.scanBin !== item.sapBin && showBin) ? `<div style="font-size:11px; color:var(--purple); font-weight:700; margin-bottom:12px; background:var(--purple-bg); padding:6px 10px; border-radius:6px; border:1px solid var(--purple-border);">📍 Scanned in ${reg.scanBin}</div>` : ''}
                 
