@@ -676,10 +676,8 @@ const NovusSettings = (() => {
     function createHUCardHTML(item) {
         if (!item) return '';
     
-        const rawHU = item.hu || item.exidv || item.handlingUnit || item.venum || item.id;
-        const safeHU = rawHU ? String(rawHU) : '';
-        
-        const reg = sessionRegistry.get(safeHU) || sessionRegistry.get(rawHU);
+        const safeHU = item.hu ? String(item.hu) : '';
+        const reg = sessionRegistry.get(safeHU) || sessionRegistry.get(item.hu);
         
         const movedElsewhere = (!reg && safeHU) 
             ? Array.from(sessionRegistry.values()).find(r => String(r.hu) === safeHU && r.status === 'MOVEMENT') 
@@ -698,8 +696,6 @@ const NovusSettings = (() => {
         
         const currentQty = reg ? reg.scanQty : (item.sapQty || 0);
         const isAdj = currentQty !== item.sapQty;
-    
-        const currentNote = (reg && reg.notes) ? reg.notes : (item.notes || '');
     
         const showBin = activeAuditMode === 'fresh' || activeAuditMode === 'product';
     
@@ -738,10 +734,6 @@ const NovusSettings = (() => {
                 ${movedElsewhere ? `<div style="font-size:11px; color:var(--purple); font-weight:700; margin-bottom:12px; background:var(--purple-bg); padding:6px 10px; border-radius:6px; border:1px solid var(--purple-border);">📍 Found earlier in ${movedElsewhere.foundIn || 'another location'}</div>` : ''}
                 ${(reg && reg.scanBin && reg.scanBin !== item.sapBin && showBin) ? `<div style="font-size:11px; color:var(--purple); font-weight:700; margin-bottom:12px; background:var(--purple-bg); padding:6px 10px; border-radius:6px; border:1px solid var(--purple-border);">📍 Scanned in ${reg.scanBin}</div>` : ''}
                 
-                <div style="margin-bottom:12px;">
-                    <input type="text" class="note-input" placeholder="Add a note (e.g. damaged box)..." value="${currentNote}" onchange="setNote('${safeHU}', this.value)" style="width:100%; box-sizing:border-box; padding:8px 10px; font-size:12px; border-radius:6px; border:1px solid var(--border); background:var(--surface-2); color:inherit;">
-                </div>
-    
                 <div class="qty-row">
                     <button class="qty-stepper" onclick="adjQty('${safeHU}', -1)">−</button>
                     <input type="number" class="qty-input qty-val-${safeHU}" value="${currentQty}" step="any" onchange="setQty('${safeHU}', this.value)">
@@ -753,6 +745,11 @@ const NovusSettings = (() => {
                     </button>
                     <button class="secondary-btn" style="flex:1; padding:12px; font-size:12px; min-height:48px; color:var(--purple)" onclick="initiateMovement('${safeHU}')">Move</button>
                     <button class="secondary-btn" style="flex:1; padding:12px; font-size:12px; min-height:48px; color:var(--red)" onclick="markMissing('${safeHU}')">Miss</button>
+                </div>
+    
+                <div style="margin-top:12px; font-size:11px; font-family:'IBM Plex Mono', monospace; background:var(--surface-1); color:var(--text-2); padding:8px; border-radius:6px; border:1px dashed var(--border); overflow-x:auto;">
+                    <strong>RAW DATA PAYLOAD:</strong><br>
+                    ${Object.keys(item).map(key => `<b>${key}:</b> ${item[key]}`).join('<br>')}
                 </div>
             </div>
         `;
