@@ -497,6 +497,71 @@ const NovusSettings = (() => {
         });
     });
 
+    let isSyncing = false;
+
+    // Grab existing queue from local storage or start fresh
+    function getSyncQueue() {
+        return JSON.parse(localStorage.getItem('novus_queue') || '[]');
+    }
+    
+    function saveToSyncQueue(payload) {
+        const queue = getSyncQueue();
+        queue.push(payload);
+        localStorage.setItem('novus_queue', JSON.stringify(queue));
+        
+        // Visually show we have pending uploads
+        document.querySelectorAll('.sync-dot').forEach(d => d.classList.add('queued'));
+        
+        // Trigger background sync
+        processSyncQueue();
+    }
+    
+    async function processSyncQueue() {
+        if (isSyncing) return;
+        
+        let queue = getSyncQueue();
+        if (queue.length === 0) {
+            document.querySelectorAll('.sync-dot').forEach(d => {
+                d.classList.remove('queued');
+                d.classList.remove('offline');
+            });
+            return;
+        }
+    
+        isSyncing = true;
+        const payload = queue[0]; // Grab the oldest item
+    
+        try {
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                redirect: 'follow',
+                body: JSON.stringify(payload)
+            });
+            
+            const result = await res.json();
+    
+            if (result.success || result.skipped) {
+                // Remove the successfully sent item from the queue
+                queue = getSyncQueue(); 
+                queue.shift(); 
+                localStorage.setItem('novus_queue', JSON.stringify(queue));
+                
+                isSyncing = false;
+                // Recursively process the next item if there are more
+                processSyncQueue(); 
+            } else {
+                throw new Error(result.error || "Server rejected sync");
+            }
+        } catch (err) {
+            console.warn("Background sync failed, will retry...", err);
+            document.querySelectorAll('.sync-dot').forEach(d => d.classList.add('offline'));
+            isSyncing = false;
+            // Retry automatically after 10 seconds
+            setTimeout(processSyncQueue, 10000); 
+        }
+    }
+    
     async function refreshData() {
         try {
             showToast("Connecting to server...", "blue");
@@ -1129,75 +1194,60 @@ const NovusSettings = (() => {
         setTimeout(() => t.classList.remove('show'), 2000);
     }
 
-    async function executeAuditSync(binName, itemsToLog, isFresh = false) {
-        try {
-            const res = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                redirect: 'follow',
-                body: JSON.stringify({
-                    action: 'logAudit',
-                    user: NovusSettings.getUser(),
-                    bin: binName,
-                    sessionId: SESSION_ID,
-                    items: itemsToLog
-                })
+    // We remove the "await" and the "fetch" from here entirely
+    function executeAuditSync(binName, itemsToLog, isFresh = false) {
+        const payload = {
+            action: 'logAudit',
+            user: NovusSettings.getUser(),
+            bin: binName,
+            sessionId: SESSION_ID,
+            items: itemsToLog,
+            isFresh: isFresh // Pass this flag to handle backend cleanup if needed
+        };
+    
+        // Push to background queue instead of waiting
+        saveToSyncQueue(payload);
+    
+        // Immediately handle local state cleanup so the UI can move on
+        if (isFresh) {
+            Array.from(sessionRegistry.values()).forEach(reg => {
+                if (FRESH_PRODUCTS.includes(reg.product)) countedFreshProducts.add(reg.product);
             });
-            const result = await res.json();
-            
-            if (result.success || result.skipped) {
-                if (isFresh) {
-                    Array.from(sessionRegistry.values()).forEach(reg => {
-                        if (FRESH_PRODUCTS.includes(reg.product)) countedFreshProducts.add(reg.product);
-                    });
-                    sessionRegistry.clear();
-                } else if (activeAuditMode === 'product') {
-                    sessionRegistry.clear(); 
-                } else {
-                    countedBins.add(binName); 
-                    localStorage.setItem('doneBins2', JSON.stringify([...countedBins]));
-                }
-                return true;
-            } else {
-                showToast("Server error: " + (result.error || "Unknown"), "red");
-                return false;
-            }
-        } catch (err) {
-            showToast("Network Error: Could not reach server", "red");
-            return false;
+            sessionRegistry.clear();
+        } else if (activeAuditMode === 'product') {
+            sessionRegistry.clear(); 
+        } else {
+            countedBins.add(binName); 
+            localStorage.setItem('doneBins2', JSON.stringify([...countedBins]));
         }
-    }
-
-    async function finalizeAisleBin() { 
-        const btn = document.getElementById('btn-next');
-        const origText = btn.innerText;
-        btn.disabled = true;
-        btn.innerText = "Syncing...";
-
-        const currentBin = currentBins[currentBinIdx];
-        const itemsToSync = Array.from(sessionRegistry.values()).filter(r => r.foundIn === currentBin || r.sapBin === currentBin);
         
-        let itemsToLog = itemsToSync.map(record => ({
-            hu: record.hu, product: record.product, desc: record.desc, batch: record.batch, sapBin: record.sapBin, sapQty: record.sapQty, countQty: record.scanQty, type: record.type, note: record.note
-        }));
-
-        itemsToLog.push({ hu: 'BIN_CLEAR', product: 'SYSTEM', desc: 'Bin Finalized', batch: '', sapBin: currentBin, sapQty: 0, countQty: 0, type: 'bin_finalized', note: `Finalized by ${NovusSettings.getUser()}`});
-
-        const success = await executeAuditSync(currentBin, itemsToLog, false);
-        btn.disabled = false;
-        btn.innerText = origText;
-
-        if (success) {
-            if(currentBinIdx < currentBins.length - 1) { 
-                currentBinIdx++; 
-                updateBinView(); 
-            } else {
-                showToast("Aisle Complete ✓", "green");
-                switchScreen('setup');
-                renderAisleGrid();
-            }
-        }
+        return true; 
     }
+    function finalizeAisleBin() { 
+    // We no longer disable the button or change the text to "Syncing..."
+    const currentBin = currentBins[currentBinIdx];
+    const itemsToSync = Array.from(sessionRegistry.values()).filter(r => r.foundIn === currentBin || r.sapBin === currentBin);
+    
+    let itemsToLog = itemsToSync.map(record => ({
+        hu: record.hu, product: record.product, desc: record.desc, batch: record.batch, sapBin: record.sapBin, sapQty: record.sapQty, countQty: record.scanQty, type: record.type, note: record.note
+    }));
+
+    itemsToLog.push({ hu: 'BIN_CLEAR', product: 'SYSTEM', desc: 'Bin Finalized', batch: '', sapBin: currentBin, sapQty: 0, countQty: 0, type: 'bin_finalized', note: `Finalized by ${NovusSettings.getUser()}`});
+
+    // Hand the payload off to our new background queue
+    executeAuditSync(currentBin, itemsToLog, false);
+
+    // Instantly advance the UI to the next bin so the operator can keep moving
+    if(currentBinIdx < currentBins.length - 1) { 
+        currentBinIdx++; 
+        updateBinView(); 
+        showToast("Bin queued for sync", "blue");
+    } else {
+        showToast("Aisle Complete ✓", "green");
+        switchScreen('setup');
+        renderAisleGrid();
+    }
+}
 
     async function submitProductAudit() {
         const btn = document.querySelector('#screen-product .primary-btn');
