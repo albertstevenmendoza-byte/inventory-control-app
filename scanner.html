@@ -674,13 +674,9 @@ const NovusSettings = (() => {
     }
 
     function createHUCardHTML(item) {
-        // FIX 1: Guard Clause. If the item is null/undefined, fail gracefully without breaking the loop.
         if (!item) return '';
     
-        // FIX 2: Type Safety. Force HU to be a string to prevent integer vs. string strict equality bugs.
         const safeHU = item.hu ? String(item.hu) : '';
-        
-        // Check registry using both the raw and stringified HU just in case
         const reg = sessionRegistry.get(safeHU) || sessionRegistry.get(item.hu);
         
         const movedElsewhere = (!reg && safeHU) 
@@ -698,13 +694,14 @@ const NovusSettings = (() => {
             statusClass = 'move';
         }
         
-        // Fallback to 0 if sapQty is missing to prevent 'undefined' math errors
         const currentQty = reg ? reg.scanQty : (item.sapQty || 0);
         const isAdj = currentQty !== item.sapQty;
     
+        // FIX 4: Check for existing notes in the registry or base item data
+        const currentNote = (reg && reg.notes) ? reg.notes : (item.notes || '');
+    
         const showBin = activeAuditMode === 'fresh' || activeAuditMode === 'product';
     
-        // FIX 3: Broad Net for Product Data. Checks multiple common API keys for the product number.
         const productNum = item.product || item.material || item.matnr || item.sku || 'UNKNOWN PRODUCT';
         const productDesc = item.desc || item.description || '';
     
@@ -736,6 +733,10 @@ const NovusSettings = (() => {
                 ${movedElsewhere ? `<div style="font-size:11px; color:var(--purple); font-weight:700; margin-bottom:12px; background:var(--purple-bg); padding:6px 10px; border-radius:6px; border:1px solid var(--purple-border);">📍 Found earlier in ${movedElsewhere.foundIn || 'another location'}</div>` : ''}
                 ${(reg && reg.scanBin && reg.scanBin !== item.sapBin && showBin) ? `<div style="font-size:11px; color:var(--purple); font-weight:700; margin-bottom:12px; background:var(--purple-bg); padding:6px 10px; border-radius:6px; border:1px solid var(--purple-border);">📍 Scanned in ${reg.scanBin}</div>` : ''}
                 
+                <div style="margin-bottom:12px;">
+                    <input type="text" class="note-input" placeholder="Add a note (e.g. damaged box)..." value="${currentNote}" onchange="setNote('${safeHU}', this.value)" style="width:100%; box-sizing:border-box; padding:8px 10px; font-size:12px; border-radius:6px; border:1px solid var(--border); background:var(--surface-2); color:inherit;">
+                </div>
+    
                 <div class="qty-row">
                     <button class="qty-stepper" onclick="adjQty('${safeHU}', -1)">−</button>
                     <input type="number" class="qty-input qty-val-${safeHU}" value="${currentQty}" step="any" onchange="setQty('${safeHU}', this.value)">
