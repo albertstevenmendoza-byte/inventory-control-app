@@ -1082,55 +1082,27 @@ const NovusSettings = (() => {
         document.getElementById('fresh-search-bar').style.display = 'block';
     }
 
-    function updateFreshOverview() {
-        const overview = document.getElementById('fresh-overview');
-        let htmlStr = '';
-        const productsToShow = FRESH_PRODUCTS.filter(prod => !countedFreshProducts.has(prod));
+    async function initFreshMode() {
+        activeAuditMode = 'fresh';
+        hideFreshDetail();
         
-        if (productsToShow.length === 0) {
-            overview.innerHTML = `
-                <div style="text-align:center; padding:60px 20px; color:var(--text-3);">
-                    <span style="font-size:42px; display:block; margin-bottom:12px;">🎉</span>
-                    <div style="font-size:18px; font-weight:800; color:var(--text); margin-bottom:4px;">All Fresh Counts Complete</div>
-                    <div>No pending fresh products detected in this cycle.</div>
-                </div>`;
-            return;
-        }
-        
-        productsToShow.forEach(prod => {
-            const sapItem = sapMaster.find(i => i.product === prod);
-            const desc = sapItem ? sapItem.desc : "Product description unavailable";
-            const expectedHUs = sapMaster.filter(i => i.product === prod);
+        // THE FIX: Reach out to the server to grab the Fresh product data
+        showToast("Loading Fresh Data...", "blue");
+        try {
+            // Assuming your backend supports an action like 'getFresh'
+            const res = await fetch(`${API_URL}?action=getFresh`);
+            const data = await res.json();
             
-            let totalFound = 0;
-            expectedHUs.forEach(huItem => {
-                const reg = sessionRegistry.get(huItem.hu);
-                if (reg && reg.scanQty > 0) totalFound++;
-            });
-
-            let borderColor = 'var(--border)';
-            if (totalFound === expectedHUs.length && expectedHUs.length > 0) borderColor = 'var(--green)';
-            else if (totalFound > 0) borderColor = 'var(--amber)';
-
-            htmlStr += `
-                <div class="hu-card" style="cursor:pointer; border-color:${borderColor};" onclick="showFreshDetail('${prod}')">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start">
-                        <div style="flex:1; padding-right:12px;">
-                            <div class="hu-meta-label">Product</div>
-                            <div style="font-size:20px; font-weight:900">${prod}</div>
-                            <div style="font-size:11px; color:var(--text-2); margin-top:4px; line-height:1.3;">${desc}</div>
-                        </div>
-                        <div style="text-align:right">
-                            <div style="font-size:32px; font-weight:900; color:${totalFound === expectedHUs.length && expectedHUs.length > 0 ? 'var(--green)' : 'var(--amber)'}">
-                                ${totalFound} <span style="font-size:16px; color:var(--text-3)">/ ${expectedHUs.length}</span>
-                            </div>
-                            <div class="hu-meta-label">Pallets Found</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-        overview.innerHTML = htmlStr;
+            // Populate sapMaster with the fresh items
+            sapMaster = data.sapData || [];
+            
+            updateFreshOverview();
+            document.getElementById('fresh-search-bar').style.display = 'block';
+            switchScreen('fresh');
+        } catch (err) {
+            showToast("Failed to load Fresh data", "red");
+            console.error("Fresh load error:", err);
+        }
     }
 
     function showFreshDetail(product) {
