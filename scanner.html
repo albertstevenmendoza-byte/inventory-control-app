@@ -675,20 +675,32 @@ const NovusSettings = (() => {
 
     function createHUCardHTML(item) {
         const reg = sessionRegistry.get(item.hu);
-        const movedElsewhere = !reg && Array.from(sessionRegistry.values()).find(r => r.hu === item.hu && r.status === 'MOVEMENT');
+        
+        // FIX 1: Explicitly ensure item.hu is truthy to prevent undefined/null from matching broadly.
+        const movedElsewhere = (!reg && item.hu) 
+            ? Array.from(sessionRegistry.values()).find(r => r.hu === item.hu && r.status === 'MOVEMENT') 
+            : null;
+        
         const statusLabel = reg ? reg.status : (movedElsewhere ? 'MOVED' : 'PENDING');
         
-        // CSS specific formatting handling to map missing_temp back to .miss class styling
-        const statusClass = reg ? (reg.status === 'MISSING (TEMP)' ? 'miss' : reg.status.toLowerCase()) : (movedElsewhere ? 'move' : 'pending');
+        // FIX 2: Bulletproof the CSS mapping so 'MOVEMENT' and 'MOVED' explicitly map to 'move'
+        let statusClass = 'pending';
+        if (reg) {
+            if (reg.status === 'MISSING (TEMP)') statusClass = 'miss';
+            else if (reg.status === 'MOVEMENT' || reg.status === 'MOVED') statusClass = 'move';
+            else statusClass = reg.status.toLowerCase();
+        } else if (movedElsewhere) {
+            statusClass = 'move';
+        }
         
         const currentQty = reg ? reg.scanQty : item.sapQty;
         const isAdj = currentQty !== item.sapQty;
-
+    
         const showBin = activeAuditMode === 'fresh' || activeAuditMode === 'product';
-
+    
         // Generate a visual badge for the Batch number if it exists
         const batchBadge = item.batch ? `<div style="display:inline-block; margin-top:6px; font-size:10px; font-family:'IBM Plex Mono', monospace; font-weight:700; color:var(--text-2); background:var(--surface-2); padding:4px 8px; border-radius:4px; border:1px solid var(--border);">BATCH: ${item.batch}</div>` : '';
-
+    
         return `
             <div class="hu-card ${statusClass}" id="hu-card-${item.hu}">
                 <div class="hu-header">
