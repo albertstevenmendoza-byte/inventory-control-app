@@ -69,7 +69,6 @@ thead{position:sticky;top:0;background:var(--surface);z-index:5}
 th{padding:10px 12px;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-3);text-align:left;border-bottom:2px solid var(--border)}
 td{padding:7px 12px;border-bottom:1px solid var(--border);font-weight:500}
 tr:hover{background:var(--surface-2)}
-/* Add this to both monitor.html and scanner.html <style> blocks */
 .status-tag, .hu-status {
   font-size: 9px;
   font-weight: 800;
@@ -79,8 +78,6 @@ tr:hover{background:var(--surface-2)}
   border-radius: 6px;
   border: 1px solid transparent;
 }
-
-/* Semantic Mapping */
 .status-tag.ok, .hu-status.ok { color: var(--green); background: var(--green-bg); border-color: rgba(34, 197, 94, 0.2); }
 .status-tag.missing, .status-tag.miss, .hu-status.miss { color: var(--red); background: var(--red-bg); border-color: rgba(239, 68, 68, 0.2); }
 .status-tag.missing_temp, .hu-status.pending { color: var(--amber); background: var(--surface-2); border-color: var(--amber); border-style: dashed; }
@@ -137,15 +134,12 @@ tr:hover{background:var(--surface-2)}
 .slide-editor-item input:focus,.slide-editor-item textarea:focus{border-color:var(--accent)}
 .slide-editor-item textarea{resize:vertical;min-height:40px}
 .slide-remove-btn{background:none;color:var(--red);font-size:14px;font-weight:900;border:none;cursor:pointer;padding:4px}
-/* Pagination */
 .pager{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--surface);border-top:1px solid var(--border);flex-shrink:0}
 .pager-info{font-size:10px;font-weight:700;color:var(--text-3);font-family:'JetBrains Mono',monospace}
 .pager-btns{display:flex;gap:4px}
 .pager-btn{padding:6px 14px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);font-size:10px;font-weight:800;cursor:pointer;font-family:inherit}
 .pager-btn:hover{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
 .pager-btn:disabled{opacity:.3;cursor:default;background:var(--surface-2);border-color:var(--border);color:var(--text-3)}
-
-/* Safety incident cards */
 .inc-card{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px;cursor:pointer;transition:border-color .15s,transform .15s}
 .inc-card:hover{border-color:var(--accent);transform:translateY(-1px)}
 .inc-card:active{transform:scale(.99)}
@@ -167,8 +161,6 @@ tr:hover{background:var(--surface-2)}
 .safety-stat{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
 .safety-stat .s-val{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700}
 .safety-stat .s-label{font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);margin-top:3px}
-
-/* Safety detail modal */
 .sd-header{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
 .sd-header .inc-sev,.sd-header .inc-status{font-size:9px;padding:4px 12px}
 .sd-timestamp{font-size:11px;color:var(--text-3);font-weight:600;margin-left:auto;font-family:'JetBrains Mono',monospace}
@@ -200,12 +192,12 @@ tr:hover{background:var(--surface-2)}
     <div class="modal-body">
       <input type="hidden" id="sop-id">
       <div>
-        <label class="m-label">Title</label>
+        <label class="m-label" for="sop-title">Title</label>
         <input type="text" id="sop-title" class="assign-input" placeholder="e.g. Near Miss Reporting Procedure">
       </div>
       <div style="display:flex; gap:12px;">
         <div style="flex:1;">
-          <label class="m-label">Category</label>
+          <label class="m-label" for="sop-category">Category</label>
           <select id="sop-category" class="assign-input">
             <option value="Safety">Safety</option>
             <option value="Cycle Count">Cycle Count</option>
@@ -215,7 +207,7 @@ tr:hover{background:var(--surface-2)}
           </select>
         </div>
         <div style="flex:1;">
-          <label class="m-label">Content Type</label>
+          <label class="m-label" for="sop-type">Content Type</label>
           <select id="sop-type" class="assign-input" onchange="toggleEditorSections()">
             <option value="Text">Standard Text</option>
             <option value="Link">External Link / Video</option>
@@ -225,11 +217,11 @@ tr:hover{background:var(--surface-2)}
         </div>
       </div>
       <div id="editor-text-section">
-        <label class="m-label">Content Body / URL</label>
+        <label class="m-label" for="sop-body">Content Body / URL</label>
         <textarea id="sop-body" class="assign-input" rows="8" style="resize:vertical;" placeholder="Enter guidelines or paste a link..."></textarea>
       </div>
       <div id="editor-mermaid-section" style="display:none">
-        <label class="m-label">Flowchart Definition (Mermaid Syntax)</label>
+        <label class="m-label" for="sop-mermaid">Flowchart Definition (Mermaid Syntax)</label>
         <textarea id="sop-mermaid" class="assign-input mono" rows="10" style="resize:vertical;font-size:11px;line-height:1.4" placeholder="flowchart TD
     A[Start] --> B{Decision}
     B -->|Yes| C[Action]
@@ -322,7 +314,7 @@ tr:hover{background:var(--surface-2)}
       <div class="rail-section">
         <h3>Aisle Assignments</h3>
         <div class="assign-row" id="aisle-picker"></div>
-        <input type="text" class="assign-input" id="prod-assign" placeholder="Product # (for product count)">
+        <input type="text" class="assign-input" id="prod-assign" aria-label="Product Assignment" placeholder="Product # (for product count)">
         <div class="assign-actions">
           <button class="assign-btn push" onclick="pushAssignments()">Push to Team</button>
           <button class="assign-btn clear" onclick="clearAssignments()">Clear</button>
@@ -529,10 +521,14 @@ const NovusSettings = (() => {
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbwZ1Dhmf6cK_hWV2xLKYmwEImUvifIRCPqVm0Fz4E7gjvfcpyzoqhAFIgvgwrjBretc/exec';
 const AISLE_ROWS = 'ABCDEFGHJKLMNP'.split('');
+
 let sapMeta = null, report = [], assignments = [];
 let assignAisles = new Set();
 let currentStatusFilter = 'all';
+
 let hideResolved = false;
+let manuallyResolvedIds = new Set();
+
 const PAGE_SIZE = 50;
 let currentPage = 0;
 
@@ -555,6 +551,25 @@ if (typeof mermaid !== 'undefined') {
       flowchart: { curve: 'basis', padding: 16 },
     });
   } catch (e) { console.warn('Mermaid init failed:', e); }
+}
+
+function toggleHideResolved() {
+  hideResolved = !hideResolved;
+  if (hideResolved && currentStatusFilter === 'found_moved') {
+    currentStatusFilter = 'all';
+  }
+  renderPills();
+  renderTable();
+}
+
+function toggleItemResolved(uniqueId) {
+  if (manuallyResolvedIds.has(uniqueId)) {
+    manuallyResolvedIds.delete(uniqueId);
+  } else {
+    manuallyResolvedIds.add(uniqueId);
+  }
+  renderPills();
+  renderTable();
 }
 
 fetchFullDashboard();
@@ -833,10 +848,11 @@ function renderPills() {
     { key: 'unexpected', label: 'SYS TRIGGER', color: 'cyan' }
   ];
   
-  // Filter the report for counts if the toggle is active
-  const visibleReport = hideResolved ? report.filter(r => r.type !== 'found_moved') : report;
+  const visibleReport = hideResolved 
+    ? report.filter(r => r.type !== 'found_moved' && !manuallyResolvedIds.has((r.hu || r.prod) + '_' + r.scanBin)) 
+    : report;
+
   const counts = { all: visibleReport.length };
-  
   visibleReport.forEach(r => { counts[r.type] = (counts[r.type] || 0) + 1; });
   
   let html = categories.map(cat => {
@@ -849,7 +865,6 @@ function renderPills() {
             </div>`;
   }).join('');
 
-  // Inject the toggle button at the end of the pills row
   html += `
     <div class="pill" style="margin-left:auto; border: 1.5px dashed var(--border);" onclick="toggleHideResolved()">
       <span class="pill-label" style="color: ${hideResolved ? 'var(--text-3)' : 'var(--accent)'}">
@@ -864,15 +879,13 @@ function renderPills() {
 function filterTable(status) { currentStatusFilter = status; currentPage = 0; renderPills(); renderTable(); }
 
 function renderTable() {
-  // Base the table off the toggle state
-  const baseReport = hideResolved ? report.filter(r => r.type !== 'found_moved') : report;
+  const baseReport = hideResolved 
+    ? report.filter(r => r.type !== 'found_moved' && !manuallyResolvedIds.has((r.hu || r.prod) + '_' + r.scanBin)) 
+    : report;
   
-  // Apply the currently selected status pill filter
   const filtered = currentStatusFilter === 'all' ? baseReport : baseReport.filter(r => r.type === currentStatusFilter);
   
   const wrap = document.getElementById('table-wrap');
-
-  // ... [Keep the rest of your pagination and table rendering logic exactly the same] ...
 
   if (filtered.length === 0) {
     wrap.innerHTML = report.length === 0
@@ -896,11 +909,22 @@ function renderTable() {
 
   const rowsHTML = pageItems.map(r => {
     if (r.type === 'bin_finalized') return ''; 
+    
+    const uniqueId = (r.hu || r.prod) + '_' + r.scanBin;
+    const isChecked = manuallyResolvedIds.has(uniqueId);
+
     const variance = (r.scanQty || 0) - (r.sapQty || 0);
     const vClass = variance < 0 ? 'red' : variance > 0 ? 'amber' : '';
     let timeStr = '—';
     try { timeStr = new Date(r.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } catch {}
-    return `<tr>
+    
+    return `<tr style="${isChecked ? 'opacity: 0.4; background: var(--surface-2);' : ''}">
+      <td style="text-align:center;">
+        <input type="checkbox" 
+               style="cursor:pointer; width:14px; height:14px; accent-color: var(--accent);" 
+               ${isChecked ? 'checked' : ''} 
+               onchange="toggleItemResolved('${uniqueId}')">
+      </td>
       <td style="font-size:9px;color:var(--text-3)">${timeStr}</td>
       <td>${r.user || '—'}</td>
       <td class="mono" style="color:var(--accent);font-weight:700">${r.scanBin || '—'}</td>
@@ -927,6 +951,7 @@ function renderTable() {
 
   wrap.innerHTML = `<table>
     <thead><tr>
+      <th style="width:30px; text-align:center;">✔</th>
       <th>Time</th><th>User</th><th>Bin</th><th>HU</th><th>Product</th>
       <th>SAP Qty</th><th>Count Qty</th><th>Variance</th><th>Status</th><th>Note</th>
     </tr></thead>
