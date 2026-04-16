@@ -1,1360 +1,1424 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cycle Counter — Novus Ops</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #f5f5f7;
-            --surface: #ffffff;
-            --surface-2: #f0f0f3;
-            --surface-3: #e8e8ec;
-            --border: #dcdce2;
-            --text: #1a1a1f;
-            --text-2: #6b6b78;
-            --text-3: #9898a6;
-            --accent: #3b6cf5;
-            --accent-glow: rgba(59,108,245,0.08);
-            --green: #16a34a;
-            --green-bg: #f0fdf4;
-            --green-border: #bbf7d0;
-            --red: #dc2626;
-            --red-bg: #fef2f2;
-            --red-border: #fecaca;
-            --amber: #d97706;
-            --amber-bg: #fffbeb;
-            --amber-border: #fde68a;
-            --purple: #7c3aed;
-            --purple-bg: #f5f3ff;
-            --purple-border: #ddd6fe;
-            --cyan: #0891b2;
-            --cyan-bg: #ecfeff;
-            --cyan-border: #a5f3fc;
-            --radius: 16px;
-            --radius-sm: 10px;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); overscroll-behavior: none; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
-        .mono { font-family: 'IBM Plex Mono', monospace; }
-        button { font-family: inherit; border: none; cursor: pointer; -webkit-user-select: none; user-select: none; }
-        button:active { transform: scale(0.96); }
-        input { font-family: inherit; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Cycle Counter — Novus Ops</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 
-        .screen { display: none; flex-direction: column; flex: 1; overflow: hidden; }
-        .screen.active { display: flex; }
+<!-- ── Shared core: API_URL, AISLE_ROWS, NovusSettings, toast, NovusLoader ── -->
+<script src="novus-core.js"></script>
 
-        .app-header { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-shrink: 0; background: var(--surface); box-shadow: var(--shadow-sm); }
-        .app-header h1 { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; }
-        .hdr-btn { background: var(--surface-2); color: var(--text-2); padding: 8px 14px; border-radius: 10px; font-size: 11px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        .header-right { display: flex; align-items: center; gap: 8px; }
-        .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
-        .sync-dot.offline { background: var(--red); animation: pulse 1.5s infinite; }
-        .sync-dot.queued { background: var(--amber); animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        .name-btn { background: var(--surface-2); color: var(--text-2); padding: 8px 14px; border-radius: var(--radius-sm); font-size: 11px; font-weight: 700; }
+<style>
+/* ─────────────────────────────────────────
+   DESIGN TOKENS (overridden by NovusSettings theme)
+───────────────────────────────────────── */
+:root {
+  --bg:#0f1117; --surface:#181a23; --surface-2:#1f2230; --surface-3:#2a2d3a;
+  --border:#313546; --text:#eceef4; --text-2:#9ba1b5; --text-3:#6c7189;
+  --accent:#5b9aff; --accent-dim:rgba(91,154,255,.1);
+  --green:#34d399; --green-bg:rgba(52,211,153,.1); --green-border:rgba(52,211,153,.25);
+  --red:#f87171; --red-bg:rgba(248,113,113,.1); --red-border:rgba(248,113,113,.25);
+  --amber:#fbbf24; --amber-bg:rgba(251,191,36,.1); --amber-border:rgba(251,191,36,.25);
+  --purple:#a78bfa; --purple-bg:rgba(167,139,250,.1);
+  --cyan:#22d3ee; --cyan-bg:rgba(34,211,238,.1);
+  --radius:14px; --radius-sm:10px;
+}
 
-        .bin-nav-cluster { display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .nav-arrow { background: var(--surface-3); color: var(--text); width: 36px; height: 36px; border-radius: 8px; font-size: 18px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
-        .nav-arrow:disabled { opacity: 0.3; pointer-events: none; }
+/* ─────────────────────────────────────────
+   RESET + BASE
+───────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body   { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; height: 100dvh; }
+button { font-family: inherit; border: none; cursor: pointer; -webkit-appearance: none; }
+button:active { transform: scale(.96); }
+input, textarea { font-family: inherit; }
+.mono  { font-family: 'JetBrains Mono', monospace; }
 
-        .phase-bar { display: flex; gap: 2px; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
-        .phase-step { flex: 1; height: 4px; border-radius: 2px; background: var(--surface-3); transition: background 0.4s; }
-        .phase-step.done { background: var(--green); }
-        .phase-step.active { background: var(--accent); animation: phase-glow 1.5s ease infinite; }
-        @keyframes phase-glow { 0%,100%{ box-shadow: 0 0 0 0 var(--accent-glow); } 50%{ box-shadow: 0 0 8px 4px var(--accent-glow); } }
-        .phase-label { display: flex; justify-content: space-between; padding: 0 16px 8px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-3); }
-        .phase-label span.active { color: var(--accent); }
-        .phase-label span.done { color: var(--green); }
+/* ─────────────────────────────────────────
+   SCREEN MANAGEMENT — fade transitions
+───────────────────────────────────────── */
+.screen { display: none; flex-direction: column; height: 100dvh; overflow: hidden; }
+.screen.active {
+  display: flex;
+  animation: screen-in .2s ease;
+}
+@keyframes screen-in { from { opacity: 0; } to { opacity: 1; } }
 
-        .scroll-area { flex: 1; overflow-y: auto; padding: 16px 16px 240px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
-        .scroll-area::-webkit-scrollbar { display: none; }
+/* ─────────────────────────────────────────
+   TOAST
+───────────────────────────────────────── */
+.toast {
+  position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+  padding: 10px 20px; border-radius: 12px; font-size: 12px; font-weight: 700;
+  z-index: 9998; pointer-events: none; opacity: 0;
+  transition: opacity .3s;
+  white-space: nowrap;
+}
+.toast.show  { opacity: 1; }
+.toast.green { background: var(--green-bg);   color: var(--green);  border: 1px solid var(--green-border); }
+.toast.red   { background: var(--red-bg);     color: var(--red);    border: 1px solid var(--red-border); }
+.toast.blue  { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(79,140,255,.2); }
+.toast.amber { background: var(--amber-bg);   color: var(--amber);  border: 1px solid var(--amber-border); }
 
-        .hu-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 10px; transition: all 0.25s; box-shadow: var(--shadow-sm); }
-        .hu-card.confirmed { border-color: var(--green-border); background: var(--green-bg); }
-        .hu-card.miss { border-color: var(--red-border); background: var(--red-bg); opacity: 0.65; }
-        .hu-card.adjusted { border-color: var(--amber-border); background: var(--amber-bg); }
-        .hu-card.movement { border-color: var(--purple-border); background: var(--purple-bg); }
-        .hu-card.extra { border-color: var(--cyan-border, rgba(34,211,238,0.25)); background: var(--cyan-bg, #ecfeff); }
-        .hu-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-        .hu-id { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700; color: var(--accent); background: var(--accent-glow); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(59,108,245,0.15); }
-        /* Add this to both monitor.html and scanner.html <style> blocks */
-        .status-tag, .hu-status {
-          font-size: 9px;
-          font-weight: 800;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          padding: 4px 10px;
-          border-radius: 6px;
-          border: 1px solid transparent;
-        }
-        
-        /* Semantic Mapping */
-        .status-tag.ok, .hu-status.ok { color: var(--green); background: var(--green-bg); border-color: rgba(34, 197, 94, 0.2); }
-        .status-tag.missing, .status-tag.miss, .hu-status.miss { color: var(--red); background: var(--red-bg); border-color: rgba(239, 68, 68, 0.2); }
-        .status-tag.missing_temp, .hu-status.pending { color: var(--amber); background: var(--surface-2); border-color: var(--amber); border-style: dashed; }
-        .status-tag.adj, .hu-status.adj { color: var(--amber); background: var(--amber-bg); border-color: rgba(245, 158, 11, 0.2); }
-        .status-tag.move, .hu-status.move { color: var(--purple); background: var(--purple-bg); border-color: rgba(168, 85, 247, 0.2); }
-        .status-tag.move_adj { color: var(--purple); background: var(--surface-2); border-color: var(--purple); border-style: dashed; }
-        .status-tag.unexpected, .hu-status.ext { color: var(--cyan); background: var(--cyan-bg); border-color: rgba(6, 182, 212, 0.2); }
-        .status-tag.found_moved { color: var(--green); background: var(--surface-2); border-color: var(--green); border-style: dashed; }
-        .hu-meta { display: flex; gap: 16px; margin-bottom: 12px; }
-        .hu-meta-label { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-3); }
-        .hu-meta-value { font-size: 14px; font-weight: 700; color: var(--text); margin-top: 1px; }
-        .hu-meta-value.mono { font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
-        .hu-actions { display: flex; gap: 8px; }
-        .hu-btn { flex: 1; padding: 16px 0; border-radius: var(--radius-sm); font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.15s; text-align: center; min-height: 52px; }
-        .hu-btn.confirm { background: var(--green); color: white; }
-        .hu-btn.miss-btn { background: var(--surface-3); color: var(--red); border: 1.5px solid var(--red-border); }
-        .hu-btn.miss-btn.active { background: var(--red); color: white; }
+/* ─────────────────────────────────────────
+   HEADER
+───────────────────────────────────────── */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px; background: var(--surface);
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.header h1     { font-size: 15px; font-weight: 800; }
+.header-sub    { font-size: 10px; color: var(--text-2); font-weight: 600; }
+.header-right  { display: flex; align-items: center; gap: 8px; }
+.hdr-btn {
+  background: var(--surface-2); color: var(--text-2);
+  padding: 8px 12px; border-radius: var(--radius-sm);
+  font-size: 10px; font-weight: 700;
+  transition: background .15s, color .15s;
+}
+.hdr-btn:hover { background: var(--accent-dim); color: var(--accent); }
 
-        .qty-row { display: flex; align-items: center; gap: 6px; background: var(--surface-2); border-radius: var(--radius-sm); padding: 8px; margin-bottom: 10px; }
-        .qty-stepper { width: 60px; height: 60px; border-radius: var(--radius-sm); background: var(--surface-3); color: var(--text); font-size: 26px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .qty-input { flex: 1; background: transparent; border: none; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 36px; font-weight: 700; color: var(--accent); outline: none; min-width: 0; }
-        .qty-input::placeholder { color: var(--text-3); }
-        .sap-qty-badge { font-size: 10px; font-weight: 700; color: var(--text-3); text-align: center; padding: 4px; }
-        .sap-qty-badge strong { color: var(--text-2); }
+/* ── Sync indicator ── */
+.sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0; transition: background .3s; }
+.sync-dot.offline { background: var(--amber); animation: pulse 1.5s infinite; }
 
-        .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 16px calc(env(safe-area-inset-bottom, 16px) + 12px); background: rgba(255,255,255,0.95); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border-top: 1px solid var(--border); z-index: 50; box-shadow: 0 -4px 20px rgba(0,0,0,0.06); }
-        .primary-btn { width: 100%; padding: 20px 0; border-radius: var(--radius); font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 58px; }
-        .primary-btn.blue { background: var(--accent); color: white; }
-        .primary-btn.green { background: var(--green); color: white; }
-        .primary-btn.disabled { background: var(--surface-3); color: var(--text-3); pointer-events: none; }
-        .secondary-row { display: flex; gap: 8px; margin-bottom: 10px; }
-        .secondary-btn { flex: 1; padding: 16px 0; border-radius: var(--radius-sm); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; background: var(--surface-2); color: var(--text-2); border: 1.5px solid var(--border); text-align: center; min-height: 50px; }
-        .secondary-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+/* ── Offline queue badge ── */
+.queue-badge { background: var(--amber-bg); color: var(--amber); padding: 3px 8px; border-radius: 6px; font-size: 9px; font-weight: 800; }
 
-        .aisle-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 0 16px 20px; }
-        .aisle-btn { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 24px 0; text-align: center; font-size: 24px; font-weight: 900; color: var(--text); position: relative; overflow: hidden; transition: all 0.2s; box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.04)); }
-        .aisle-btn .aisle-fill { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(79,125,249,0.12), transparent); transition: height 0.5s; }
-        .aisle-btn .aisle-count { position: absolute; top: 6px; right: 8px; font-size: 9px; font-weight: 700; color: var(--text-3); }
-        .section-title { padding: 20px 16px 10px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-3); }
-        .search-container { padding: 16px; position: relative; }
-        .search-field { width: 100%; padding: 16px 16px 16px 44px; border-radius: var(--radius); border: 1.5px solid var(--border); background: var(--surface); color: var(--text); font-size: 16px; outline: none; }
-        .search-icon { position: absolute; left: 30px; top: 34px; color: var(--text-3); }
-        .bin-strip { display: flex; gap: 6px; overflow-x: auto; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); scrollbar-width: none; }
-        .strip-dot { min-width: 50px; height: 32px; border-radius: 8px; background: var(--surface-2); color: var(--text-2); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; border: 1px solid transparent; transition: all 0.2s;}
-        .strip-dot.active { background: var(--accent); color: white; }
+@keyframes pulse { 50% { opacity: .3; } }
 
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 200; display: flex; align-items: flex-end; justify-content: center; padding: 0; }
-        .modal-sheet { background: var(--surface); border-radius: var(--radius) var(--radius) 0 0; width: 100%; max-height: 85vh; overflow-y: auto; padding: 24px 20px calc(env(safe-area-inset-bottom, 8px) + 24px); animation: sheet-up 0.35s cubic-bezier(0.16,1,0.3,1); }
-        @keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .modal-handle { width: 36px; height: 4px; background: var(--surface-3); border-radius: 2px; margin: 0 auto 20px; }
-        .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
-        .modal-sub { font-size: 12px; color: var(--text-2); font-weight: 500; margin-bottom: 20px; }
+/* ─────────────────────────────────────────
+   SETUP SCREEN
+───────────────────────────────────────── */
+.setup-content {
+  flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 90px;
+  -webkit-overflow-scrolling: touch;
+}
+.setup-content::-webkit-scrollbar { display: none; }
 
-        .toast { position: fixed; top: env(safe-area-inset-top, 12px); left: 50%; transform: translateX(-50%) translateY(-120%); z-index: 999; padding: 12px 20px; border-radius: var(--radius); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); pointer-events: none; opacity: 0; transition: all 0.4s cubic-bezier(0.16,1,0.3,1); }
-        .toast.show { transform: translateX(-50%) translateY(12px); opacity: 1; }
-        .toast.green { background: var(--green); color: white; }
-        .toast.red { background: var(--red); color: white; }
-        .toast.blue { background: var(--accent); color: white; }
-        .toast.amber { background: var(--amber); color: white; }
-        .toast.cyan { background: var(--cyan); color: white; }
-    </style>
+.stat-row { display: flex; gap: 8px; margin-bottom: 16px; }
+.stat-box {
+  flex: 1; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px; text-align: center;
+  transition: border-color .2s;
+}
+.stat-box:hover { border-color: var(--accent); }
+.stat-val   { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 700; color: var(--accent); }
+.stat-label { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-3); margin-top: 4px; }
+
+.section-title { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-3); margin: 18px 0 10px; }
+
+.aisle-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+.aisle-btn {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 20px 0;
+  text-align: center; font-size: 24px; font-weight: 900; color: var(--text);
+  position: relative; overflow: hidden;
+  transition: border-color .15s, background .15s, transform .1s;
+}
+.aisle-btn:hover  { border-color: var(--accent); background: var(--accent-dim); }
+.aisle-btn:active { transform: scale(.93); }
+.aisle-btn.done   { border-color: var(--green-border); background: var(--green-bg); }
+.aisle-btn .a-count {
+  position: absolute; top: 5px; right: 7px;
+  font-size: 8px; font-weight: 700; color: var(--text-3);
+}
+
+/* ─────────────────────────────────────────
+   COUNTING SCREEN — PHASE BAR
+───────────────────────────────────────── */
+.phase-bar    { display: flex; gap: 2px; padding: 10px 16px 0; background: var(--surface); }
+.phase-step   { flex: 1; height: 4px; border-radius: 2px; background: var(--surface-3); transition: background .3s; }
+.phase-step.active { background: var(--accent); }
+.phase-step.done   { background: var(--green); }
+.phase-labels {
+  display: flex; justify-content: space-between;
+  padding: 4px 16px 10px; font-size: 8px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-3);
+  background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.phase-labels span.active { color: var(--accent); }
+.phase-labels span.done   { color: var(--green); }
+
+/* ── Bin navigation bar ── */
+.bin-nav {
+  display: flex; gap: 6px; padding: 12px 16px;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  flex-shrink: 0; align-items: center;
+}
+.nav-btn {
+  width: 52px; height: 52px; border-radius: 12px;
+  background: var(--surface-2); color: var(--text-3);
+  font-size: 18px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: background .15s, color .15s;
+}
+.nav-btn:hover { background: var(--accent-dim); color: var(--accent); }
+.bin-input {
+  flex: 1; padding: 14px; background: var(--surface-2);
+  border: 2px solid var(--border); border-radius: 12px;
+  font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700;
+  color: var(--accent); text-transform: uppercase; text-align: center; outline: none;
+  transition: border-color .15s;
+}
+.bin-input:focus { border-color: var(--accent); }
+
+/* ── Bin strip (mini nav) ── */
+.bin-strip {
+  display: flex; gap: 3px; padding: 8px 16px;
+  overflow-x: auto; background: var(--surface);
+  scrollbar-width: none; flex-shrink: 0;
+}
+.bin-strip::-webkit-scrollbar { display: none; }
+.strip-dot {
+  min-width: 26px; height: 26px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8px; font-weight: 800;
+  background: var(--surface-2); color: var(--text-3); flex-shrink: 0;
+  cursor: pointer; transition: background .15s, color .15s;
+}
+.strip-dot:hover   { background: var(--accent-dim); color: var(--accent); }
+.strip-dot.current { min-width: 38px; font-size: 10px; background: var(--accent); color: #fff; cursor: default; }
+.strip-dot.done    { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+
+/* ─────────────────────────────────────────
+   HU CARDS
+───────────────────────────────────────── */
+.hu-list {
+  flex: 1; overflow-y: auto; padding: 12px 16px 260px;
+  -webkit-overflow-scrolling: touch;
+}
+.hu-list::-webkit-scrollbar { display: none; }
+
+.hu-card {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 16px; margin-bottom: 8px;
+  transition: border-color .2s, background .2s;
+  animation: card-in .18s ease both;
+}
+@keyframes card-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.hu-card.confirmed { border-color: var(--green-border);              background: var(--green-bg); }
+.hu-card.missing   { border-color: var(--red-border);   opacity: .7; background: var(--red-bg); }
+.hu-card.adjusted  { border-color: var(--amber-border);              background: var(--amber-bg); }
+.hu-card.extra     { border-color: rgba(6,182,212,.25);              background: var(--cyan-bg); }
+
+.hu-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.hu-id  {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+  color: var(--accent); background: var(--accent-dim); padding: 3px 10px; border-radius: 6px;
+}
+.hu-badge { font-size: 8px; font-weight: 800; text-transform: uppercase; padding: 3px 10px; border-radius: 6px; letter-spacing: .5px; }
+.hu-badge.ok  { background: var(--green-bg);  color: var(--green); }
+.hu-badge.miss{ background: var(--red-bg);    color: var(--red); }
+.hu-badge.adj { background: var(--amber-bg);  color: var(--amber); }
+.hu-badge.ext { background: var(--cyan-bg);   color: var(--cyan); }
+
+.hu-meta { display: flex; gap: 16px; margin-bottom: 6px; }
+.meta-label { display: block; font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-3); }
+.meta-val   { font-size: 13px; font-weight: 700; margin-top: 1px; }
+.hu-desc    { font-size: 10px; color: var(--text-2); margin-bottom: 10px; }
+
+/* ── Quantity row ── */
+.qty-row {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface-2); border-radius: 12px; padding: 6px; margin-bottom: 8px;
+}
+.qty-btn {
+  width: 64px; height: 64px; border-radius: 12px;
+  background: var(--surface-3); font-size: 28px; font-weight: 900; color: var(--text-3);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: background .15s, color .15s;
+}
+.qty-btn:hover { background: var(--surface-2); }
+.qty-btn.plus  { color: var(--accent); }
+.qty-btn.plus:hover { background: var(--accent-dim); }
+.qty-input {
+  flex: 1; background: transparent; border: none;
+  text-align: center; font-family: 'JetBrains Mono', monospace;
+  font-size: 38px; font-weight: 700; color: var(--accent); outline: none; min-width: 0;
+}
+.qty-input::placeholder { color: var(--surface-3); }
+.sap-hint { text-align: center; font-size: 9px; font-weight: 700; color: var(--text-3); margin-bottom: 8px; }
+
+/* ── Action buttons ── */
+.hu-actions { display: flex; gap: 6px; }
+.act-btn {
+  flex: 1; padding: 18px 0; border-radius: 12px;
+  font-size: 12px; font-weight: 800; text-transform: uppercase;
+  min-height: 56px; display: flex; align-items: center; justify-content: center;
+  transition: filter .15s, transform .1s;
+}
+.act-btn:hover  { filter: brightness(1.1); }
+.act-btn.confirm { background: var(--green); color: #fff; }
+.act-btn.miss    { background: var(--surface-3); color: var(--red); border: 1.5px solid var(--red-border); }
+.act-btn.miss.active { background: var(--red); color: #fff; border-color: transparent; }
+
+/* ── Resolved / undo row ── */
+.resolved-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; background: var(--surface-2);
+  border-radius: var(--radius-sm); margin-bottom: 6px;
+}
+.resolved-label { font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--text-3); }
+.resolved-val   { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; }
+.resolved-val.match    { color: var(--green); }
+.resolved-val.mismatch { color: var(--amber); }
+.undo-btn { width: 100%; padding: 8px; background: none; color: var(--text-3); font-size: 9px; font-weight: 700; }
+
+/* ── Note / Move buttons ── */
+.note-btn {
+  width: 100%; margin-top: 6px; padding: 10px 14px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); font-size: 10px; font-weight: 700;
+  color: var(--text-3); text-align: left;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.note-btn:hover { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.note-btn.has   { background: var(--amber-bg); border-color: var(--amber-border); color: var(--amber); }
+
+/* ── Empty bin state ── */
+.empty-bin { text-align: center; padding: 48px 24px; color: var(--text-3); }
+.empty-bin .icon { font-size: 40px; margin-bottom: 10px; display: block; }
+
+/* ── Already-counted banner ── */
+.counted-banner {
+  display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+  border-radius: var(--radius); margin-bottom: 8px;
+  background: var(--green-bg); border: 1px solid var(--green-border);
+  animation: card-in .18s ease;
+}
+.counted-banner strong { font-size: 11px; color: var(--green); font-weight: 800; }
+.counted-banner small  { font-size: 9px; color: var(--text-2); }
+
+/* ─────────────────────────────────────────
+   BOTTOM BAR (fixed)
+───────────────────────────────────────── */
+.bottom-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  padding: 10px 16px calc(env(safe-area-inset-bottom, 14px) + 10px);
+  background: rgba(11,12,16,.92); backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border); z-index: 50;
+}
+.bottom-row { display: flex; gap: 6px; margin-bottom: 8px; }
+.btn-sec {
+  flex: 1; padding: 14px 0; border-radius: 12px; font-size: 11px; font-weight: 800;
+  text-transform: uppercase; background: var(--surface-2); color: var(--text-2);
+  border: 1.5px solid var(--border); text-align: center; min-height: 48px;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.btn-sec:hover { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.btn-pri {
+  width: 100%; padding: 18px 0; border-radius: var(--radius);
+  font-size: 14px; font-weight: 800; text-transform: uppercase;
+  background: var(--green); color: #fff; min-height: 60px;
+  display: flex; align-items: center; justify-content: center;
+  transition: filter .15s;
+}
+.btn-pri:hover   { filter: brightness(1.1); }
+.btn-pri.disabled { background: var(--surface-3); color: var(--text-3); pointer-events: none; }
+
+/* ─────────────────────────────────────────
+   SETUP BOTTOM NAV
+───────────────────────────────────────── */
+.setup-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  display: flex; gap: 6px;
+  padding: 10px 16px calc(env(safe-area-inset-bottom, 14px) + 10px);
+  background: rgba(11,12,16,.92); backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+}
+.setup-nav .nav-tab {
+  flex: 1; padding: 14px 0; border-radius: 12px;
+  font-size: 11px; font-weight: 800; text-transform: uppercase;
+  background: var(--surface-2); color: var(--text-2); border: 1.5px solid var(--border);
+  text-align: center; min-height: 48px;
+  transition: background .15s, color .15s;
+}
+.setup-nav .nav-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ─────────────────────────────────────────
+   EXTRA ITEM FORM
+───────────────────────────────────────── */
+.extra-form {
+  background: var(--surface); border: 1.5px dashed var(--border);
+  border-radius: var(--radius); padding: 16px; margin-bottom: 8px;
+  animation: card-in .18s ease;
+}
+.extra-form h3 {
+  font-size: 10px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--cyan); margin-bottom: 10px;
+}
+.field {
+  width: 100%; padding: 14px; background: var(--surface-2);
+  border: 1.5px solid var(--border); border-radius: 12px;
+  font-size: 15px; font-weight: 600; color: var(--text); outline: none; margin-bottom: 6px;
+  transition: border-color .15s;
+}
+.field:focus { border-color: var(--accent); }
+.field::placeholder { color: var(--text-3); }
+.field-row { display: flex; gap: 6px; }
+.hidden { display: none !important; }
+
+/* ─────────────────────────────────────────
+   MOVE MODAL
+───────────────────────────────────────── */
+#modal-move {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.8); backdrop-filter: blur(5px);
+  z-index: 100; align-items: center; justify-content: center; padding: 20px;
+}
+#modal-move .move-box {
+  background: var(--surface); width: 100%; max-width: 400px;
+  padding: 20px; border-radius: var(--radius); border: 1px solid var(--purple);
+  animation: ns-slide-up .25s cubic-bezier(.34,1.56,.64,1);
+}
+</style>
 </head>
 <body>
 
-<div id="toast" class="toast green"><span id="toast-text"></span></div>
+<!-- ── Global toast ── -->
+<div id="toast" class="toast"><span id="toast-text"></span></div>
 
-<div class="modal-overlay" id="ghost-modal" style="display: none; align-items:center; padding:20px;">
-  <div style="background:var(--surface); border-radius:var(--radius); width:100%; max-width:400px; padding:24px 20px; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
-    <div style="text-align:center; padding-bottom: 16px; border-bottom:1px solid var(--border); margin-bottom:16px;">
-        <h3 style="font-size:18px; font-weight:800; color:var(--red);">⚠️ Unexpected Item</h3>
-        <p style="font-size:13px; color:var(--text-2); margin-top:4px;">Not found in active SAP extract.</p>
-    </div>
-    
-    <div style="text-align:center; margin-bottom: 24px;">
-        <div style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--text-3); letter-spacing:1px;">HU Scanned</div>
-        <div id="ghost-hu" class="mono" style="font-size:24px; font-weight:900; color:var(--accent); margin-top:4px;"></div>
-    </div>
-
-    <p style="font-size:12px; color:var(--text-2); text-align:center; margin-bottom:16px; line-height:1.5;">
-        Cycle count recommended. Enter the <strong>Product Number</strong> for this pallet to begin a global audit across all bins.
-    </p>
-    
-    <input type="text" id="ghost-prod-input" placeholder="Enter Product #..." style="width:100%; background:var(--surface-2); border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:14px 16px; font-size:16px; font-family:'IBM Plex Mono', monospace; text-align:center; outline:none; margin-bottom:24px;">
-
-    <div style="display:flex; gap:10px">
-        <button class="secondary-btn" style="flex:1; padding:16px 0;" onclick="closeGhostModal()">Dismiss</button>
-        <button class="primary-btn" style="flex:2; background:var(--cyan)" onclick="pivotToProductAudit()">Start Product Audit</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="add-hu-modal" style="display: none; align-items:center; padding:20px;">
-  <div style="background:var(--surface); border-radius:var(--radius); width:100%; max-width:400px; padding:24px 20px; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
-    <div style="text-align:center; padding-bottom: 16px; border-bottom:1px solid var(--border); margin-bottom:16px;">
-        <h3 style="font-size:18px; font-weight:800; color:var(--purple);">📦 Add Found HU</h3>
-        <p style="font-size:13px; color:var(--text-2); margin-top:4px;">Log an unexpected pallet to the current bin.</p>
-    </div>
-    
-    <div style="margin-bottom:16px;">
-        <label style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--text-3);">HU Number</label>
-        <input type="text" id="add-hu-id" placeholder="Scan or type HU..." style="width:100%; background:var(--surface-2); border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:12px; font-size:16px; font-family:'IBM Plex Mono', monospace; outline:none; margin-top:6px;" oninput="checkSmartFill()">
-    </div>
-    <div style="margin-bottom:16px;">
-        <label style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--text-3);">Product Number</label>
-        <input type="text" id="add-hu-prod" placeholder="Product #" style="width:100%; background:var(--surface-2); border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:12px; font-size:16px; font-family:'IBM Plex Mono', monospace; outline:none; margin-top:6px;">
-    </div>
-    <div style="margin-bottom:24px;">
-        <label style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--text-3);">Quantity</label>
-        <input type="number" id="add-hu-qty" placeholder="0" step="any" style="width:100%; background:var(--surface-2); border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:12px; font-size:16px; font-family:'IBM Plex Mono', monospace; outline:none; margin-top:6px;">
-    </div>
-
-    <div style="display:flex; gap:10px">
-        <button class="secondary-btn" style="flex:1; padding:16px 0;" onclick="closeAddHuModal()">Cancel</button>
-        <button class="primary-btn" style="flex:2; background:var(--purple)" onclick="submitAddedHu()">Add to Bin</button>
-    </div>
-  </div>
-</div>
-
+<!-- ══════════════════════════════════════════
+     SCREEN 1: SETUP / AISLE SELECTION
+══════════════════════════════════════════ -->
 <div id="screen-setup" class="screen active">
-    <div class="app-header">
-        <a href="index.html" class="hdr-btn">← Home</a>
-        <h1>Cycle Counter</h1>
-        <div class="header-right">
-            <div id="sync-dot" class="sync-dot"></div>
-            <button class="hdr-btn" style="font-size:14px; padding:6px 10px;" onclick="NovusSettings.openModal()">⚙</button>
-        </div>
-    </div>
-    <div class="scroll-area">
-        
-        <div style="padding: 16px 16px 0; display:flex; justify-content:space-between; align-items:center;">
-            <div>
-                <div style="font-size:10px; font-weight:700; color:var(--text-3); text-transform:uppercase;">Auditor</div>
-                <div id="name-display" style="font-weight:800; color:var(--accent);">Operator</div>
-            </div>
-            <button onclick="refreshData()" class="hdr-btn" style="font-size:11px; padding:8px 12px;">↻ Refresh SAP</button>
-        </div>
-
-        <div class="search-container">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="hub-search" class="search-field" placeholder="Scan Product, Bin, or type 'FRESH'...">
-        </div>
-        
-        <div class="section-title" style="padding: 0 16px; font-size: 10px; font-weight: 800; color: var(--text-3); text-transform: uppercase;">Aisle Audit</div>
-        <div class="aisle-grid" id="aisle-grid"></div>
-
-        <div style="padding: 0 16px">
-            <button onclick="initFreshMode()" style="width:100%; padding:20px; border-radius:var(--radius); background:linear-gradient(135deg, var(--amber), #b45309); color:white; font-weight:900; font-size:15px; letter-spacing:1px; border:none; box-shadow:var(--shadow-sm);">START FRESH AUDIT</button>
-        </div>
-    </div>
-</div>
-
-<div id="screen-count" class="screen">
-    <div class="app-header">
-        <button onclick="switchScreen('setup')" class="hdr-btn">← Back</button>
-        <div class="bin-nav-cluster">
-            <button id="btn-prev" class="nav-arrow" onclick="prevBin()">←</button>
-            <h1 id="count-title" class="mono" style="font-size: 16px; width: 85px; text-align: center; display:flex; align-items:center; justify-content:center; gap:4px;"></h1>
-            <button id="btn-next-top" class="nav-arrow" onclick="skipBin()">→</button>
-        </div>
-        <div class="sync-dot"></div>
-    </div>
-    
+  <div class="header">
     <div>
-        <div class="phase-bar">
-            <div id="phase-1" class="phase-step active"></div>
-            <div id="phase-2" class="phase-step"></div>
-            <div id="phase-3" class="phase-step"></div>
-        </div>
-        <div class="phase-label">
-            <span id="phase-1-label" class="active">Verify HUs</span>
-            <span id="phase-2-label">Review</span>
-            <span id="phase-3-label">Finalize</span>
-        </div>
+      <h1>Cycle Counter</h1>
+      <div class="header-sub"><span id="stat-progress">0 / 0</span> bins counted</div>
+    </div>
+    <div class="header-right">
+      <!-- Offline queue indicator -->
+      <span class="queue-badge hidden" id="queue-badge">0 queued</span>
+      <!-- Refresh SAP data from cloud -->
+      <button class="hdr-btn" id="refresh-btn" onclick="refreshAll()">↻ Refresh</button>
+      <!-- Online / offline dot -->
+      <div class="sync-dot" id="sync-dot"></div>
+      <!-- Settings modal trigger -->
+      <button class="hdr-btn" onclick="NovusSettings.openModal()">⚙</button>
+      <!-- Quick name setter -->
+      <button class="hdr-btn" onclick="setName()">👤 <span id="name-display">Set Name</span></button>
+    </div>
+  </div>
+
+  <div class="setup-content">
+    <!-- KPI bar -->
+    <div class="stat-row">
+      <div class="stat-box"><div class="stat-val" id="stat-loaded">—</div><div class="stat-label">SAP Items</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat-bins">—</div><div class="stat-label">Bins</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat-done">0</div><div class="stat-label">Done Today</div></div>
     </div>
 
-    <div class="bin-strip" id="bin-strip"></div>
-    
-    <div style="padding: 12px 16px 0; flex-shrink:0; display:flex; gap:8px;">
-        <div style="position: relative; flex:1;">
-            <span class="search-icon" style="top: 14px; left: 16px; font-size: 14px; color:var(--purple);">➕</span>
-            <input type="text" id="bin-scan-input" class="search-field" placeholder="Scan unexpected HU..." style="border-color: var(--purple); padding-left: 40px; padding-top: 12px; padding-bottom: 12px; font-size: 14px;">
-        </div>
-        <button class="secondary-btn" style="padding:0 16px; border-color:var(--purple); color:var(--purple); min-height:46px;" onclick="openAddHuModal()">Add</button>
+    <!-- Product search -->
+    <div class="section-title">Count By Product</div>
+    <div style="display:flex; gap:8px; margin-bottom:24px">
+      <input type="text" id="product-search" class="field mono"
+             placeholder="Enter Product #…"
+             style="flex:1; padding:12px; border-radius:12px; background:var(--surface);
+                    border:1px solid var(--border); color:var(--accent); font-weight:700; outline:none; margin:0;">
+      <button class="hdr-btn"
+              style="background:var(--accent); color:#fff; font-size:12px; padding:0 16px;"
+              onclick="searchProduct()">Search</button>
     </div>
 
-    <div class="scroll-area" id="hu-list" style="padding-top: 12px;">
-        </div>
-    <div class="bottom-bar">
-        <div style="display:flex; gap:8px; width:100%;">
-            <button class="secondary-btn" style="flex: 1;" onclick="skipBin()">Skip</button>
-            <button class="primary-btn" id="btn-next" style="flex: 2;" onclick="finalizeAisleBin()">Finalize & Next →</button>
-        </div>
+    <!-- Aisle grid (skeleton on load, then real buttons) -->
+    <div class="section-title">Select Aisle</div>
+    <div class="aisle-grid" id="aisle-grid">
+      <!-- Filled by buildAisleGrid() or skeletonAisleCards() -->
     </div>
+  </div>
+
+  <div class="setup-nav">
+    <button class="nav-tab active">Count</button>
+    <a href="index.html" class="nav-tab"
+       style="text-decoration:none; display:flex; align-items:center; justify-content:center">Home</a>
+  </div>
 </div>
 
-<div id="screen-product" class="screen">
-    <div class="app-header">
-        <button onclick="switchScreen('setup')" class="hdr-btn">← Back</button>
-        <h1 style="color:var(--cyan)">Product Audit</h1>
-        <div class="sync-dot"></div>
-    </div>
-    <div style="padding: 16px 16px 0; font-size: 12px; color: var(--text-2); text-align:center;">
-        Global system reconciliation for <strong id="product-display" style="color:var(--text)"></strong>
-    </div>
-    
-    <div style="padding: 12px 16px 0; flex-shrink:0;">
-        <div style="position: relative;">
-            <span class="search-icon" style="top: 14px; left: 16px; font-size: 14px; color:var(--cyan);">➕</span>
-            <input type="text" id="product-scan-input" class="search-field" placeholder="Scan HU to add to audit..." style="border-color: var(--cyan); padding-left: 40px; padding-top: 12px; padding-bottom: 12px; font-size: 14px;">
-        </div>
-    </div>
+<!-- ══════════════════════════════════════════
+     SCREEN 2: BIN COUNTING
+══════════════════════════════════════════ -->
+<div id="screen-counting" class="screen">
+  <div class="header">
+    <button class="hdr-btn" onclick="backToSetup()">← Back</button>
+    <h1 id="count-bin-title">—</h1>
+    <div class="sync-dot"></div>
+  </div>
 
-    <div class="scroll-area" id="product-list" style="padding-top: 12px;">
-        </div>
-    <div class="bottom-bar">
-        <button class="primary-btn" style="background:var(--cyan)" onclick="submitProductAudit()">Finalize Product Audit</button>
+  <!-- 3-phase progress bar -->
+  <div class="phase-bar">
+    <div class="phase-step" id="ph1"></div>
+    <div class="phase-step" id="ph2"></div>
+    <div class="phase-step" id="ph3"></div>
+  </div>
+  <div class="phase-labels">
+    <span id="phl1">Check HUs</span>
+    <span id="phl2">Extras</span>
+    <span id="phl3">Finalize</span>
+  </div>
+
+  <!-- Bin input + prev/next navigation -->
+  <div class="bin-nav">
+    <button class="nav-btn" onclick="stepBin(-1)">◀</button>
+    <input type="text" class="bin-input" id="bin-input" placeholder="SCAN BIN…">
+    <button class="nav-btn" onclick="stepBin(1)">▶</button>
+  </div>
+
+  <!-- Scrollable mini-map of bins in current aisle -->
+  <div class="bin-strip" id="bin-strip"></div>
+
+  <!-- HU cards list -->
+  <div class="hu-list" id="hu-list"></div>
+
+  <!-- Fixed bottom actions -->
+  <div class="bottom-bar" id="bottom-bar">
+    <div class="bottom-row">
+      <button class="btn-sec" onclick="toggleExtra()">+ Found Extra</button>
+      <button class="btn-sec" id="btn-confirm-all" onclick="confirmAll()">✓ Confirm All</button>
     </div>
+    <button class="btn-pri" id="btn-finalize" onclick="finalizeBin()">Finalize & Next Bin →</button>
+  </div>
 </div>
 
-<div id="screen-fresh" class="screen">
-    <div class="app-header">
-        <button onclick="handleFreshBack()" class="hdr-btn">← Back</button>
-        <h1 id="fresh-title" style="color:var(--amber)">FRESH Tally</h1>
-        <div class="sync-dot"></div>
+<!-- ══════════════════════════════════════════
+     MOVE / RELOCATION MODAL
+══════════════════════════════════════════ -->
+<div id="modal-move" style="display:none; align-items:center; justify-content:center; padding:20px;">
+  <div class="move-box">
+    <h3 style="color:var(--purple); font-size:16px; font-weight:800; margin-bottom:16px;">🔄 Move Item to Another Bin</h3>
+
+    <label style="font-size:8px; font-weight:700; text-transform:uppercase; letter-spacing:1.2px; color:var(--text-3); display:block; margin-bottom:6px">Scan / Enter HU</label>
+    <input type="text" id="qm-hu" class="field mono" placeholder="HU Number" style="margin-bottom:0;" readonly>
+
+    <!-- SAP info pulled from huIndex -->
+    <div id="qm-info" style="margin:8px 0 16px; font-size:11px; color:var(--text-2); min-height:40px; background:var(--surface-2); padding:8px; border-radius:8px;">
+      Enter HU to load SAP info…
     </div>
-    <div class="search-container" id="fresh-search-bar">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="fresh-scan-input" class="search-field" style="border-color:var(--amber)" placeholder="Scan any pallet...">
+
+    <div style="display:flex; gap:8px;">
+      <div style="flex:2">
+        <label style="font-size:8px; font-weight:700; text-transform:uppercase; letter-spacing:1.2px; color:var(--text-3); display:block; margin-bottom:6px">Found In Bin</label>
+        <input type="text" id="qm-bin" class="field mono" placeholder="e.g. WA12A" style="text-transform:uppercase;">
+      </div>
+      <div style="flex:1">
+        <label style="font-size:8px; font-weight:700; text-transform:uppercase; letter-spacing:1.2px; color:var(--text-3); display:block; margin-bottom:6px">Actual Qty</label>
+        <input type="number" inputmode="numeric" id="qm-qty" class="field mono" placeholder="Qty">
+      </div>
     </div>
-    <div class="scroll-area" id="fresh-list" style="padding-top:0;">
-        <div id="fresh-overview" style="padding-top:16px;"></div>
-        <div id="fresh-detail" style="display:none; padding-top:16px;"></div>
+
+    <div style="display:flex; gap:8px; margin-top:24px;">
+      <button class="btn-sec" onclick="document.getElementById('modal-move').style.display='none'" style="flex:1">Cancel</button>
+      <button class="act-btn" style="flex:2; background:var(--purple); color:#fff; border:none;" onclick="submitQuickMove()">Log Movement</button>
     </div>
-    <div class="bottom-bar">
-        <button class="primary-btn" style="background:var(--amber)" onclick="submitFreshAudit()">Submit Fresh Audit</button>
-    </div>
+  </div>
 </div>
 
+
+<!-- ══════════════════════════════════════════
+     PAGE LOGIC
+══════════════════════════════════════════ -->
 <script>
-const NovusSettings = (() => {
-  const STORAGE_KEY = 'novus_settings';
-  const DEFAULTS = { userName: '', theme: 'dark', pollInterval: 10, hapticFeedback: true, compactMode: false };
+// ─────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────
 
-  const LIGHT_VARS = {
-    '--bg': '#F8FAFC', '--surface': '#FFFFFF', '--surface-2': '#F1F5F9', '--surface-3': '#E2E8F0',
-    '--border': '#CBD5E1', '--text': '#0F172A', '--text-2': '#334155', '--text-3': '#64748B',
-    '--accent': '#2563EB', '--accent-dim': 'rgba(37,99,235,0.1)',
-    '--green': '#16A34A', '--green-bg': '#DCFCE7',
-    '--red': '#DC2626', '--red-bg': '#FEE2E2',
-    '--amber': '#D97706', '--amber-bg': '#FEF3C7',
-    '--purple': '#7C3AED', '--purple-bg': '#F3E8FF',
-    '--cyan': '#0891B2', '--cyan-bg': '#CFFAFE'
-  };
+let sapMaster  = JSON.parse(localStorage.getItem('novus_sap') || '[]');
+let binIndex   = {};       // { 'WA01A': [item, …] }
+let huIndex    = new Map();// huNumber → item
 
-  const DARK_VARS = {
-    '--bg': '#0F172A', '--surface': '#1E293B', '--surface-2': '#334155', '--surface-3': '#475569',
-    '--border': '#334155', '--text': '#F8FAFC', '--text-2': '#CBD5E1', '--text-3': '#94A3B8',
-    '--accent': '#3B82F6', '--accent-dim': 'rgba(59,130,246,0.15)',
-    '--green': '#22C55E', '--green-bg': 'rgba(34,197,94,0.15)',
-    '--red': '#EF4444', '--red-bg': 'rgba(239,68,68,0.15)',
-    '--amber': '#F59E0B', '--amber-bg': 'rgba(245,158,11,0.15)',
-    '--purple': '#A855F7', '--purple-bg': 'rgba(168,85,247,0.15)',
-    '--cyan': '#06B6D4', '--cyan-bg': 'rgba(6,182,212,0.15)'
-  };
+// ── Daily cache expiration ──────────────
+const _todayStr = new Date().toDateString();
+let _rawDone    = JSON.parse(localStorage.getItem('novus_done') || '{"date":"","bins":[]}');
+let completedBins = new Set();
 
-  function loadAll() {
-    try { const r = localStorage.getItem(STORAGE_KEY); return r ? { ...DEFAULTS, ...JSON.parse(r) } : { ...DEFAULTS }; }
-    catch { return { ...DEFAULTS }; }
+if (Array.isArray(_rawDone) || _rawDone.date !== _todayStr) {
+  // Legacy array OR new day — reset
+  localStorage.setItem('novus_done', JSON.stringify({ date: _todayStr, bins: [] }));
+} else {
+  completedBins = new Set(_rawDone.bins);
+}
+// ────────────────────────────────────────
+
+let auditorName   = NovusSettings.getUser();
+let currentBin    = '';
+let currentItems  = [];    // HU objects for the active bin
+let phase         = 1;
+let aisleBins     = [];    // ordered bin list for current aisle/product
+let binIdx        = 0;
+let showingExtra  = false;
+let targetProduct = null;  // set when searching by product
+
+let offlineQueue  = JSON.parse(localStorage.getItem('novus_queue') || '[]');
+let activeMoveIdx = -1;
+let isOnline      = navigator.onLine;
+
+// ─────────────────────────────────────────
+// BOOT
+// ─────────────────────────────────────────
+
+document.getElementById('name-display').textContent = auditorName || 'Set Name';
+updateQueueBadge();
+updateSyncDot();
+
+window.addEventListener('online',  () => { isOnline = true;  updateSyncDot(); flushQueue(); });
+window.addEventListener('offline', () => { isOnline = false; updateSyncDot(); });
+
+// Show skeleton immediately, then try to hydrate
+document.getElementById('aisle-grid').innerHTML = NovusLoader.skeletonAisleCards(14);
+
+if (sapMaster.length > 0) {
+  buildIndexes();
+  showSetup();
+} else {
+  pullCloud();
+}
+
+// ─────────────────────────────────────────
+// SYNC INDICATORS
+// ─────────────────────────────────────────
+
+function updateSyncDot() {
+  document.querySelectorAll('.sync-dot').forEach(d => {
+    d.className = isOnline ? 'sync-dot' : 'sync-dot offline';
+  });
+}
+
+function updateQueueBadge() {
+  const badge = document.getElementById('queue-badge');
+  if (offlineQueue.length > 0) {
+    badge.textContent = `${offlineQueue.length} queued`;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
   }
-  function saveAll(s) { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
+}
 
-  let _cache = loadAll();
-  const legacyName = localStorage.getItem('novus_name');
-  if (legacyName && !_cache.userName) { _cache.userName = legacyName; saveAll(_cache); }
+// ─────────────────────────────────────────
+// INDEX BUILDERS
+// ─────────────────────────────────────────
 
-  function get(key) { return _cache[key] !== undefined ? _cache[key] : DEFAULTS[key]; }
-  function set(key, val) {
-    _cache[key] = val; saveAll(_cache);
-    if (key === 'userName') {
-        localStorage.setItem('novus_name', val);
-        const disp = document.getElementById('name-display');
-        if(disp) disp.innerText = val || 'Operator';
+function buildIndexes() {
+  binIndex = {};
+  huIndex  = new Map();
+
+  sapMaster.forEach(i => {
+    i.sapBin   = String(i.sapBin   || i.expectedBin || '').trim().toUpperCase();
+    i.hu       = String(i.hu       || '').trim();
+    i.product  = String(i.product  || '').trim();
+    i.batch    = String(i.batch    || '').trim();
+    i.desc     = String(i.desc     || '');
+    i.sapQty   = Number(i.sapQty   || i.expectedQty) || 0;
+
+    if (i.sapBin) {
+      if (!binIndex[i.sapBin]) binIndex[i.sapBin] = [];
+      binIndex[i.sapBin].push(i);
     }
-    if (key === 'theme') applyTheme();
+    if (i.hu) huIndex.set(i.hu, i);
+  });
+
+  document.getElementById('stat-loaded').textContent = sapMaster.length.toLocaleString();
+  document.getElementById('stat-bins').textContent   = Object.keys(binIndex).length.toLocaleString();
+  updateDoneCount();
+}
+
+function showSetup() {
+  switchScreen('setup');
+  buildAisleGrid();
+}
+
+// ─────────────────────────────────────────
+// CLOUD DATA FETCH
+// ─────────────────────────────────────────
+
+async function pullCloud() {
+  NovusLoader.start();
+  try {
+    const res  = await fetch(API_URL + '?type=sapdata');
+    const data = await res.json();
+
+    if (data.sapData && data.sapData.length > 0) {
+      sapMaster = data.sapData;
+      localStorage.setItem('novus_sap', JSON.stringify(sapMaster));
+      buildIndexes();
+      showSetup();
+      toast(`${sapMaster.length.toLocaleString()} items loaded`, 'blue');
+    } else {
+      _showNoData();
+    }
+  } catch {
+    isOnline = false;
+    updateSyncDot();
+    if (sapMaster.length > 0) {
+      buildIndexes();
+      showSetup();
+      toast('Offline — showing cached data', 'amber');
+    } else {
+      _showNoData();
+    }
+  } finally {
+    NovusLoader.done();
   }
-  function getUser() { return get('userName') || 'Operator'; }
-  function applyTheme() {
-    const vars = get('theme') === 'light' ? LIGHT_VARS : DARK_VARS;
-    Object.entries(vars).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
-    document.body.setAttribute('data-theme', get('theme'));
-    
-    document.querySelectorAll('.bottom-bar').forEach(bb => {
-        bb.style.background = get('theme') === 'light' ? 'rgba(255,255,255,0.95)' : 'rgba(15,17,23,0.95)';
-    });
+}
+
+function _showNoData() {
+  showSetup();
+  document.getElementById('aisle-grid').innerHTML =
+    `<div style="grid-column:1/-1; text-align:center; padding:40px 20px; color:var(--text-3)">
+      <span style="font-size:36px; display:block; margin-bottom:10px">📭</span>
+      <p style="font-weight:700">No SAP data yet</p>
+      <p style="font-size:11px; margin-top:4px">Upload from Control Center first</p>
+    </div>`;
+}
+
+async function refreshAll() {
+  const btn = document.getElementById('refresh-btn');
+  btn.style.opacity = '.5';
+  btn.style.pointerEvents = 'none';
+  btn.textContent = '↻ …';
+
+  NovusLoader.start();
+  try {
+    const res  = await fetch(API_URL + '?type=sapdata');
+    const data = await res.json();
+
+    if (data.sapData && data.sapData.length > 0) {
+      sapMaster = data.sapData;
+      localStorage.setItem('novus_sap', JSON.stringify(sapMaster));
+      buildIndexes();
+      buildAisleGrid();
+      isOnline = true;
+      updateSyncDot();
+
+      // Prompt to clear daily "done" state on fresh SAP data
+      if (completedBins.size > 0) {
+        if (confirm('New SAP data loaded!\n\nClear "Already Counted" bins to start a fresh cycle?')) {
+          completedBins.clear();
+          localStorage.setItem('novus_done', JSON.stringify({ date: new Date().toDateString(), bins: [] }));
+          updateDoneCount();
+          buildAisleGrid();
+        }
+      }
+      toast(`Refreshed · ${sapMaster.length.toLocaleString()} items`, 'blue');
+    }
+  } catch {
+    isOnline = false;
+    updateSyncDot();
+    toast('Refresh failed — offline mode', 'red');
+  } finally {
+    NovusLoader.done();
+    btn.style.opacity = '';
+    btn.style.pointerEvents = '';
+    btn.textContent = '↻ Refresh';
+  }
+}
+
+// ─────────────────────────────────────────
+// AISLE GRID
+// ─────────────────────────────────────────
+
+function updateDoneCount() {
+  const totalBins = Object.keys(binIndex).length;
+  document.getElementById('stat-done').textContent     = completedBins.size;
+  document.getElementById('stat-progress').textContent = `${completedBins.size} / ${totalBins}`;
+}
+
+function buildAisleGrid() {
+  const grid = document.getElementById('aisle-grid');
+  grid.innerHTML = '';
+
+  AISLE_ROWS.forEach(letter => {
+    const bins   = Object.keys(binIndex).filter(b => b.charAt(1) === letter);
+    const done   = bins.filter(b => completedBins.has(b)).length;
+    const allDone = bins.length > 0 && done >= bins.length;
+
+    const btn = document.createElement('button');
+    btn.className = `aisle-btn${allDone ? ' done' : ''}`;
+    btn.innerHTML  = `${letter}<span class="a-count">${done}/${bins.length}</span>`;
+    btn.onclick    = () => selectAisle(letter);
+    grid.appendChild(btn);
+  });
+}
+
+// ─────────────────────────────────────────
+// NAVIGATION
+// ─────────────────────────────────────────
+
+function selectAisle(letter) {
+  targetProduct = null;
+  // B and C aisles are shorter
+  const limit = 'BC'.includes(letter) ? 25 : 38;
+  aisleBins = [];
+  for (let n = 0; n <= limit; n++) {
+    ['A','B','C'].forEach(s => aisleBins.push(`W${letter}${String(n).padStart(2,'0')}${s}`));
+  }
+  binIdx = 0;
+  navigateToBin(aisleBins[0]);
+}
+
+function searchProduct() {
+  const prod = document.getElementById('product-search').value.trim().toUpperCase();
+  if (!prod) return;
+
+  const binsWithProduct = [...new Set(
+    sapMaster.filter(i => i.product.toUpperCase() === prod).map(i => i.sapBin)
+  )].sort();
+
+  if (binsWithProduct.length === 0) {
+    toast(`Product ${prod} not found in SAP`, 'amber');
+    return;
   }
 
-  let _modalInjected = false;
-  function _injectModal() {
-    if (_modalInjected) return;
-    _modalInjected = true;
-    const overlay = document.createElement('div');
-    overlay.id = 'novus-settings-overlay';
-    overlay.innerHTML = `
-      <div class="ns-modal">
-        <div class="ns-header"><h3 style="margin:0; font-size:16px;">⚙ Settings</h3><button class="ns-close" onclick="NovusSettings.closeModal()" style="background:none; border:none; font-size:18px; cursor:pointer; color:var(--text-3);">✕</button></div>
-        <div class="ns-body" style="padding:16px 20px;">
-          <div style="margin-bottom:20px;">
-            <label style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--text-3); display:block; margin-bottom:8px;">Your Name / ID</label>
-            <input type="text" id="ns-username" placeholder="Enter your name..." style="width:100%; padding:14px; background:var(--surface-2); border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; outline:none; color:var(--text);">
-          </div>
-          <div style="margin-bottom:20px;">
-            <label style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--text-3); display:block; margin-bottom:8px;">Theme</label>
-            <div style="display:flex; gap:10px;">
-                <button onclick="NovusSettings.set('theme', 'light'); NovusSettings._updateThemeSwitch();" id="btn-theme-light" style="flex:1; padding:14px; background:var(--surface-2); border:1.5px solid var(--border); border-radius:var(--radius-sm); font-weight:700; color:var(--text);">Light</button>
-                <button onclick="NovusSettings.set('theme', 'dark'); NovusSettings._updateThemeSwitch();" id="btn-theme-dark" style="flex:1; padding:14px; background:var(--surface-2); border:1.5px solid var(--border); border-radius:var(--radius-sm); font-weight:700; color:var(--text);">Dark</button>
-            </div>
-          </div>
-          <div style="margin-bottom:20px;">
-            <button onclick="if(confirm('Clear local data and reload?')){ localStorage.removeItem('sap2'); localStorage.removeItem('doneBins2'); if(typeof sessionRegistry !== 'undefined') sessionRegistry.clear(); window.location.reload(); }" style="width:100%; padding:14px; background:var(--red-bg); color:var(--red); border:1px solid var(--red-border); border-radius:var(--radius-sm); font-weight:800; font-size:12px; text-transform:uppercase;">🗑 Clear Local Data</button>
-          </div>
-          <button onclick="NovusSettings._save()" style="width:100%; padding:16px; background:var(--accent); color:white; border:none; border-radius:var(--radius); font-weight:800; font-size:14px; text-transform:uppercase;">Save Settings</button>
+  targetProduct = prod;
+  aisleBins     = binsWithProduct;
+  binIdx        = 0;
+  toast(`Found ${prod} in ${binsWithProduct.length} bin(s)`, 'blue');
+  navigateToBin(aisleBins[0]);
+}
+
+function navigateToBin(bin) {
+  if (!bin) return;
+  currentBin = bin.toUpperCase();
+  binIdx     = aisleBins.indexOf(currentBin);
+  if (binIdx < 0) binIdx = 0;
+
+  // Build item list — filter to target product if set
+  let expected = binIndex[currentBin] || [];
+  if (targetProduct) expected = expected.filter(i => i.product.toUpperCase() === targetProduct);
+
+  currentItems = expected.map(i => ({
+    hu:        i.hu,
+    product:   i.product,
+    desc:      i.desc,
+    batch:     i.batch,
+    sapBin:    i.sapBin,
+    sapQty:    i.sapQty,
+    scannedQty: 0,
+    status:    'pending', // pending → confirmed | adjusted | missing
+    isExtra:   false,
+    note:      '',
+  }));
+
+  phase        = 1;
+  showingExtra = false;
+
+  switchScreen('counting');
+  document.getElementById('count-bin-title').textContent = currentBin;
+  document.getElementById('bin-input').value             = currentBin;
+
+  renderPhase();
+  renderStrip();
+  renderHUList();
+  updateFinalizeBtn();
+}
+
+function stepBin(dir) {
+  const next = binIdx + dir;
+  if (next >= 0 && next < aisleBins.length) navigateToBin(aisleBins[next]);
+}
+
+// ─────────────────────────────────────────
+// RENDER — STRIP + PHASE BAR
+// ─────────────────────────────────────────
+
+function renderStrip() {
+  const strip = document.getElementById('bin-strip');
+  strip.innerHTML = '';
+  const seen = {};
+
+  aisleBins.forEach(b => {
+    const num = b.substring(2, 4);
+    if (seen[num]) return;
+    seen[num] = true;
+
+    const isCurrent = currentBin.substring(2, 4) === num;
+    const isDone    = aisleBins.filter(x => x.substring(2,4) === num).some(x => completedBins.has(x));
+
+    const dot = document.createElement('button');
+    dot.className = `strip-dot${isCurrent ? ' current' : ''}${isDone && !isCurrent ? ' done' : ''}`;
+    dot.textContent = isCurrent ? num : (isDone ? '✓' : num);
+    dot.onclick     = () => navigateToBin(`W${currentBin.charAt(1)}${num}A`);
+    strip.appendChild(dot);
+  });
+
+  setTimeout(() => {
+    const cur = strip.querySelector('.current');
+    if (cur) cur.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }, 50);
+}
+
+function renderPhase() {
+  ['ph1','ph2','ph3'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.className = 'phase-step' +
+      (phase === i + 1 ? ' active' : '') +
+      (phase > i + 1   ? ' done'   : '');
+  });
+  ['phl1','phl2','phl3'].forEach((id, i) => {
+    document.getElementById(id).className =
+      (phase === i + 1 ? 'active' : '') +
+      (phase > i + 1   ? ' done'  : '');
+  });
+}
+
+// ─────────────────────────────────────────
+// RENDER — HU CARD LIST
+// ─────────────────────────────────────────
+
+function renderHUList() {
+  const list = document.getElementById('hu-list');
+  list.innerHTML = '';
+
+  // Already-counted banner
+  if (completedBins.has(currentBin)) {
+    list.innerHTML += `
+      <div class="counted-banner">
+        <span>✅</span>
+        <div>
+          <strong>Already Counted Today</strong>
+          <small>Counting again will replace previous results</small>
         </div>
       </div>`;
-    document.body.appendChild(overlay);
-    
-    const style = document.createElement('style');
-    style.textContent = `
-      #novus-settings-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:9999;align-items:flex-end;justify-content:center;}
-      #novus-settings-overlay.open{display:flex}
-      .ns-modal{background:var(--surface);width:100%;border-radius:24px 24px 0 0;display:flex;flex-direction:column;max-height:90vh;overflow-y:auto; padding-bottom:env(safe-area-inset-bottom, 20px);}
-      .ns-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
-    `;
-    document.body.appendChild(style);
   }
 
-  function openModal() {
-    _injectModal();
-    document.getElementById('novus-settings-overlay').classList.add('open');
-    document.getElementById('ns-username').value = get('userName');
-    _updateThemeSwitch();
-  }
-  function closeModal() { const o = document.getElementById('novus-settings-overlay'); if (o) o.classList.remove('open'); }
-  function _updateThemeSwitch() {
-    const t = get('theme');
-    const l = document.getElementById('btn-theme-light');
-    const d = document.getElementById('btn-theme-dark');
-    if (l && d) {
-        l.style.borderColor = t === 'light' ? 'var(--accent)' : 'var(--border)';
-        l.style.color = t === 'light' ? 'var(--accent)' : 'var(--text)';
-        d.style.borderColor = t === 'dark' ? 'var(--accent)' : 'var(--border)';
-        d.style.color = t === 'dark' ? 'var(--accent)' : 'var(--text)';
-    }
-  }
-  function _save() {
-    set('userName', document.getElementById('ns-username').value.trim());
-    closeModal(); 
-    if(typeof showToast === 'function') showToast('Settings saved', 'green');
+  // Empty bin state
+  if (currentItems.length === 0 && !showingExtra) {
+    list.innerHTML += `
+      <div class="empty-bin">
+        <span class="icon">📭</span>
+        <p>SAP shows this bin as empty</p>
+        <p style="color:var(--accent);font-weight:700;font-size:11px;margin-top:6px">
+          Tap "+ Found Extra" if you find anything here
+        </p>
+      </div>`;
   }
 
-  applyTheme();
-  return { get, set, getUser, applyTheme, openModal, closeModal, _updateThemeSwitch, _save };
-})();
-</script>
+  // Expected HU cards
+  currentItems.filter(i => !i.isExtra).forEach((item, idx) => {
+    list.innerHTML += renderCard(item, idx);
+  });
 
-<script>
-    const FRESH_PRODUCTS = ["3305704","3307506","3307509","3307515","3307518","3307525","3307710","3308356","3309009","3309016","3309017","3309019","3309138","3309139"];
-    const API_URL = 'https://script.google.com/macros/s/AKfycbwZ1Dhmf6cK_hWV2xLKYmwEImUvifIRCPqVm0Fz4E7gjvfcpyzoqhAFIgvgwrjBretc/exec';
-    
-    const SESSION_ID = 'sess_' + Math.random().toString(36).substr(2, 9);
-    
-    let sapMaster = JSON.parse(localStorage.getItem('sap2') || '[]');
-    let sessionRegistry = new Map(); 
-    let countedBins = new Set(JSON.parse(localStorage.getItem('doneBins2') || '[]')); 
-    let countedFreshProducts = new Set(); 
-    
-    let activeAuditMode = 'hub'; 
-    let currentAisle = "";
-    let currentBinIdx = 0;
-    let currentBins = [];
-    let currentPhase = 1;
-    let activeFreshProduct = null;
-    let activeGhostHU = ""; 
-    let activeProductAudit = ""; 
+  // Extra items section
+  const extras = currentItems.filter(i => i.isExtra);
+  if (extras.length) {
+    list.innerHTML += `<div class="section-title" style="color:var(--cyan)">🔍 Extra Items Found</div>`;
+    extras.forEach(item => list.innerHTML += renderCard(item, currentItems.indexOf(item)));
+  }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('name-display').innerText = NovusSettings.getUser();
-        renderAisleGrid();
-        refreshData(); 
+  // Inline extra form
+  if (showingExtra) {
+    list.innerHTML += `
+      <div class="extra-form">
+        <h3>🔍 Found Extra Item</h3>
+        <input type="text" class="field mono" id="extra-hu"
+               placeholder="HU number (0 if no label)" oninput="extraLookup()">
+        <div id="extra-autofill"></div>
+        <div class="field-row">
+          <input type="text"   class="field"      id="extra-product" placeholder="Product #" style="flex:1">
+          <input type="number" inputmode="numeric" class="field mono" id="extra-qty"
+                 placeholder="Qty" style="width:90px; text-align:center">
+        </div>
+        <div style="display:flex; gap:8px; margin-top:10px">
+          <button class="btn-sec" onclick="toggleExtra()" style="flex:1">Cancel</button>
+          <button class="act-btn confirm" onclick="addExtra()" style="flex:2">Add Item</button>
+        </div>
+      </div>`;
+  }
 
-        setInterval(pollLightweight, 15000);
-
-        document.getElementById('hub-search').addEventListener('keypress', e => {
-            if(e.key === 'Enter') { handleGateway(e.target.value.trim().toUpperCase()); e.target.value = ''; }
-        });
-        document.getElementById('fresh-scan-input').addEventListener('keypress', e => {
-            if(e.key === 'Enter') { processFreshScan(e.target.value.trim().toUpperCase()); e.target.value = ''; }
-        });
-        document.getElementById('bin-scan-input').addEventListener('keypress', e => {
-            if(e.key === 'Enter') { processBinScan(e.target.value.trim().toUpperCase()); e.target.value = ''; }
-        });
-        document.getElementById('product-scan-input').addEventListener('keypress', e => {
-            if(e.key === 'Enter') { processProductScan(e.target.value.trim().toUpperCase()); e.target.value = ''; }
-        });
-    });
-
-    let isSyncing = false;
-
-    // Grab existing queue from local storage or start fresh
-    function getSyncQueue() {
-        return JSON.parse(localStorage.getItem('novus_queue') || '[]');
-    }
-    
-    function saveToSyncQueue(payload) {
-        const queue = getSyncQueue();
-        queue.push(payload);
-        localStorage.setItem('novus_queue', JSON.stringify(queue));
-        
-        // Visually show we have pending uploads
-        document.querySelectorAll('.sync-dot').forEach(d => d.classList.add('queued'));
-        
-        // Trigger background sync
-        processSyncQueue();
-    }
-    
-    async function processSyncQueue() {
-        if (isSyncing) return;
-        
-        let queue = getSyncQueue();
-        if (queue.length === 0) {
-            document.querySelectorAll('.sync-dot').forEach(d => {
-                d.classList.remove('queued');
-                d.classList.remove('offline');
-            });
-            return;
-        }
-    
-        isSyncing = true;
-        const payload = queue[0]; // Grab the oldest item
-    
-        try {
-            const res = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                redirect: 'follow',
-                body: JSON.stringify(payload)
-            });
-            
-            const result = await res.json();
-    
-            if (result.success || result.skipped) {
-                // Remove the successfully sent item from the queue
-                queue = getSyncQueue(); 
-                queue.shift(); 
-                localStorage.setItem('novus_queue', JSON.stringify(queue));
-                
-                isSyncing = false;
-                // Recursively process the next item if there are more
-                processSyncQueue(); 
-            } else {
-                throw new Error(result.error || "Server rejected sync");
-            }
-        } catch (err) {
-            console.warn("Background sync failed, will retry...", err);
-            document.querySelectorAll('.sync-dot').forEach(d => d.classList.add('offline'));
-            isSyncing = false;
-            // Retry automatically after 10 seconds
-            setTimeout(processSyncQueue, 10000); 
-        }
-    }
-    
-    async function refreshData() {
-        try {
-            showToast("Connecting to server...", "blue");
-            
-            // Only ask for the 'ping' action
-            const res = await fetch(API_URL + '?action=ping&t=' + Date.now(), { redirect: 'follow' });
-            const data = await res.json();
-            
-            if (data.error) throw new Error(data.error);
-    
-            // Update just the progress trackers
-            countedBins = new Set(data.finalizedBins || []);
-            countedFreshProducts = new Set(data.freshDone || []);
-            localStorage.setItem('doneBins2', JSON.stringify([...countedBins]));
-            
-            document.querySelectorAll('.sync-dot').forEach(d => d.classList.remove('offline'));
-            showToast("Connected & Up to date", "green");
-            
-            // Refresh UI state
-            if (activeAuditMode === 'aisle') updateBinView();
-            else if (activeAuditMode === 'fresh') updateFreshOverview();
-            else if (activeAuditMode === 'hub') renderAisleGrid();
-            
-        } catch(e) { 
-            document.querySelectorAll('.sync-dot').forEach(d => d.classList.add('offline'));
-            showToast("Offline Mode", "amber");
-        }
+  updateFinalizeBtn();
 }
 
-    async function pollLightweight() {
-    try {
-        const res = await fetch(API_URL + '?action=ping&t=' + Date.now(), { redirect: 'follow' });
-        const data = await res.json();
-        
-        countedBins = new Set(data.finalizedBins || []);
-        countedFreshProducts = new Set(data.freshDone || []);
-        localStorage.setItem('doneBins2', JSON.stringify([...countedBins]));
-        
-        if (activeAuditMode === 'aisle') {
-            renderBinStrip(); 
-            const currentBin = currentBins[currentBinIdx];
-            const titleEl = document.getElementById('count-title');
-            titleEl.innerHTML = `${currentBin} ${countedBins.has(currentBin) ? '<span style="color:var(--green); font-size:14px; margin-left:4px">✓</span>' : ''}`;
-        } else if (activeAuditMode === 'hub') {
-            renderAisleGrid();
-        }
-    } catch(e) {} 
+/**
+ * Build a single HU card's HTML.
+ * @param {object} item
+ * @param {number} idx  — index in currentItems[]
+ */
+function renderCard(item, idx) {
+  const isOk      = item.status === 'confirmed';
+  const isMiss    = item.status === 'missing';
+  const isAdj     = item.status === 'adjusted';
+  const isPending = item.status === 'pending';
+
+  const cardCls = isMiss ? 'missing' : isOk ? 'confirmed' : isAdj ? 'adjusted' : item.isExtra ? 'extra' : '';
+
+  const badgeHTML =
+    isOk    ? '<span class="hu-badge ok">✓ Confirmed</span>'  :
+    isMiss  ? '<span class="hu-badge miss">✗ Missing</span>'  :
+    isAdj   ? '<span class="hu-badge adj">± Adjusted</span>'  :
+    item.isExtra ? '<span class="hu-badge ext">+ Extra</span>' : '';
+
+  const qtyMatch = item.scannedQty === item.sapQty;
+
+  // ── Body: active counting controls OR resolved summary ──
+  let body = '';
+  if (isPending || isAdj) {
+    body = `
+      <div class="qty-row">
+        <button class="qty-btn"      onclick="adjustQty(${idx},-1)">−</button>
+        <input  type="number" inputmode="numeric" class="qty-input"
+                value="${item.scannedQty || ''}"
+                placeholder="${item.sapQty}"
+                onfocus="this.select()"
+                oninput="setQty(${idx},this.value)">
+        <button class="qty-btn plus" onclick="adjustQty(${idx},1)">+</button>
+      </div>
+      <div class="sap-hint">SAP expects <strong>${item.sapQty}</strong></div>
+      <div class="hu-actions">
+        <button class="act-btn confirm" onclick="confirmHU(${idx})">Confirm ${item.sapQty}</button>
+        <button class="act-btn miss${isMiss ? ' active' : ''}" onclick="markMissing(${idx})">Missing</button>
+      </div>`;
+  } else {
+    body = `
+      <div class="resolved-row">
+        <span class="resolved-label">Count</span>
+        <span class="resolved-val ${qtyMatch ? 'match' : 'mismatch'}">${item.scannedQty}</span>
+      </div>
+      <button class="undo-btn" onclick="resetHU(${idx})">↺ Undo</button>`;
+  }
+
+  return `
+    <div class="hu-card ${cardCls}">
+      <div class="hu-top">
+        <span class="hu-id">HU ${item.hu || '—'}</span>
+        ${badgeHTML}
+      </div>
+      <div class="hu-meta">
+        <div><span class="meta-label">Product</span><span class="meta-val">${item.product}</span></div>
+        <div><span class="meta-label">SAP Qty</span><span class="meta-val mono">${item.sapQty}</span></div>
+      </div>
+      ${item.desc ? `<div class="hu-desc">${item.desc}</div>` : ''}
+      ${body}
+      <!-- Notes + Move controls -->
+      <div style="display:flex; gap:6px; margin-top:6px;">
+        <button class="note-btn${item.note ? ' has' : ''}" style="margin-top:0; flex:1;"
+                onclick="addNote(${idx})">
+          📝 ${item.note ? item.note.substring(0, 30) : 'Add Note'}
+        </button>
+        <button class="note-btn" style="margin-top:0; flex:1; color:var(--purple);
+                border-color:rgba(167,139,250,.3); background:var(--purple-bg);"
+                onclick="openMoveModal(${idx})">
+          🔄 Move Bin
+        </button>
+      </div>
+    </div>`;
 }
 
-    function processBinScan(input) {
-        if(!input) return;
-        const currentBin = currentBins[currentBinIdx];
-        
-        const existingReg = sessionRegistry.get(input);
-        if (existingReg && existingReg.foundIn === currentBin) {
-            showToast("HU already scanned in this bin", "blue");
-            return;
-        }
+// ─────────────────────────────────────────
+// HU STATE ACTIONS
+// ─────────────────────────────────────────
 
-        const sap = sapMaster.find(i => i.hu === input);
-        if (sap) {
-            saveToRegistry(input, { 
-                scanBin: currentBin, 
-                foundIn: currentBin, 
-                scanQty: sap.sapQty, 
-                status: 'MOVEMENT'
-            });
-            showToast(`Moved ${input} to ${currentBin}`, "purple");
-            if(navigator.vibrate) navigator.vibrate(50);
-        } else {
-            activeGhostHU = input;
-            document.getElementById('ghost-hu').innerText = input;
-            document.getElementById('ghost-modal').style.display = 'flex';
-            document.getElementById('ghost-prod-input').value = ''; 
-            if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
-        }
+function confirmHU(idx) {
+  haptic();
+  currentItems[idx].scannedQty = currentItems[idx].scannedQty || currentItems[idx].sapQty;
+  currentItems[idx].status = currentItems[idx].scannedQty === currentItems[idx].sapQty
+    ? 'confirmed' : 'adjusted';
+  checkPhaseAdvance();
+  renderHUList();
+}
+
+function markMissing(idx) {
+  haptic();
+  if (currentItems[idx].status === 'missing') {
+    // Toggle off → back to pending
+    currentItems[idx].status    = 'pending';
+    currentItems[idx].scannedQty = 0;
+  } else {
+    currentItems[idx].status    = 'missing';
+    currentItems[idx].scannedQty = 0;
+  }
+  checkPhaseAdvance();
+  renderHUList();
+}
+
+function adjustQty(idx, delta) {
+  haptic();
+  currentItems[idx].scannedQty = Math.max(0, (currentItems[idx].scannedQty || 0) + delta);
+  currentItems[idx].status     = 'adjusted';
+  renderHUList();
+}
+
+function setQty(idx, val) {
+  currentItems[idx].scannedQty = parseFloat(val) || 0;
+  if (currentItems[idx].scannedQty > 0) {
+    currentItems[idx].status = currentItems[idx].scannedQty === currentItems[idx].sapQty
+      ? 'confirmed' : 'adjusted';
+  }
+  updateFinalizeBtn();
+}
+
+function resetHU(idx) {
+  haptic();
+  currentItems[idx].status    = 'pending';
+  currentItems[idx].scannedQty = 0;
+  phase = 1;
+  renderPhase();
+  renderHUList();
+}
+
+function confirmAll() {
+  haptic();
+  currentItems.forEach((item, i) => {
+    if (!item.isExtra && item.status === 'pending') {
+      currentItems[i].scannedQty = item.sapQty;
+      currentItems[i].status     = 'confirmed';
+    }
+  });
+  checkPhaseAdvance();
+  renderHUList();
+}
+
+/**
+ * Add or edit a free-text note on any HU.
+ * Notes are included in the audit payload sent to GAS.
+ */
+function addNote(idx) {
+  const existing = currentItems[idx].note || '';
+  const note = prompt('Note for this item:', existing);
+  if (note !== null) {
+    currentItems[idx].note = note.trim();
+    renderHUList();
+  }
+}
+
+function checkPhaseAdvance() {
+  const expected = currentItems.filter(i => !i.isExtra);
+  if (expected.every(i => i.status !== 'pending') && phase === 1) {
+    phase = 2;
+    renderPhase();
+  }
+}
+
+// ─────────────────────────────────────────
+// MOVE MODAL
+// ─────────────────────────────────────────
+
+function openMoveModal(idx) {
+  activeMoveIdx = idx;
+  const item = currentItems[idx];
+  document.getElementById('qm-hu').value  = item.hu;
+  document.getElementById('qm-qty').value = item.scannedQty || item.sapQty || 0;
+  document.getElementById('qm-bin').value = '';
+  document.getElementById('qm-info').innerHTML =
+    `<span style="color:var(--accent); font-weight:800;">Moving from ${currentBin}</span><br>
+     Product: ${item.product} · SAP Qty: ${item.sapQty}`;
+  document.getElementById('modal-move').style.display = 'flex';
+}
+
+async function submitQuickMove() {
+  const hu      = document.getElementById('qm-hu').value.trim();
+  const scanBin = document.getElementById('qm-bin').value.trim().toUpperCase();
+  const scanQty = parseFloat(document.getElementById('qm-qty').value);
+
+  if (!hu || !scanBin || isNaN(scanQty)) { toast('Fill all fields', 'amber'); return; }
+  if (activeMoveIdx < 0)                  { toast('No item selected', 'red');   return; }
+
+  const item = currentItems[activeMoveIdx];
+  const { sapBin, sapQty, product, desc, batch } = item;
+
+  // ── Classify the move ──────────────────
+  // move     : different bin, same qty
+  // move_adj : different bin, different qty
+  const type = scanQty === sapQty ? 'move' : 'move_adj';
+
+  if (item.isExtra) {
+    currentItems.splice(activeMoveIdx, 1);
+  } else {
+    item.scannedQty = 0;
+    item.status     = 'missing';
+    item.note       = `Moved to ${scanBin}`;
+  }
+
+  renderHUList();
+  checkPhaseAdvance();
+
+  const sessionId = 'MOVE-' + new Date().toISOString().split('T')[0];
+  const payload = {
+    action: 'logAudit',
+    user: auditorName || 'Counter',
+    bin: scanBin,
+    sessionId,
+    idempotencyKey: makeIdempotencyKey(scanBin, sessionId),
+    items: [{ hu, product, desc, batch, sapBin, sapQty, countQty: scanQty, type, note: `Moved from ${currentBin}` }],
+  };
+
+  document.getElementById('modal-move').style.display = 'none';
+  await sendPayload(payload, 'Movement logged');
+}
+
+// ─────────────────────────────────────────
+// EXTRA ITEMS
+// ─────────────────────────────────────────
+
+function toggleExtra() {
+  showingExtra = !showingExtra;
+  renderHUList();
+}
+
+function extraLookup() {
+  const hu = document.getElementById('extra-hu').value.trim();
+  if (hu.length < 6) return;
+  const match = huIndex.get(hu);
+  if (match) {
+    document.getElementById('extra-product').value = match.product;
+    document.getElementById('extra-autofill').innerHTML =
+      '<span style="font-size:9px;font-weight:700;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:6px;margin-bottom:6px;display:inline-block">Auto-filled from SAP</span>';
+  } else {
+    document.getElementById('extra-autofill').innerHTML = '';
+  }
+}
+
+function addExtra() {
+  const hu      = document.getElementById('extra-hu').value.trim() || '0';
+  const product = document.getElementById('extra-product').value.trim();
+  const qty     = parseFloat(document.getElementById('extra-qty').value) || 0;
+
+  if (!product || !qty) { toast('Enter product # and qty', 'amber'); return; }
+
+  const match = huIndex.get(hu);
+  currentItems.push({
+    hu, product,
+    desc:      match ? match.desc  : 'FOUND (Extra)',
+    batch:     match ? match.batch : '',
+    sapBin:    match ? match.sapBin : '',
+    sapQty:    match ? match.sapQty : 0,
+    scannedQty: qty,
+    status:    'confirmed',
+    isExtra:   true,
+    note:      '',
+  });
+
+  showingExtra = false;
+  renderHUList();
+  toast('Extra item added', 'blue');
+}
+
+// ─────────────────────────────────────────
+// FINALIZE BIN — BUSINESS LOGIC CLASSIFIER
+// ─────────────────────────────────────────
+
+function updateFinalizeBtn() {
+  const pendingCount = currentItems.filter(i => i.status === 'pending').length;
+  const btn          = document.getElementById('btn-finalize');
+
+  if (pendingCount > 0) {
+    btn.className   = 'btn-pri disabled';
+    btn.textContent = `${pendingCount} item${pendingCount > 1 ? 's' : ''} unchecked`;
+  } else {
+    btn.className   = 'btn-pri';
+    btn.textContent = currentItems.length === 0 ? 'Skip Empty Bin →' : 'Finalize & Next Bin →';
+  }
+
+  // Hide "Confirm All" when all cards are resolved or there's only one
+  const unresolved = currentItems.filter(i => !i.isExtra && i.status === 'pending').length;
+  document.getElementById('btn-confirm-all').style.display =
+    (unresolved <= 1) ? 'none' : '';
+}
+
+/**
+ * State classification rules (from system prompt):
+ *   ok         — same bin, same qty
+ *   adj        — same bin, different qty
+ *   move       — different bin, same qty
+ *   move_adj   — different bin, different qty
+ *   missing    — expected but not found (status='missing')
+ *   unexpected — scanned but not in SAP
+ */
+async function finalizeBin() {
+  if (currentItems.some(i => i.status === 'pending')) return;
+  haptic();
+
+  const items = currentItems.map(i => {
+    let type = 'ok';
+
+    if (i.status === 'missing') {
+      // Phase 1: flag as missing_temp; GAS promotes to missing after full count
+      type = 'miss';
+    } else if (i.isExtra) {
+      if (i.sapBin && i.sapBin !== currentBin) {
+        // Found in wrong bin
+        type = i.scannedQty === i.sapQty ? 'move' : 'move_adj';
+      } else {
+        // Not in SAP at all
+        type = 'unexpected';
+      }
+    } else if (i.scannedQty !== i.sapQty) {
+      type = 'adj';
     }
 
-    function closeGhostModal() {
-        document.getElementById('ghost-modal').style.display = 'none';
-        activeGhostHU = "";
-    }
+    return {
+      hu:        i.hu,
+      product:   i.product,
+      desc:      i.desc,
+      batch:     i.batch,
+      sapBin:    i.sapBin,
+      sapQty:    i.sapQty,
+      countQty:  i.scannedQty,
+      type,
+      note:      i.note, // ← user-entered notes flow through here
+    };
+  });
 
-    function pivotToProductAudit() {
-        const prod = document.getElementById('ghost-prod-input').value.trim().toUpperCase();
-        if(!prod) return showToast("Enter a valid Product Number", "red");
-        
-        sapMaster.push({
-            hu: activeGhostHU,
-            product: prod,
-            desc: 'Ghost Item - Manually Added',
-            batch: '',
-            sapBin: 'NONE',
-            sapQty: 0
-        }); 
-        
-        const foundLoc = (activeAuditMode === 'aisle') ? currentBins[currentBinIdx] : 'NONE';
-        
-        saveToRegistry(activeGhostHU, { 
-            scanQty: 1, 
-            scanBin: foundLoc, 
-            foundIn: foundLoc,
-            status: 'confirmed'
-        });
-        
-        closeGhostModal();
-        showToast(`Ghost HU assigned to Product ${prod}`, "cyan");
-        
-        initProductAudit(prod);
-    }
+  const sessionId = 'S-' + new Date().toISOString().split('T')[0];
+  const payload   = {
+    action: 'logAudit',
+    user:   auditorName || 'Counter',
+    bin:    currentBin,
+    items,
+    sessionId,
+    idempotencyKey: makeIdempotencyKey(currentBin, sessionId, items),
+  };
 
-    function createHUCardHTML(item) {
-        if (!item) return '';
-    
-        const safeHU = item.hu ? String(item.hu) : '';
-        const reg = sessionRegistry.get(safeHU) || sessionRegistry.get(item.hu);
-        
-        const movedElsewhere = (!reg && safeHU) 
-            ? Array.from(sessionRegistry.values()).find(r => String(r.hu) === safeHU && r.status === 'MOVEMENT') 
-            : null;
-        
-        const statusLabel = reg ? reg.status : (movedElsewhere ? 'MOVED' : 'PENDING');
-        
-        let statusClass = 'pending';
-        if (reg) {
-            if (reg.status === 'MISSING (TEMP)') statusClass = 'miss';
-            else if (reg.status === 'MOVEMENT' || reg.status === 'MOVED') statusClass = 'move';
-            else statusClass = reg.status.toLowerCase();
-        } else if (movedElsewhere) {
-            statusClass = 'move';
-        }
-        
-        const currentQty = reg ? reg.scanQty : (item.sapQty || 0);
-        const isAdj = currentQty !== item.sapQty;
-    
-        const showBin = activeAuditMode === 'fresh' || activeAuditMode === 'product';
-    
-        const productNum = item.product || item.material || item.matnr || item.sku || 'UNKNOWN PRODUCT';
-        const productDesc = item.desc || item.description || '';
-    
-        const batchBadge = item.batch ? `<div style="display:inline-block; margin-top:6px; font-size:10px; font-family:'IBM Plex Mono', monospace; font-weight:700; color:var(--text-2); background:var(--surface-2); padding:4px 8px; border-radius:4px; border:1px solid var(--border);">BATCH: ${item.batch}</div>` : '';
-    
-        return `
-            <div class="hu-card ${statusClass}" id="hu-card-${safeHU}">
-                <div class="hu-header">
-                    <span class="hu-id">HU ${safeHU || 'UNKNOWN'}</span>
-                    <span class="hu-status ${statusClass}">${statusLabel}</span>
-                </div>
-                <div class="hu-meta">
-                    <div style="flex:2; padding-right:12px;">
-                        <div class="hu-meta-label">Product</div>
-                        <div class="hu-meta-value">${productNum}</div>
-                        <div style="font-size:10px; color:var(--text-2); margin-top:2px; line-height:1.3;">${productDesc}</div>
-                        ${batchBadge}
-                    </div>
-                    
-                    <div style="flex:1; text-align:right; display:flex; flex-direction:column; gap:8px;">
-                        ${showBin ? `
-                        <div>
-                            <div class="hu-meta-label">Expected Bin</div>
-                            <div class="hu-meta-value mono" style="font-size:14px; color:var(--accent)">${item.sapBin || 'N/A'}</div>
-                        </div>` : ''}
-                        <div>
-                            <div class="hu-meta-label">SAP Qty</div>
-                            <div class="hu-meta-value mono">${item.sapQty || 0}</div>
-                        </div>
-                    </div>
-                </div>
-                
-                ${movedElsewhere ? `<div style="font-size:11px; color:var(--purple); font-weight:700; margin-bottom:12px; background:var(--purple-bg); padding:6px 10px; border-radius:6px; border:1px solid var(--purple-border);">📍 Found earlier in ${movedElsewhere.foundIn || 'another location'}</div>` : ''}
-                ${(reg && reg.scanBin && reg.scanBin !== item.sapBin && showBin) ? `<div style="font-size:11px; color:var(--purple); font-weight:700; margin-bottom:12px; background:var(--purple-bg); padding:6px 10px; border-radius:6px; border:1px solid var(--purple-border);">📍 Scanned in ${reg.scanBin}</div>` : ''}
-                
-                <div class="qty-row">
-                    <button class="qty-stepper" onclick="adjQty('${safeHU}', -1)">−</button>
-                    <input type="number" class="qty-input qty-val-${safeHU}" value="${currentQty}" step="any" onchange="setQty('${safeHU}', this.value)">
-                    <button class="qty-stepper" onclick="adjQty('${safeHU}', 1)">+</button>
-                </div>
-                <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                    <button class="primary-btn" style="flex:2; padding:12px; font-size:13px; min-height:48px; background:${isAdj ? 'var(--amber)' : 'var(--green)'}" onclick="confirmItem('${safeHU}')">
-                        ${isAdj ? 'Confirm Adj' : 'Confirm'}
-                    </button>
-                    <button class="secondary-btn" style="flex:1; padding:12px; font-size:12px; min-height:48px; color:var(--purple)" onclick="initiateMovement('${safeHU}')">Move</button>
-                    <button class="secondary-btn" style="flex:1; padding:12px; font-size:12px; min-height:48px; color:var(--red)" onclick="markMissing('${safeHU}')">Miss</button>
-                </div>
-    
-                <div style="margin-top:12px; font-size:11px; font-family:'IBM Plex Mono', monospace; background:var(--surface-1); color:var(--text-2); padding:8px; border-radius:6px; border:1px dashed var(--border); overflow-x:auto;">
-                    <strong>RAW DATA PAYLOAD:</strong><br>
-                    ${Object.keys(item).map(key => `<b>${key}:</b> ${item[key]}`).join('<br>')}
-                </div>
-            </div>
-        `;
-    }
+  const success = await sendPayload(payload, 'Bin finalized');
 
-    function saveToRegistry(hu, updates) {
-        const sap = sapMaster.find(i => i.hu === hu);
-        
-        let defaultBin = sap.sapBin;
-        if (activeAuditMode === 'aisle') defaultBin = currentBins[currentBinIdx];
-        
-        const current = sessionRegistry.get(hu) || { 
-            ...sap, scanQty: sap.sapQty, scanBin: defaultBin, foundIn: defaultBin, note: '', type: 'ok', status: 'PENDING' 
-        };
-        
-        const merged = { ...current, ...updates };
-        
-        // 3. The "Missing" Lifecycle - Phase 1 (Active Count)
-        if (merged.status === 'MISSING' || merged.scanQty === 0) {
-            merged.type = 'missing_temp'; 
-            merged.status = 'MISSING (TEMP)'; 
-            merged.scanQty = 0;
-        } 
-        // 4. The "Unexpected" State
-        else if (sap.sapBin === 'NONE' && merged.scanBin === 'NONE') {
-            merged.type = 'unexpected'; 
-            merged.status = 'UNEXPECTED'; 
-        } 
-        // 1 & 2. OK, Move, and Adjustments
-        else {
-            const isMoved = merged.scanBin !== merged.sapBin;
-            const isAdj = merged.scanQty !== merged.sapQty;
-            if (isMoved && isAdj) { merged.type = 'move_adj'; merged.status = 'MOVEMENT'; }
-            else if (isMoved) { merged.type = 'move'; merged.status = 'MOVEMENT'; }
-            else if (isAdj) { merged.type = 'adj'; merged.status = 'ADJUSTED'; }
-            else { merged.type = 'ok'; merged.status = 'OK'; }
-        }
-        
-        sessionRegistry.set(hu, merged);
-        
-        const cardEl = document.getElementById(`hu-card-${hu}`);
-        
-        if (activeAuditMode === 'fresh') {
-            if (activeFreshProduct) {
-                if (cardEl) cardEl.outerHTML = createHUCardHTML(merged);
-                else showFreshDetail(activeFreshProduct);
-            }
-            updateFreshOverview();
-        } else if (activeAuditMode === 'product') {
-            if (cardEl) cardEl.outerHTML = createHUCardHTML(merged);
-            else renderProductList(); 
-        } else {
-            if (cardEl) {
-                cardEl.outerHTML = createHUCardHTML(merged);
-                updatePhase();
-            } else {
-                renderAisleHUList(); 
-            }
-        }
-    }
-
-    function confirmItem(hu) { 
-        const val = parseFloat(document.querySelector(`.qty-val-${hu}`).value) || 0;
-        const sap = sapMaster.find(i => i.hu === hu);
-        let scanBin = sap.sapBin;
-        if (activeAuditMode === 'aisle') scanBin = currentBins[currentBinIdx];
-        if (sap.sapBin === 'NONE') scanBin = prompt("Enter bin location for this item:", "") || 'NONE'; 
-        
-        saveToRegistry(hu, { scanQty: val, scanBin: scanBin }); 
-        if(navigator.vibrate) navigator.vibrate(25);
-    }
-    
-    function adjQty(hu, delta) { 
-        const cur = sessionRegistry.get(hu); 
-        const sap = sapMaster.find(i => i.hu === hu);
-        saveToRegistry(hu, { scanQty: Math.max(0, (cur ? cur.scanQty : sap.sapQty) + delta) }); 
-        if(navigator.vibrate) navigator.vibrate(25);
-    }
-    
-    function setQty(hu, val) { 
-        saveToRegistry(hu, { scanQty: parseFloat(val) || 0 }); 
-    }
-    
-    function markMissing(hu) { 
-        saveToRegistry(hu, { status: 'MISSING' }); 
-        if(navigator.vibrate) navigator.vibrate(25);
-    }
-    
-    function initiateMovement(hu) {
-        const sap = sapMaster.find(i => i.hu === hu);
-        const dest = prompt(`Transfer HU ${hu}\nExpected: ${sap.sapBin}\nEnter new bin:`, sessionRegistry.get(hu)?.scanBin || sap.sapBin);
-        if (dest && dest.trim() !== '') { 
-            saveToRegistry(hu, { scanBin: dest.trim().toUpperCase(), foundIn: dest.trim().toUpperCase() }); 
-            showToast(`Routed to ${dest.trim().toUpperCase()}`, "purple"); 
-        }
-    }
-
-    async function startAisleAudit(aisle, targetBin = null) {
-        activeAuditMode = 'aisle';
-        currentAisle = aisle;
-        currentBins = [];
-        
-        // Generate bin list
-        const max = (aisle === 'B' || aisle === 'C') ? 25 : 38;
-        for(let i=0; i<=max; i++) {
-            const num = String(i).padStart(2, '0');
-            ["A","B","C"].forEach(s => currentBins.push(`W${aisle}${num}${s}`));
-        }
-        currentBinIdx = targetBin ? currentBins.indexOf(targetBin) : 0;
-    
-        // --- NEW FETCH LOGIC ---
-        showToast(`Loading Aisle ${aisle} data...`, "blue");
-        try {
-            const res = await fetch(`${API_URL}?action=getAisle&aisle=${aisle}`);
-            const data = await res.json();
-            
-            // This array now holds ~100 items instead of 50,000+
-            sapMaster = data.sapData || []; 
-            
-            switchScreen('count');
-            updateBinView();
-        } catch (err) {
-            showToast(`Failed to load Aisle ${aisle}`, "red");
-        }
-    }
-
-    function renderAisleHUList() {
-        const container = document.getElementById('hu-list');
-        const bin = currentBins[currentBinIdx];
-        
-        const isCounted = countedBins.has(bin);
-        document.getElementById('count-title').innerHTML = `${bin} ${isCounted ? '<span style="color:var(--green); font-size:14px; margin-left:4px">✓</span>' : ''}`;
-
-        const expected = sapMaster.filter(i => i.sapBin === bin);
-        const movementsHere = Array.from(sessionRegistry.values()).filter(i => i.foundIn === bin && i.sapBin !== bin);
-
-        const allItems = [...expected];
-        movementsHere.forEach(m => { if(!allItems.find(i => i.hu === m.hu)) allItems.push(m); });
-
-        let htmlStr = '';
-
-        if (isCounted) {
-            htmlStr += `
-                <div style="background:var(--green-bg);border:1.5px solid var(--green-border);border-radius:var(--radius);padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">
-                    <span style="font-size:20px;">✅</span>
-                    <div>
-                        <div style="font-size:12px;font-weight:800;color:var(--green);">Already Counted</div>
-                        <div style="font-size:10px;color:var(--text-2);font-weight:600;">This bin was finalized earlier.</div>
-                    </div>
-                </div>`;
-        }
-
-        if (allItems.length === 0) {
-            htmlStr += `
-                <div class="empty-state" style="padding: 32px 16px;">
-                    <div class="es-icon" style="font-size:32px;">📭</div>
-                    <p>SAP shows this bin as empty.</p>
-                </div>`;
-        } else {
-            const expectArr = allItems.filter(i => i.sapBin === bin);
-            const extraArr = allItems.filter(i => i.sapBin !== bin);
-
-            if (expectArr.length > 0) {
-                htmlStr += `<div class="section-title" style="padding: 10px 0 6px;">Expected in bin</div>`;
-                expectArr.forEach(item => { htmlStr += createHUCardHTML(item); });
-            }
-
-            if (extraArr.length > 0) {
-                htmlStr += `<div class="section-title" style="padding: 16px 0 6px; color:var(--cyan);">🔍 Extras Found Here</div>`;
-                extraArr.forEach(item => { htmlStr += createHUCardHTML(item); });
-            }
-        }
-
-        container.innerHTML = htmlStr;
-        updatePhase();
-    }
-    
-    function renderBinStrip() {
-        const strip = document.getElementById('bin-strip');
-        strip.innerHTML = '';
-        const start = Math.max(0, currentBinIdx - 2);
-        const end = Math.min(currentBins.length, start + 10);
-        
-        for(let i=start; i<end; i++) {
-            const bin = currentBins[i];
-            const isCounted = countedBins.has(bin);
-            
-            const dot = document.createElement('div');
-            dot.className = `strip-dot ${i === currentBinIdx ? 'active' : ''}`;
-            
-            if (isCounted && i !== currentBinIdx) {
-                dot.style.background = 'var(--green-bg)';
-                dot.style.color = 'var(--green)';
-                dot.style.border = '1px solid var(--green-border)';
-            }
-            
-            dot.innerHTML = `${bin.slice(-3)}${isCounted ? '<span style="font-size:9px; margin-left:3px">✓</span>' : ''}`;
-            dot.onclick = () => { currentBinIdx = i; updateBinView(); };
-            strip.appendChild(dot);
-        }
-    }
-
-    function prevBin() { if(currentBinIdx > 0) { currentBinIdx--; updateBinView(); } }
-    
-    function skipBin() {
-        if(currentBinIdx < currentBins.length - 1) { 
-            currentBinIdx++; 
-            updateBinView(); 
-        } else {
-            showToast("End of Aisle", "blue");
-        }
-    }
-
-    function updateBinView() {
-        renderAisleHUList(); renderBinStrip();
-        const pBtn = document.getElementById('btn-prev');
-        if(pBtn) pBtn.disabled = currentBinIdx === 0;
-    }
-
-    function updatePhase() {
-        const bin = currentBins[currentBinIdx];
-        const expected = sapMaster.filter(i => i.sapBin === bin);
-        const movementsHere = Array.from(sessionRegistry.values()).filter(i => i.foundIn === bin && i.sapBin !== bin);
-        const allItems = [...expected];
-        movementsHere.forEach(m => { if(!allItems.find(i => i.hu === m.hu)) allItems.push(m); });
-
-        const pendingCount = allItems.filter(i => {
-            const reg = sessionRegistry.get(i.hu);
-            return !reg || reg.status === 'PENDING';
-        }).length;
-
-        currentPhase = pendingCount === 0 ? 3 : 1;
-
-        [1, 2, 3].forEach(p => {
-            const el = document.getElementById(`phase-${p}`);
-            const label = document.getElementById(`phase-${p}-label`);
-            el.className = 'phase-step';
-            label.className = '';
-            if (p < currentPhase) { el.classList.add('done'); label.classList.add('done'); }
-            else if (p === currentPhase) { el.classList.add('active'); label.classList.add('active'); }
-        });
-
-        const btn = document.getElementById('btn-next');
-        if (currentPhase === 3) {
-            btn.style.background = 'var(--green)';
-            btn.style.pointerEvents = 'auto';
-            btn.style.opacity = '1';
-            btn.innerText = currentBinIdx === currentBins.length - 1 ? 'Finalize Aisle ✓' : 'Finalize & Next →';
-        } else {
-            btn.style.background = 'var(--surface-3)';
-            btn.style.pointerEvents = 'none';
-            btn.style.opacity = '0.7';
-            btn.innerText = `${pendingCount} item${pendingCount > 1 ? 's' : ''} pending`;
-        }
-    }
-
-    async function initProductAudit(product) {
-        activeAuditMode = 'product';
-        activeProductAudit = product;
-        document.getElementById('product-display').innerText = product;
-        
-        // --- NEW FETCH LOGIC ---
-        showToast(`Loading data for Product ${product}...`, "blue");
-        try {
-            const res = await fetch(`${API_URL}?action=getProduct&product=${product}`);
-            const data = await res.json();
-            
-            sapMaster = data.sapData || [];
-            
-            // Pre-fill the registry for verification
-            sapMaster.forEach(sap => {
-                if (!sessionRegistry.has(sap.hu)) {
-                    sessionRegistry.set(sap.hu, { ...sap, scanQty: sap.sapQty, scanBin: sap.sapBin, foundIn: sap.sapBin, note: '', type: 'ok', status: 'PENDING' });
-                }
-            });
-            
-            renderProductList();
-            switchScreen('product');
-        } catch (err) {
-            showToast("Failed to load product data", "red");
-        }
-    }
-
-    function renderProductList() {
-        const container = document.getElementById('product-list');
-        const expected = sapMaster.filter(i => i.product === activeProductAudit);
-        const extra = Array.from(sessionRegistry.values()).filter(i => i.product === activeProductAudit && !expected.find(e => e.hu === i.hu));
-        const allItems = [...expected, ...extra];
-        
-        let htmlStr = '';
-        allItems.forEach(item => { htmlStr += createHUCardHTML(item); });
-        container.innerHTML = htmlStr || '<div class="empty-state"><div class="es-icon">📭</div><p>No pallets found for this product.</p></div>';
-    }
-
-    function processProductScan(input) {
-        const sap = sapMaster.find(i => i.hu === input);
-        if (sap && sap.product === activeProductAudit) {
-            saveToRegistry(input, { scanQty: sap.sapQty, status: 'OK', type: 'ok' });
-            showToast(`Verified Pallet ${input}`, "green");
-            if(navigator.vibrate) navigator.vibrate(50);
-        } else if (sap) {
-            showToast(`HU belongs to different Product: ${sap.product}`, "red");
-            if(navigator.vibrate) navigator.vibrate([100,50,100]); 
-        } else {
-            activeGhostHU = input;
-            document.getElementById('ghost-hu').innerText = input;
-            document.getElementById('ghost-modal').style.display = 'flex';
-            document.getElementById('ghost-prod-input').value = activeProductAudit; 
-            if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
-        }
-    }
-
-    function handleFreshBack() {
-        if (activeFreshProduct) hideFreshDetail();
-        else switchScreen('setup');
-    }
-
-    async function initFreshMode() {
-        activeAuditMode = 'fresh';
-        hideFreshDetail();
-        
-        showToast("Loading Fresh Data...", "blue");
-        try {
-            // THE FIX: Added { redirect: 'follow' } so the browser doesn't block Google's redirect
-            const res = await fetch(`${API_URL}?action=getFresh`, { redirect: 'follow' });
-            const data = await res.json();
-            
-            sapMaster = data.sapData || [];
-            
-            updateFreshOverview();
-            document.getElementById('fresh-search-bar').style.display = 'block';
-            switchScreen('fresh');
-        } catch (err) {
-            showToast("Failed to load Fresh data", "red");
-            console.error("Fresh load error:", err);
-        }
-    }
-
-    function showFreshDetail(product) {
-        activeFreshProduct = product;
-        document.getElementById('fresh-overview').style.display = 'none';
-        document.getElementById('fresh-search-bar').style.display = 'none';
-        
-        const detail = document.getElementById('fresh-detail');
-        detail.style.display = 'block';
-        
-        const sapItem = sapMaster.find(i => i.product === product);
-        const desc = sapItem ? sapItem.desc : "";
-        const expectedHUs = sapMaster.filter(i => i.product === product);
-        
-        expectedHUs.forEach(sap => {
-            if (!sessionRegistry.has(sap.hu)) {
-                sessionRegistry.set(sap.hu, { ...sap, scanQty: sap.sapQty, scanBin: sap.sapBin, foundIn: sap.sapBin, note: '', type: 'ok', status: 'PENDING' });
-            }
-        });
-
-        let html = `
-            <div style="margin-bottom: 16px;">
-                <div style="font-size: 22px; font-weight: 900; color: var(--accent);">${product}</div>
-                <div style="font-size: 13px; color: var(--text-2); margin-top:2px;">${desc}</div>
-                <div style="font-size: 11px; color: var(--text-3); margin-top:6px; font-weight:700;">Expected Pallets: ${expectedHUs.length}</div>
-            </div>
-        `;
-        
-        if(expectedHUs.length === 0) {
-            html += `<div style="text-align:center; padding: 20px; color: var(--text-3);">No pallets expected in SAP for this Product.</div>`;
-        } else {
-            expectedHUs.forEach(item => {
-                html += createHUCardHTML(item);
-            });
-        }
-        detail.innerHTML = html;
-    }
-
-    function processFreshScan(input) {
-        const sap = sapMaster.find(i => i.hu === input);
-        if (sap && FRESH_PRODUCTS.includes(sap.product)) {
-            
-            if (countedFreshProducts.has(sap.product)) {
-                showToast("Product already audited in this cycle", "amber");
-                if(navigator.vibrate) navigator.vibrate([100,50,100]);
-                return;
-            }
-            
-            saveToRegistry(input, { scanQty: sap.sapQty, status: 'OK', type: 'ok', scanBin: sap.sapBin, foundIn: sap.sapBin });
-            showToast(`Found Pallet ${input}`, "green");
-            
-            if (activeFreshProduct !== sap.product) showFreshDetail(sap.product);
-            else showFreshDetail(sap.product); 
-            
-            updateFreshOverview();
-            if(navigator.vibrate) navigator.vibrate(50);
-            
-        } else { 
-            showToast("Scan a specific Pallet (HU) from the FRESH list", "red"); 
-            if(navigator.vibrate) navigator.vibrate([100,50,100]); 
-        }
-    }
-
-    function renderAisleGrid() {
-        const grid = document.getElementById('aisle-grid');
-        grid.innerHTML = '';
-        
-        let assigned = new Set();
-        "ABCDEFGHJKLMNP".split("").forEach(row => {
-            const doneBinsForRow = new Set();
-            countedBins.forEach(b => { if (b.includes(`W${row}`)) doneBinsForRow.add(b); });
-            
-            const doneCount = doneBinsForRow.size;
-            const btn = document.createElement('button');
-            btn.className = `aisle-btn`;
-            btn.innerHTML = `
-                <div class="aisle-fill" style="height:0%"></div>
-                <span style="position:relative;z-index:1;">${row}</span>
-                <span class="aisle-count">${doneCount}</span>`;
-            btn.onclick = () => startAisleAudit(row);
-            grid.appendChild(btn);
-        });
-    }
-
-    function showToast(msg, color) {
-        const t = document.getElementById('toast');
-        document.getElementById('toast-text').innerText = msg;
-        t.className = `toast ${color} show`;
-        setTimeout(() => t.classList.remove('show'), 2000);
-    }
-
-    // We remove the "await" and the "fetch" from here entirely
-    function executeAuditSync(binName, itemsToLog, isFresh = false) {
-        const payload = {
-            action: 'logAudit',
-            user: NovusSettings.getUser(),
-            bin: binName,
-            sessionId: SESSION_ID,
-            items: itemsToLog,
-            isFresh: isFresh // Pass this flag to handle backend cleanup if needed
-        };
-    
-        // Push to background queue instead of waiting
-        saveToSyncQueue(payload);
-    
-        // Immediately handle local state cleanup so the UI can move on
-        if (isFresh) {
-            Array.from(sessionRegistry.values()).forEach(reg => {
-                if (FRESH_PRODUCTS.includes(reg.product)) countedFreshProducts.add(reg.product);
-            });
-            sessionRegistry.clear();
-        } else if (activeAuditMode === 'product') {
-            sessionRegistry.clear(); 
-        } else {
-            countedBins.add(binName); 
-            localStorage.setItem('doneBins2', JSON.stringify([...countedBins]));
-        }
-        
-        return true; 
-    }
-    function finalizeAisleBin() { 
-    // We no longer disable the button or change the text to "Syncing..."
-    const currentBin = currentBins[currentBinIdx];
-    const itemsToSync = Array.from(sessionRegistry.values()).filter(r => r.foundIn === currentBin || r.sapBin === currentBin);
-    
-    let itemsToLog = itemsToSync.map(record => ({
-        hu: record.hu, product: record.product, desc: record.desc, batch: record.batch, sapBin: record.sapBin, sapQty: record.sapQty, countQty: record.scanQty, type: record.type, note: record.note
+  if (success) {
+    completedBins.add(currentBin);
+    localStorage.setItem('novus_done', JSON.stringify({
+      date: new Date().toDateString(),
+      bins: [...completedBins],
     }));
-
-    itemsToLog.push({ hu: 'BIN_CLEAR', product: 'SYSTEM', desc: 'Bin Finalized', batch: '', sapBin: currentBin, sapQty: 0, countQty: 0, type: 'bin_finalized', note: `Finalized by ${NovusSettings.getUser()}`});
-
-    // Hand the payload off to our new background queue
-    executeAuditSync(currentBin, itemsToLog, false);
-
-    // Instantly advance the UI to the next bin so the operator can keep moving
-    if(currentBinIdx < currentBins.length - 1) { 
-        currentBinIdx++; 
-        updateBinView(); 
-        showToast("Bin queued for sync", "blue");
-    } else {
-        showToast("Aisle Complete ✓", "green");
-        switchScreen('setup');
-        renderAisleGrid();
-    }
+    updateDoneCount();
+    stepBin(1);
+  }
 }
 
-    async function submitProductAudit() {
-        const btn = document.querySelector('#screen-product .primary-btn');
-        const origText = btn.innerText;
-        btn.disabled = true;
-        btn.innerText = "Syncing...";
+// ─────────────────────────────────────────
+// NETWORK
+// ─────────────────────────────────────────
 
-        const itemsToSync = Array.from(sessionRegistry.values()).filter(r => r.product === activeProductAudit);
-        if (itemsToSync.length === 0) {
-            btn.disabled = false; btn.innerText = origText;
-            showToast("No counts to submit", "amber"); return;
-        }
+/** Deterministic idempotency key to prevent double-writes if GAS request retries */
+function makeIdempotencyKey(bin, sessionId, items) {
+  const fingerprint = items
+    ? `${items.length}|${(items[0]?.hu || 'empty')}`
+    : 'nofp';
+  return `${sessionId}|${bin}|${auditorName}|${fingerprint}`;
+}
 
-        const itemsToLog = itemsToSync.map(record => ({
-            hu: record.hu, product: record.product, desc: record.desc, batch: record.batch, sapBin: record.sapBin, sapQty: record.sapQty, countQty: record.scanQty, type: record.type, note: record.note
-        }));
+async function sendPayload(payload, successMsg) {
+  try {
+    const res  = await fetch(API_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      redirect: 'follow',
+      body:    JSON.stringify(payload),
+    });
+    const text = await res.text();
 
-        const success = await executeAuditSync(`PRODUCT: ${activeProductAudit}`, itemsToLog, false);
-        btn.disabled = false; btn.innerText = origText;
-
-        if (success) {
-            showToast("Product Audit Complete", "green");
-            switchScreen('setup');
-        }
+    let result;
+    try {
+      result = JSON.parse(text);
+    } catch {
+      // GAS returned non-JSON (common during cold start) — queue for retry
+      _queuePayload(payload);
+      return true;
     }
 
-    async function submitFreshAudit() {
-        const btn = document.querySelector('#screen-fresh .primary-btn');
-        const origText = btn.innerText;
-        btn.disabled = true;
-        btn.innerText = "Syncing...";
-
-        const itemsToSync = Array.from(sessionRegistry.values());
-        if (itemsToSync.length === 0) {
-            btn.disabled = false; btn.innerText = origText;
-            showToast("No counts to submit", "amber"); return;
-        }
-
-        const itemsToLog = itemsToSync.map(record => ({
-            hu: record.hu, product: record.product, desc: record.desc, batch: record.batch, sapBin: record.sapBin, sapQty: record.sapQty, countQty: record.scanQty, type: record.type, note: record.note
-        }));
-
-        const success = await executeAuditSync("FRESH", itemsToLog, true);
-        btn.disabled = false; btn.innerText = origText;
-
-        if (success) {
-            showToast("Fresh Audit Complete", "green");
-            switchScreen('setup');
-            hideFreshDetail();
-            initFreshMode(); 
-        }
+    if (result.success === false) {
+      toast('Server error: ' + (result.error || 'unknown'), 'red');
+      return false;
     }
 
-    function switchScreen(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById('screen-' + id).classList.add('active');
+    if (result.skipped) {
+      toast('Already synced (duplicate)', 'amber');
+    } else if (successMsg) {
+      toast(successMsg, 'green');
     }
 
-    // --- NEW ADD HU MODAL LOGIC ---
-    
-    function openAddHuModal() {
-        document.getElementById('add-hu-id').value = '';
-        document.getElementById('add-hu-prod').value = '';
-        document.getElementById('add-hu-qty').value = '';
-        document.getElementById('add-hu-modal').style.display = 'flex';
-        setTimeout(() => document.getElementById('add-hu-id').focus(), 100);
+    isOnline = true;
+    updateSyncDot();
+    return true;
+  } catch {
+    _queuePayload(payload);
+    isOnline = false;
+    updateSyncDot();
+    toast('Saved offline — will sync later', 'amber');
+    return true; // allow local completion
+  }
+}
+
+function _queuePayload(payload) {
+  offlineQueue.push(payload);
+  localStorage.setItem('novus_queue', JSON.stringify(offlineQueue));
+  updateQueueBadge();
+}
+
+async function flushQueue() {
+  if (!offlineQueue.length) return;
+  const batch  = [...offlineQueue];
+  offlineQueue = [];
+  const failed = [];
+
+  for (const payload of batch) {
+    try {
+      const res  = await fetch(API_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        redirect: 'follow',
+        body:    JSON.stringify(payload),
+      });
+      const text = await res.text();
+      try {
+        const result = JSON.parse(text);
+        if (result.success === false) failed.push(payload);
+      } catch { failed.push(payload); }
+    } catch {
+      failed.push(payload);
     }
+  }
 
-    function closeAddHuModal() {
-        document.getElementById('add-hu-modal').style.display = 'none';
-    }
+  offlineQueue = failed;
+  localStorage.setItem('novus_queue', JSON.stringify(offlineQueue));
+  updateQueueBadge();
 
-    function checkSmartFill() {
-        const huInput = document.getElementById('add-hu-id').value.trim().toUpperCase();
-        if (!huInput) return;
-        
-        // Check SAP for existing data
-        const sap = sapMaster.find(i => i.hu === huInput);
-        if (sap) {
-            document.getElementById('add-hu-prod').value = sap.product;
-            document.getElementById('add-hu-qty').value = sap.sapQty;
-        }
-    }
+  if (failed.length === 0 && batch.length > 0) {
+    toast(`${batch.length} queued item(s) synced`, 'green');
+  }
+}
 
-    function submitAddedHu() {
-        const hu = document.getElementById('add-hu-id').value.trim().toUpperCase();
-        const prod = document.getElementById('add-hu-prod').value.trim().toUpperCase();
-        const qty = parseFloat(document.getElementById('add-hu-qty').value) || 0;
+// Periodic queue flush (every 15 s)
+setInterval(flushQueue, 15000);
 
-        if (!hu || !prod) {
-            showToast("HU and Product are required", "red");
-            return;
-        }
+// ─────────────────────────────────────────
+// UI UTILITIES
+// ─────────────────────────────────────────
 
-        const currentBin = currentBins[currentBinIdx];
-        let sap = sapMaster.find(i => i.hu === hu);
+function switchScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
 
-        // If it's a complete ghost item not in the SAP extract at all, push a dummy record
-        if (!sap) {
-            sap = {
-                hu: hu,
-                product: prod,
-                desc: 'Manually Added Found Item',
-                batch: '',
-                sapBin: 'NONE', 
-                sapQty: 0
-            };
-            sapMaster.push(sap);
-        }
+function backToSetup() {
+  targetProduct = null;
+  document.getElementById('product-search').value = '';
+  switchScreen('setup');
+  buildAisleGrid();
+}
 
-        // Rely on existing logic to handle state classification ('MOVEMENT' vs 'UNEXPECTED')
-        saveToRegistry(hu, {
-            scanQty: qty,
-            scanBin: currentBin,
-            foundIn: currentBin
-        });
+function setName() {
+  const name = prompt('Your name:', auditorName);
+  if (name !== null) {
+    auditorName = name.trim();
+    NovusSettings.set('userName', auditorName);
+    document.getElementById('name-display').textContent = auditorName || 'Set Name';
+  }
+}
 
-        closeAddHuModal();
-        showToast(`Added ${hu} to ${currentBin}`, "purple");
-        
-        // Refresh UI to show the newly added card
-        updateBinView();
-        if(navigator.vibrate) navigator.vibrate(50);
-    }
+function haptic() {
+  if (NovusSettings.get('hapticFeedback') && navigator.vibrate) navigator.vibrate(15);
+}
+
+// Re-sync auditor name if settings change from modal
+window.addEventListener('novus-settings-changed', () => {
+  auditorName = NovusSettings.getUser();
+  document.getElementById('name-display').textContent = auditorName || 'Set Name';
+});
+
+// Keyboard shortcut: Enter in bin input → navigate
+document.getElementById('bin-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') navigateToBin(e.target.value);
+});
 </script>
 </body>
 </html>
