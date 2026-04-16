@@ -105,11 +105,17 @@ const NovusSettings = (() => {
   function getUser() { return get('userName') || ''; }
 
   /* ── Theme engine ── */
+  // AFTER — guards against <body> not existing when script runs in <head>
   function applyTheme() {
     const vars = get('theme') === 'light' ? LIGHT_VARS : DARK_VARS;
+    // CSS variables on <html> are safe at any time
     Object.entries(vars).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
-    document.body.setAttribute('data-theme', get('theme'));
+    // data-theme attribute on <body> must wait until body exists
+    if (document.body) {
+      document.body.setAttribute('data-theme', get('theme'));
+     }
   }
+
 
   /* ── Settings modal (lazily injected once per page) ── */
   let _modalInjected = false;
