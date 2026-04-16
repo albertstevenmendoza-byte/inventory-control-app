@@ -5,280 +5,127 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Novus Ops — Plant 1730</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
-
-<!-- Shared core: API_URL, NovusSettings, NovusLoader, toast -->
-<script src="novus-core.js"></script>
-
+<script src="novus-core.js" defer></script>
 <style>
-/* ─────────────────────────────────────────
-   DESIGN TOKENS
-───────────────────────────────────────── */
-:root {
-  --bg:#0f1117; --surface:#181a23; --surface-2:#1f2230; --surface-3:#2a2d3a;
-  --border:#313546; --text:#eceef4; --text-2:#9ba1b5; --text-3:#6c7189;
-  --accent:#5b9aff; --accent-dim:rgba(91,154,255,.1);
-  --green:#34d399; --green-bg:rgba(52,211,153,.1);
-  --red:#f87171;   --red-bg:rgba(248,113,113,.1);
-  --amber:#fbbf24; --amber-bg:rgba(251,191,36,.1);
+:root{
+  --bg:#0f1117;--surface:#181a23;--surface-2:#1f2230;--surface-3:#2a2d3a;
+  --border:#313546;--text:#eceef4;--text-2:#9ba1b5;--text-3:#6c7189;
+  --accent:#5b9aff;--accent-dim:rgba(91,154,255,.1);
+  --green:#34d399;--green-bg:rgba(52,211,153,.1);
+  --red:#f87171;--red-bg:rgba(248,113,113,.1);
+  --amber:#fbbf24;--amber-bg:rgba(251,191,36,.1);
   --radius:16px;
 }
-*, *::before, *::after {
-  box-sizing: border-box; margin: 0; padding: 0;
-  -webkit-tap-highlight-color: transparent;
-}
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--bg); color: var(--text);
-  min-height: 100dvh;
-  display: flex; align-items: center; justify-content: center;
-}
-
-/* ─────────────────────────────────────────
-   TOAST
-───────────────────────────────────────── */
-.toast {
-  position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
-  padding: 10px 20px; border-radius: 12px; font-size: 12px; font-weight: 700;
-  z-index: 9998; pointer-events: none; opacity: 0; transition: opacity .3s;
-  white-space: nowrap;
-}
-.toast.show  { opacity: 1; }
-.toast.green { background: var(--green-bg); color: var(--green); border: 1px solid rgba(52,211,153,.25); }
-.toast.red   { background: var(--red-bg);   color: var(--red);   border: 1px solid rgba(248,113,113,.25); }
-.toast.blue  { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(79,140,255,.2); }
-.toast.amber { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(251,191,36,.25); }
-
-/* ─────────────────────────────────────────
-   HUB LAYOUT
-───────────────────────────────────────── */
-.hub { width: 100%; max-width: 520px; padding: 32px 20px; }
-
-/* ── Hero ── */
-.hero { text-align: center; margin-bottom: 36px; }
-.hero-badge {
-  display: inline-block; padding: 5px 14px; border-radius: 20px;
-  background: var(--accent-dim); color: var(--accent);
-  font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
-  text-transform: uppercase; margin-bottom: 16px;
-}
-.hero h1 {
-  font-size: 36px; font-weight: 900; letter-spacing: -.8px;
-  background: linear-gradient(135deg, var(--text) 30%, var(--accent));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-}
-.hero p { color: var(--text-2); font-size: 13px; font-weight: 500; margin-top: 6px; }
-
-/* ── Nav cards ── */
-.nav-grid { display: flex; flex-direction: column; gap: 10px; }
-
-.nav-card {
-  display: flex; align-items: center; gap: 16px; padding: 20px;
-  background: var(--surface); border: 1.5px solid var(--border);
-  border-radius: var(--radius); text-decoration: none; color: var(--text);
-  position: relative; overflow: hidden;
-  transition: border-color .2s, transform .2s, box-shadow .2s;
-}
-/* Subtle gradient overlay on hover */
-.nav-card::after {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(135deg, transparent 55%, var(--accent-dim));
-  opacity: 0; transition: opacity .25s; pointer-events: none;
-}
-.nav-card:hover          { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,.35); }
-.nav-card:hover::after   { opacity: 1; }
-.nav-card:active         { transform: scale(.97); }
-
-.nc-icon {
-  font-size: 28px; width: 52px; height: 52px;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--surface-2); border-radius: 14px; flex-shrink: 0;
-}
-.nc-info       { flex: 1; min-width: 0; }
-.nc-info h2    { font-size: 15px; font-weight: 800; }
-.nc-info p     { font-size: 11px; color: var(--text-2); font-weight: 500; margin-top: 2px; }
-
-/* Live stat badge on each card */
-.nc-live {
-  display: inline-flex; align-items: center; gap: 5px;
-  margin-top: 6px; padding: 3px 8px; border-radius: 6px;
-  font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px;
-  background: var(--surface-3); color: var(--text-3);
-  transition: background .3s, color .3s;
-}
-.nc-live.ok    { background: var(--green-bg); color: var(--green); }
-.nc-live.warn  { background: var(--amber-bg); color: var(--amber); }
-.nc-live.alert { background: var(--red-bg);   color: var(--red); }
-.nc-live .dot  {
-  width: 5px; height: 5px; border-radius: 50%; background: currentColor;
-  animation: pulse 1.5s infinite;
-}
-@keyframes pulse { 50% { opacity: .3; } }
-
-.nc-arrow {
-  margin-left: auto; color: var(--text-3);
-  font-size: 18px; font-weight: 900; flex-shrink: 0;
-  transition: color .2s, transform .2s;
-}
-.nav-card:hover .nc-arrow { color: var(--accent); transform: translateX(3px); }
-
-/* ── API status bar ── */
-.api-bar {
-  margin-top: 24px; text-align: center;
-  font-size: 10px; font-weight: 600; color: var(--text-3);
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-}
-.api-dot {
-  width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0;
-}
-.api-dot.ok      { background: var(--green); }
-.api-dot.err     { background: var(--red); }
-.api-dot.loading { background: var(--amber); animation: pulse 1s infinite; }
-
-/* ── Today's KPI strip ── */
-.kpi-strip {
-  display: flex; gap: 8px; margin-top: 16px;
-}
-.kpi-box {
-  flex: 1; background: var(--surface); border: 1px solid var(--border);
-  border-radius: 12px; padding: 10px 12px; text-align: center;
-}
-.kpi-val   { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: var(--accent); }
-.kpi-label { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.1px; color: var(--text-3); margin-top: 3px; }
-
-/* ── Footer ── */
-.footer {
-  display: flex; justify-content: center; align-items: center; gap: 12px;
-  margin-top: 20px; font-size: 9px; color: var(--text-3); letter-spacing: .5px;
-}
-.gear-btn {
-  background: var(--surface-2); color: var(--text-2);
-  padding: 5px 12px; border-radius: 8px; font-size: 12px;
-  border: none; cursor: pointer; font-family: inherit;
-  transition: background .15s, color .15s;
-}
-.gear-btn:hover { background: var(--accent-dim); color: var(--accent); }
-
-/* ── Skeleton shimmer ── */
-@keyframes shimmer { to { background-position: -200% 0; } }
-.shimmer {
-  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.4s infinite;
-  border-radius: 5px;
-}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;align-items:center;justify-content:center}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:12px;font-size:12px;font-weight:700;z-index:9998;pointer-events:none;opacity:0;transition:opacity .3s;white-space:nowrap}
+.toast.show{opacity:1}
+.toast.green{background:var(--green-bg);color:var(--green);border:1px solid rgba(52,211,153,.25)}
+.toast.red{background:var(--red-bg);color:var(--red);border:1px solid rgba(248,113,113,.25)}
+.toast.blue{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(79,140,255,.2)}
+.toast.amber{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(251,191,36,.25)}
+.hub{width:100%;max-width:520px;padding:32px 20px}
+.hero{text-align:center;margin-bottom:36px}
+.hero-badge{display:inline-block;padding:5px 14px;border-radius:20px;background:var(--accent-dim);color:var(--accent);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px}
+.hero h1{font-size:36px;font-weight:900;letter-spacing:-.8px;background:linear-gradient(135deg,var(--text) 30%,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:var(--text-2);font-size:13px;font-weight:500;margin-top:6px}
+.nav-grid{display:flex;flex-direction:column;gap:10px}
+.nav-card{display:flex;align-items:center;gap:16px;padding:20px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--text);position:relative;overflow:hidden;transition:border-color .2s,transform .2s,box-shadow .2s}
+.nav-card::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 55%,var(--accent-dim));opacity:0;transition:opacity .25s;pointer-events:none}
+.nav-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.35)}
+.nav-card:hover::after{opacity:1}
+.nav-card:active{transform:scale(.97)}
+.nc-icon{font-size:28px;width:52px;height:52px;display:flex;align-items:center;justify-content:center;background:var(--surface-2);border-radius:14px;flex-shrink:0}
+.nc-info{flex:1;min-width:0}
+.nc-info h2{font-size:15px;font-weight:800}
+.nc-info p{font-size:11px;color:var(--text-2);font-weight:500;margin-top:2px}
+.nc-live{display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:3px 8px;border-radius:6px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;background:var(--surface-3);color:var(--text-3);transition:background .3s,color .3s}
+.nc-live.ok{background:var(--green-bg);color:var(--green)}
+.nc-live.warn{background:var(--amber-bg);color:var(--amber)}
+.nc-live.alert{background:var(--red-bg);color:var(--red)}
+.nc-live .dot{width:5px;height:5px;border-radius:50%;background:currentColor;animation:pulse 1.5s infinite}
+@keyframes pulse{50%{opacity:.3}}
+.nc-arrow{margin-left:auto;color:var(--text-3);font-size:18px;font-weight:900;flex-shrink:0;transition:color .2s,transform .2s}
+.nav-card:hover .nc-arrow{color:var(--accent);transform:translateX(3px)}
+.kpi-strip{display:flex;gap:8px;margin-top:16px}
+.kpi-box{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px;text-align:center}
+.kpi-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--accent)}
+.kpi-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.1px;color:var(--text-3);margin-top:3px}
+.api-bar{margin-top:24px;text-align:center;font-size:10px;font-weight:600;color:var(--text-3);display:flex;align-items:center;justify-content:center;gap:8px}
+.api-dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0}
+.api-dot.ok{background:var(--green)}
+.api-dot.err{background:var(--red)}
+.api-dot.loading{background:var(--amber);animation:pulse 1s infinite}
+.footer{display:flex;justify-content:center;align-items:center;gap:12px;margin-top:20px;font-size:9px;color:var(--text-3);letter-spacing:.5px}
+.gear-btn{background:var(--surface-2);color:var(--text-2);padding:5px 12px;border-radius:8px;font-size:12px;border:none;cursor:pointer;font-family:inherit;transition:background .15s,color .15s}
+.gear-btn:hover{background:var(--accent-dim);color:var(--accent)}
+@keyframes shimmer{to{background-position:-200% 0}}
+.shimmer{background:linear-gradient(90deg,var(--surface-2) 25%,var(--surface-3) 50%,var(--surface-2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:5px}
 </style>
 </head>
 <body>
-
 <div id="toast" class="toast"><span id="toast-text"></span></div>
-
 <div class="hub">
-
-  <!-- Hero -->
   <div class="hero">
     <span class="hero-badge">Plant 1730</span>
     <h1>Novus Ops</h1>
     <p id="hero-sub">Warehouse Management Platform</p>
   </div>
-
-  <!-- Navigation cards -->
   <nav class="nav-grid">
-
-    <!-- Cycle Counter -->
     <a href="scanner.html" class="nav-card">
       <span class="nc-icon">📋</span>
       <div class="nc-info">
         <h2>Cycle Counter</h2>
         <p>Bin-by-bin · Fresh audit · Aisle workflow</p>
-        <span class="nc-live" id="live-scanner">
-          <span class="dot"></span>
-          <span id="live-scanner-text">—</span>
-        </span>
+        <span class="nc-live" id="live-scanner"><span class="dot"></span><span id="live-scanner-text">—</span></span>
       </div>
       <span class="nc-arrow">→</span>
     </a>
-
-    <!-- Safety Reporter -->
     <a href="safety.html" class="nav-card">
       <span class="nc-icon">🦺</span>
       <div class="nc-info">
         <h2>Safety Reporter</h2>
         <p>Log hazards, near-misses &amp; incidents</p>
-        <span class="nc-live" id="live-safety">
-          <span class="dot"></span>
-          <span id="live-safety-text">—</span>
-        </span>
+        <span class="nc-live" id="live-safety"><span class="dot"></span><span id="live-safety-text">—</span></span>
       </div>
       <span class="nc-arrow">→</span>
     </a>
-
-    <!-- Control Center -->
     <a href="monitor.html" class="nav-card">
       <span class="nc-icon">📊</span>
       <div class="nc-info">
         <h2>Control Center</h2>
         <p>Dashboard · SAP data · Aisles · SOPs</p>
-        <span class="nc-live" id="live-monitor">
-          <span class="dot"></span>
-          <span id="live-monitor-text">—</span>
-        </span>
+        <span class="nc-live" id="live-monitor"><span class="dot"></span><span id="live-monitor-text">—</span></span>
       </div>
       <span class="nc-arrow">→</span>
     </a>
-
   </nav>
-
-  <!-- Today's KPI strip -->
   <div class="kpi-strip">
-    <div class="kpi-box">
-      <div class="kpi-val shimmer" id="kpi-bins" style="height:24px; width:40px; margin:0 auto 4px">&nbsp;</div>
-      <div class="kpi-label">Bins Today</div>
-    </div>
-    <div class="kpi-box">
-      <div class="kpi-val shimmer" id="kpi-ok"   style="height:24px; width:40px; margin:0 auto 4px">&nbsp;</div>
-      <div class="kpi-label">OK</div>
-    </div>
-    <div class="kpi-box">
-      <div class="kpi-val shimmer" id="kpi-disc" style="height:24px; width:40px; margin:0 auto 4px">&nbsp;</div>
-      <div class="kpi-label">Discrepancies</div>
-    </div>
-    <div class="kpi-box">
-      <div class="kpi-val shimmer" id="kpi-sap"  style="height:24px; width:56px; margin:0 auto 4px">&nbsp;</div>
-      <div class="kpi-label">SAP Items</div>
-    </div>
+    <div class="kpi-box"><div class="kpi-val shimmer" id="kpi-bins" style="height:24px;width:40px;margin:0 auto 4px">&nbsp;</div><div class="kpi-label">Bins Today</div></div>
+    <div class="kpi-box"><div class="kpi-val shimmer" id="kpi-ok"   style="height:24px;width:40px;margin:0 auto 4px">&nbsp;</div><div class="kpi-label">OK</div></div>
+    <div class="kpi-box"><div class="kpi-val shimmer" id="kpi-disc" style="height:24px;width:40px;margin:0 auto 4px">&nbsp;</div><div class="kpi-label">Discrepancies</div></div>
+    <div class="kpi-box"><div class="kpi-val shimmer" id="kpi-sap"  style="height:24px;width:56px;margin:0 auto 4px">&nbsp;</div><div class="kpi-label">SAP Items</div></div>
   </div>
-
-  <!-- API connectivity -->
   <div class="api-bar">
     <span class="api-dot loading" id="api-dot"></span>
     <span id="api-text">Connecting to API…</span>
   </div>
-
-  <!-- Footer -->
   <div class="footer">
     <span>Novus Foods · Buena Park, CA</span>
     <button class="gear-btn" onclick="NovusSettings.openModal()">⚙ Settings</button>
   </div>
-
-</div><!-- /.hub -->
-
+</div>
 <script>
-/* ─────────────────────────────────────────
-   HUB BOOT — fetch poll data and populate live stats
-───────────────────────────────────────── */
 (async () => {
   const dot  = document.getElementById('api-dot');
   const text = document.getElementById('api-text');
 
-  /* Helper: replace shimmer placeholder with real value */
   function setKPI(id, val, colorClass = '') {
     const el = document.getElementById(id);
-    el.className  = 'kpi-val' + (colorClass ? ' ' + colorClass : '');
-    el.style      = ''; // remove shimmer inline styles
+    el.className = 'kpi-val' + (colorClass ? ' ' + colorClass : '');
+    el.style = '';
     el.textContent = val;
   }
-
-  /* Helper: update a live badge */
   function setLive(badgeId, textId, label, cls) {
     document.getElementById(badgeId).className = 'nc-live ' + cls;
     document.getElementById(textId).textContent = label;
@@ -289,11 +136,10 @@ body {
     const raw  = await res.text();
     const data = JSON.parse(raw);
 
-    const report    = data.report      || [];
-    const sapCount  = data.sapMeta?.rowCount || 0;
-    const safetyOpen = data.safetyOpen  || 0;
+    const report     = data.report || [];
+    const sapCount   = data.sapMeta?.rowCount || 0;
+    const safetyOpen = data.safetyOpen || 0;
 
-    /* ── KPI strip ── */
     const bins = new Set(report.map(r => r.scanBin).filter(Boolean)).size;
     const ok   = report.filter(r => r.type === 'ok').length;
     const disc = report.filter(r => r.type !== 'ok').length;
@@ -303,46 +149,31 @@ body {
     setKPI('kpi-disc', disc, disc > 0 ? 'amber' : 'green');
     setKPI('kpi-sap',  Number(sapCount).toLocaleString());
 
-    /* ── Live badges ── */
-    setLive('live-scanner', 'live-scanner-text',
-      `${bins} bin${bins !== 1 ? 's' : ''} counted today`,
-      bins > 0 ? 'ok' : '');
-
+    setLive('live-scanner','live-scanner-text', `${bins} bin${bins!==1?'s':''} counted today`, bins > 0 ? 'ok' : '');
     if (safetyOpen > 0) {
-      setLive('live-safety', 'live-safety-text',
-        `${safetyOpen} open incident${safetyOpen > 1 ? 's' : ''}`, 'alert');
+      setLive('live-safety','live-safety-text', `${safetyOpen} open incident${safetyOpen>1?'s':''}`, 'alert');
     } else {
-      setLive('live-safety', 'live-safety-text', 'No open incidents', 'ok');
+      setLive('live-safety','live-safety-text', 'No open incidents', 'ok');
     }
+    setLive('live-monitor','live-monitor-text', `${Number(sapCount).toLocaleString()} SAP items`, sapCount > 0 ? 'ok' : 'warn');
 
-    setLive('live-monitor', 'live-monitor-text',
-      `${Number(sapCount).toLocaleString()} SAP items`, sapCount > 0 ? 'ok' : 'warn');
-
-    /* ── API dot ── */
     dot.className  = 'api-dot ok';
-    text.textContent = `API connected · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    text.textContent = `API connected · ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`;
 
-    /* ── Personalized greeting ── */
     const name = NovusSettings.getUser();
     if (name) {
-      const hour = new Date().getHours();
-      const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-      document.getElementById('hero-sub').textContent = `${greeting}, ${name}`;
+      const h = new Date().getHours();
+      const g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+      document.getElementById('hero-sub').textContent = `${g}, ${name}`;
     }
-
   } catch (err) {
-    /* API unreachable */
     dot.className  = 'api-dot err';
     text.textContent = 'API not reachable — check Apps Script URL';
-
-    setKPI('kpi-bins', '—');
-    setKPI('kpi-ok',   '—');
-    setKPI('kpi-disc', '—');
-    setKPI('kpi-sap',  '—');
-
-    setLive('live-scanner', 'live-scanner-text', 'Offline', 'warn');
-    setLive('live-safety',  'live-safety-text',  'Offline', 'warn');
-    setLive('live-monitor', 'live-monitor-text', 'Offline', 'warn');
+    setKPI('kpi-bins','—'); setKPI('kpi-ok','—');
+    setKPI('kpi-disc','—'); setKPI('kpi-sap','—');
+    setLive('live-scanner','live-scanner-text','Offline','warn');
+    setLive('live-safety', 'live-safety-text', 'Offline','warn');
+    setLive('live-monitor','live-monitor-text','Offline','warn');
   }
 })();
 </script>
