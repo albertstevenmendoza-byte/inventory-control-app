@@ -1374,9 +1374,77 @@ function renderPhase() {
 // ─────────────────────────────────────────
 // SLED HELPERS
 // ─────────────────────────────────────────
-function parseSLED(s) { if(!s)return null; const d=new Date(s); if(!isNaN(d))return d; const m=s.match(/^(\d{2})\.(\d{2})\.(\d{4})$/); if(m)return new Date(`${m[3]}-${m[2]}-${m[1]}`); return null; }
-function sledStatus(s) { const d=parseSLED(s); if(!d)return'unknown'; const now=new Date(); now.setHours(0,0,0,0); const thr=new Date(now); thr.setDate(thr.getDate()+freshDays); if(d<now)return'expired'; if(d<=thr)return'expiring'; return'valid'; }
-function formatSLED(s) { const d=parseSLED(s); if(!d)return s||'—'; return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}); }
+/**
+ * parseSLED
+ * Parses a raw SLED string from Google Sheets into a JS Date.
+ * Handles the following formats that SAP commonly exports:
+ *   ISO 8601      : "2025-03-15"  or  "2025-03-15T00:00:00.000Z"
+ *   US slash      : "03/15/2025"
+ *   EU dot        : "15.03.2025"
+ *   Excel serial  : 45000  (number of days since 1900-01-01)
+ * Returns null if the value cannot be parsed.
+ */
+function parseSLED(raw) {
+  if (!raw) return null;
+
+  // Excel serial number (Google Sheets sometimes passes these)
+  if (typeof raw === 'number' || /^\d{4,5}$/.test(String(raw).trim())) {
+    const serial = Number(raw);
+    if (serial > 0) {
+      // Excel epoch: 1900-01-01, but Excel wrongly treats 1900 as a leap year,
+      // so we subtract 2 days to correct.
+      const ms = (serial - 2) * 86400000;
+      const d  = new Date(Date.UTC(1900, 0, 1) + ms);
+      if (!isNaN(d)) return d;
+    }
+  }
+
+  const s = String(raw).trim();
+  if (!s || s === 'undefined' || s === 'null') return null;
+
+  // ISO / standard JS parseable (handles "2025-03-15" and full ISO strings)
+  const iso = new Date(s);
+  if (!isNaN(iso)) return iso;
+
+  // US format: MM/DD/YYYY
+  const usMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (usMatch) return new Date(`${usMatch[3]}-${usMatch[1].padStart(2,'0')}-${usMatch[2].padStart(2,'0')}`);
+
+  // EU dot format: DD.MM.YYYY
+  const euMatch = s.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (euMatch) return new Date(`${euMatch[3]}-${euMatch[2]}-${euMatch[1]}`);
+
+  return null;
+}
+
+/**
+ * sledStatus
+ * Returns 'expired' | 'expiring' | 'valid' | 'unknown'
+ * based on parsed SLED date vs today + threshold.
+ */
+function sledStatus(raw) {
+  const d = parseSLED(raw);
+  if (!d) return 'unknown';
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const thr = new Date(now); thr.setDate(thr.getDate() + freshDays);
+  if (d < now)  return 'expired';
+  if (d <= thr) return 'expiring';
+  return 'valid';
+}
+
+/**
+ * formatSLED
+ * Returns a clean MM/DD/YYYY string for display on HU cards.
+ * Falls back to the raw value if it cannot be parsed.
+ */
+function formatSLED(raw) {
+  const d = parseSLED(raw);
+  if (!d) return raw || '—';
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const yy = d.getFullYear();
+  return `${mm}/${dd}/${yy}`;
+}
 
 // ─────────────────────────────────────────
 // STANDARD HU LIST RENDER
