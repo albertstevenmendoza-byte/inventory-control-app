@@ -7,7 +7,6 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js" onerror="window._mermaidFailed=true"></script>
-<script src="novus-core.js"></script>
 <style>
 :root{--bg:#0f1117;--surface:#181a23;--surface-2:#1f2230;--surface-3:#2a2d3a;--border:#313546;--text:#eceef4;--text-2:#9ba1b5;--text-3:#6c7189;--accent:#5b9aff;--accent-dim:rgba(91,154,255,.1);--green:#34d399;--green-bg:rgba(52,211,153,.1);--green-border:rgba(52,211,153,.25);--red:#f87171;--red-bg:rgba(248,113,113,.1);--red-border:rgba(248,113,113,.25);--amber:#fbbf24;--amber-bg:rgba(251,191,36,.1);--amber-border:rgba(251,191,36,.25);--purple:#a78bfa;--purple-bg:rgba(167,139,250,.1);--cyan:#22d3ee;--cyan-bg:rgba(34,211,238,.1);--fresh:#f472b6;--fresh-bg:rgba(244,114,182,.1);--fresh-border:rgba(244,114,182,.25);--radius:14px}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -303,7 +302,8 @@ tr:hover{background:var(--surface-2)}
     </main>
   </div>
 </div>
-
+  
+<script src="novus-core.js"></script>
 <script>
 'use strict';
 if (typeof mermaid !== 'undefined') { try { mermaid.initialize({startOnLoad:false,theme:'dark',themeVariables:{darkMode:true,primaryColor:'#5b9aff',primaryTextColor:'#eceef4',primaryBorderColor:'#313546',lineColor:'#6c7189',secondaryColor:'#1f2230',tertiaryColor:'#2a2d3a',fontFamily:'DM Sans, sans-serif',fontSize:'13px'},flowchart:{curve:'basis',padding:16}}); } catch(e){} }
