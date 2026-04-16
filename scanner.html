@@ -6,9 +6,12 @@
 <title>Cycle Counter — Novus Ops</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
+/* ─────────────────────────────────────────
+   TOKENS
+───────────────────────────────────────── */
 :root{
   --bg:#0f1117;--surface:#181a23;--surface-2:#1f2230;--surface-3:#2a2d3a;
-  --border:#313546;--text:#eceef4;--text-2:#9ba1b5;--text-3:#6c7189;
+  --border:#313546;--text:#eceef4;--text-2:#9ba1b5;--text-3:#6c7169;
   --accent:#5b9aff;--accent-dim:rgba(91,154,255,.1);
   --green:#34d399;--green-bg:rgba(52,211,153,.1);--green-border:rgba(52,211,153,.25);
   --red:#f87171;--red-bg:rgba(248,113,113,.1);--red-border:rgba(248,113,113,.25);
@@ -24,6 +27,10 @@ button{font-family:inherit;border:none;cursor:pointer;-webkit-appearance:none}
 button:active{transform:scale(.96)}
 input,textarea,select{font-family:inherit}
 .mono{font-family:'JetBrains Mono',monospace}
+
+/* ─────────────────────────────────────────
+   TOAST
+───────────────────────────────────────── */
 .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:12px;font-size:12px;font-weight:700;z-index:9998;pointer-events:none;opacity:0;transition:opacity .3s;white-space:nowrap}
 .toast.show{opacity:1}
 .toast.green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
@@ -31,9 +38,17 @@ input,textarea,select{font-family:inherit}
 .toast.blue{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(79,140,255,.2)}
 .toast.amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
 .toast.pink{background:var(--fresh-bg);color:var(--fresh);border:1px solid var(--fresh-border)}
+
+/* ─────────────────────────────────────────
+   SCREENS
+───────────────────────────────────────── */
 .screen{display:none;flex-direction:column;height:100dvh;overflow:hidden}
 .screen.active{display:flex;animation:screen-in .18s ease}
 @keyframes screen-in{from{opacity:0}to{opacity:1}}
+
+/* ─────────────────────────────────────────
+   HEADER
+───────────────────────────────────────── */
 .header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;gap:8px}
 .header h1{font-size:15px;font-weight:800;white-space:nowrap}
 .header-sub{font-size:10px;color:var(--text-2);font-weight:600}
@@ -45,37 +60,195 @@ input,textarea,select{font-family:inherit}
 .queue-badge{background:var(--amber-bg);color:var(--amber);padding:3px 8px;border-radius:6px;font-size:9px;font-weight:800}
 @keyframes pulse{50%{opacity:.3}}
 
-/* ── Audit mode bar ── */
+/* ─────────────────────────────────────────
+   AUDIT MODE BAR
+───────────────────────────────────────── */
 .mode-bar{display:flex;gap:2px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
 .mode-btn{flex:1;padding:10px 0;border-radius:10px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;background:var(--surface-2);color:var(--text-3);border:1.5px solid var(--border);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
 .mode-btn.active-std{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
 .mode-btn.active-fresh{background:var(--fresh-bg);border-color:var(--fresh);color:var(--fresh)}
 
-/* ── Fresh sub-mode panel ── */
-.fresh-panel{display:none;flex-direction:column;gap:0;background:var(--fresh-bg);border-bottom:1px solid var(--fresh-border);flex-shrink:0}
+/* ─────────────────────────────────────────
+   FRESH PANEL
+   (shown when Fresh mode active)
+───────────────────────────────────────── */
+.fresh-panel{display:none;flex-direction:column;background:var(--fresh-bg);border-bottom:1px solid var(--fresh-border);flex-shrink:0}
 .fresh-panel.visible{display:flex}
-.fresh-submode-bar{display:flex;gap:2px;padding:8px 16px}
-.fresh-sub-btn{flex:1;padding:9px 0;border-radius:9px;font-size:11px;font-weight:800;text-transform:uppercase;background:transparent;color:var(--fresh);border:1.5px solid var(--fresh-border);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:5px;opacity:.6}
+
+/* SKU dropdown row */
+.fresh-sku-row{padding:12px 16px 10px}
+.fresh-sku-label{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--fresh);display:block;margin-bottom:8px}
+.fresh-sku-select{
+  width:100%;padding:13px 16px;
+  background:var(--surface);
+  border:1.5px solid var(--fresh-border);
+  border-radius:12px;
+  font-size:14px;font-weight:700;color:var(--text);
+  outline:none;cursor:pointer;
+  appearance:none;-webkit-appearance:none;
+  transition:border-color .15s;
+}
+.fresh-sku-select:focus{border-color:var(--fresh)}
+.fresh-sku-select option{background:var(--surface-2);color:var(--text)}
+
+/* Sub-mode toggle — HIDDEN until SKU chosen */
+.fresh-submode-bar{
+  display:none; /* hidden by default — revealed after SKU selected */
+  gap:2px;padding:0 16px 10px;
+}
+.fresh-submode-bar.visible{display:flex}
+.fresh-sub-btn{
+  flex:1;padding:10px 0;border-radius:9px;
+  font-size:11px;font-weight:800;text-transform:uppercase;
+  background:transparent;color:var(--fresh);
+  border:1.5px solid var(--fresh-border);
+  transition:all .2s;display:flex;align-items:center;justify-content:center;gap:5px;
+  opacity:.6;
+}
 .fresh-sub-btn.active{background:var(--fresh);color:#fff;border-color:var(--fresh);opacity:1}
-.fresh-threshold-row{display:flex;align-items:center;gap:10px;padding:0 16px 8px}
+
+/* Expiry threshold row (HU mode only) */
+.fresh-threshold-row{display:none;align-items:center;gap:10px;padding:0 16px 10px}
+.fresh-threshold-row.visible{display:flex}
 .fresh-threshold-row label{font-size:10px;font-weight:700;color:var(--fresh);flex-shrink:0}
 .fresh-threshold-row input{width:64px;padding:5px 8px;background:var(--surface);border:1.5px solid var(--fresh-border);border-radius:8px;font-size:12px;font-weight:700;color:var(--fresh);outline:none;text-align:center;font-family:'JetBrains Mono',monospace}
 .fresh-threshold-row span{font-size:10px;color:var(--fresh);opacity:.7}
 
-/* ── Pallet count form ── */
-.pallet-form{display:none;flex-direction:column;gap:0;padding-bottom:90px;overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1}
+/* ─────────────────────────────────────────
+   FRESH HU VIEW
+   Inline card list for "Count by HU" mode.
+   Replaces aisle grid; shown in setup screen.
+───────────────────────────────────────── */
+.fresh-hu-view{display:none;flex:1;flex-direction:column;overflow:hidden}
+.fresh-hu-view.visible{display:flex}
+
+.fresh-hu-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 16px;background:var(--surface);
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.fresh-hu-title{font-size:12px;font-weight:800;color:var(--fresh)}
+.fresh-hu-subtitle{font-size:9px;color:var(--text-3);font-weight:600;margin-top:2px}
+.fresh-hu-submit{
+  padding:10px 20px;border-radius:10px;
+  background:var(--fresh);color:#fff;
+  font-size:11px;font-weight:800;text-transform:uppercase;
+  transition:filter .15s;flex-shrink:0;
+}
+.fresh-hu-submit:hover{filter:brightness(1.1)}
+.fresh-hu-submit:disabled{background:var(--surface-3);color:var(--text-3);pointer-events:none}
+
+.fresh-hu-list{flex:1;overflow-y:auto;padding:12px 16px 100px;-webkit-overflow-scrolling:touch}
+.fresh-hu-list::-webkit-scrollbar{display:none}
+
+/* Fresh HU card — location-first design */
+.fhu-card{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:0;margin-bottom:10px;
+  overflow:hidden;
+  animation:card-in .18s ease both;
+  transition:border-color .2s;
+}
+@keyframes card-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.fhu-card.confirmed{border-color:var(--green-border)}
+.fhu-card.missing{border-color:var(--red-border);opacity:.75}
+.fhu-card.adjusted{border-color:var(--amber-border)}
+
+/* Location banner — the most prominent element on each card */
+.fhu-location{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;
+  background:var(--surface-2);
+  border-bottom:1px solid var(--border);
+}
+.fhu-location-icon{font-size:16px;flex-shrink:0}
+.fhu-location-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3)}
+.fhu-location-bin{
+  font-family:'JetBrains Mono',monospace;
+  font-size:20px;font-weight:900;color:var(--accent);
+  letter-spacing:1px;
+}
+.fhu-location-badge{
+  margin-left:auto;font-size:8px;font-weight:800;
+  text-transform:uppercase;padding:4px 10px;border-radius:6px;
+  flex-shrink:0;
+}
+.fhu-location-badge.ok{background:var(--green-bg);color:var(--green)}
+.fhu-location-badge.miss{background:var(--red-bg);color:var(--red)}
+.fhu-location-badge.adj{background:var(--amber-bg);color:var(--amber)}
+.fhu-location-badge.pending{background:var(--surface-3);color:var(--text-3)}
+
+/* Card body */
+.fhu-body{padding:12px 14px}
+.fhu-meta-row{display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap}
+.fhu-meta{display:flex;flex-direction:column}
+.fhu-meta-label{font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-3)}
+.fhu-meta-val{font-size:13px;font-weight:700;margin-top:1px}
+
+/* SLED row inside fresh HU card */
+.fhu-sled{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 10px;background:var(--surface-2);
+  border-radius:8px;border:1px solid var(--border);margin-bottom:10px;
+}
+.fhu-sled-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-3)}
+.fhu-sled-val{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;margin-left:auto}
+.fhu-sled-val.expired{color:var(--red)}
+.fhu-sled-val.expiring{color:var(--amber)}
+.fhu-sled-val.valid{color:var(--green)}
+
+/* Qty controls inside fresh HU card */
+.fhu-qty-row{display:flex;align-items:center;gap:6px;background:var(--surface-2);border-radius:12px;padding:6px;margin-bottom:8px}
+.fhu-qty-btn{width:56px;height:56px;border-radius:10px;background:var(--surface-3);font-size:24px;font-weight:900;color:var(--text-3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,color .15s}
+.fhu-qty-btn:hover{background:var(--fresh-bg);color:var(--fresh)}
+.fhu-qty-input{flex:1;background:transparent;border:none;text-align:center;font-family:'JetBrains Mono',monospace;font-size:34px;font-weight:700;color:var(--fresh);outline:none;min-width:0}
+.fhu-qty-input::placeholder{color:var(--surface-3)}
+.fhu-sap-hint{text-align:center;font-size:9px;font-weight:700;color:var(--text-3);margin-bottom:8px}
+
+/* Action buttons inside fresh HU card */
+.fhu-actions{display:flex;gap:6px}
+.fhu-act{flex:1;padding:14px 0;border-radius:10px;font-size:12px;font-weight:800;text-transform:uppercase;min-height:50px;display:flex;align-items:center;justify-content:center;transition:filter .15s}
+.fhu-act:hover{filter:brightness(1.1)}
+.fhu-act.confirm{background:var(--green);color:#fff}
+.fhu-act.miss{background:var(--surface-3);color:var(--red);border:1.5px solid var(--red-border)}
+.fhu-act.miss.active{background:var(--red);color:#fff;border-color:transparent}
+
+/* Resolved summary row */
+.fhu-resolved{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface-2);border-radius:var(--radius-sm);margin-bottom:6px}
+.fhu-resolved-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text-3)}
+.fhu-resolved-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700}
+.fhu-resolved-val.match{color:var(--green)}
+.fhu-resolved-val.mismatch{color:var(--amber)}
+.fhu-undo{width:100%;padding:6px;background:none;color:var(--text-3);font-size:9px;font-weight:700}
+
+/* Note button inside fresh HU card */
+.fhu-note{
+  width:100%;margin-top:6px;padding:9px 12px;
+  background:var(--surface-2);border:1px solid var(--border);
+  border-radius:var(--radius-sm);font-size:10px;font-weight:700;
+  color:var(--text-3);text-align:left;cursor:pointer;
+  transition:background .15s,color .15s,border-color .15s;
+}
+.fhu-note:hover{background:var(--fresh-bg);border-color:var(--fresh-border);color:var(--fresh)}
+.fhu-note.has{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber)}
+
+/* Empty state */
+.fresh-hu-empty{text-align:center;padding:48px 24px;color:var(--text-3)}
+.fresh-hu-empty .icon{font-size:40px;margin-bottom:10px;display:block}
+
+/* ─────────────────────────────────────────
+   PALLET COUNT FORM
+   (shown when Fresh + By Pallet selected)
+───────────────────────────────────────── */
+.pallet-form{display:none;flex:1;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .pallet-form.visible{display:flex}
 .pallet-form::-webkit-scrollbar{display:none}
-.pallet-section{padding:16px}
-.pallet-section-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--fresh);margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.pallet-field-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);display:block;margin-bottom:6px;margin-top:14px}
+.pallet-section{padding:16px 16px 90px}
+.pallet-field-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);display:block;margin-bottom:6px;margin-top:16px}
 .pallet-field-label:first-of-type{margin-top:0}
 .pallet-input{width:100%;padding:14px 16px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;font-size:15px;font-weight:600;color:var(--text);outline:none;transition:border-color .15s}
 .pallet-input:focus{border-color:var(--fresh)}
 .pallet-input::placeholder{color:var(--text-3)}
-.pallet-select{width:100%;padding:14px 16px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;font-size:14px;font-weight:700;color:var(--text);outline:none;transition:border-color .15s;appearance:none;-webkit-appearance:none;cursor:pointer}
-.pallet-select:focus{border-color:var(--fresh)}
-.pallet-select option{background:var(--surface-2);color:var(--text)}
 .pallet-qty-row{display:flex;align-items:center;gap:8px;background:var(--surface-2);border-radius:12px;padding:8px;margin-top:6px}
 .pallet-qty-btn{width:64px;height:64px;border-radius:12px;background:var(--surface-3);font-size:28px;font-weight:900;color:var(--text-3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,color .15s}
 .pallet-qty-btn:hover{background:var(--fresh-bg);color:var(--fresh)}
@@ -85,17 +258,18 @@ input,textarea,select{font-family:inherit}
 .pallet-submit-btn{width:100%;padding:20px;border-radius:var(--radius);font-size:14px;font-weight:800;text-transform:uppercase;background:var(--fresh);color:#fff;min-height:60px;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:20px;transition:filter .15s}
 .pallet-submit-btn:hover{filter:brightness(1.1)}
 .pallet-submit-btn:disabled{background:var(--surface-3);color:var(--text-3);pointer-events:none}
-/* Recent pallet submissions list */
+/* Session log */
 .pallet-log{margin-top:16px;display:flex;flex-direction:column;gap:6px}
 .pallet-log-item{background:var(--surface);border:1px solid var(--fresh-border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;animation:card-in .18s ease}
-@keyframes card-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 .pallet-log-icon{font-size:20px;flex-shrink:0}
 .pallet-log-info{flex:1;min-width:0}
 .pallet-log-sku{font-size:12px;font-weight:800;color:var(--fresh)}
 .pallet-log-detail{font-size:10px;color:var(--text-2);margin-top:2px}
 .pallet-log-qty{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--fresh);flex-shrink:0}
 
-/* ── Setup screen ── */
+/* ─────────────────────────────────────────
+   STANDARD SETUP CONTENT
+───────────────────────────────────────── */
 .setup-content{flex:1;overflow-y:auto;padding:16px;padding-bottom:90px;-webkit-overflow-scrolling:touch}
 .setup-content::-webkit-scrollbar{display:none}
 .stat-row{display:flex;gap:8px;margin-bottom:16px}
@@ -115,6 +289,10 @@ input,textarea,select{font-family:inherit}
 .aisle-prog{position:absolute;bottom:0;left:0;height:3px;background:var(--accent);transition:width .4s ease}
 .aisle-btn.done .aisle-prog{background:var(--green)}
 .aisle-btn.in-progress .aisle-prog{background:var(--amber)}
+
+/* ─────────────────────────────────────────
+   STANDARD COUNTING SCREEN
+───────────────────────────────────────── */
 .phase-bar{display:flex;gap:2px;padding:10px 16px 0;background:var(--surface)}
 .phase-step{flex:1;height:4px;border-radius:2px;background:var(--surface-3);transition:background .3s}
 .phase-step.active{background:var(--accent)}
@@ -144,9 +322,6 @@ input,textarea,select{font-family:inherit}
 .hu-card.missing{border-color:var(--red-border);opacity:.7;background:var(--red-bg)}
 .hu-card.adjusted{border-color:var(--amber-border);background:var(--amber-bg)}
 .hu-card.extra{border-color:rgba(6,182,212,.25);background:var(--cyan-bg)}
-.hu-card.fresh-expired{border-color:var(--red-border);background:var(--red-bg)}
-.hu-card.fresh-expiring{border-color:var(--amber-border);background:var(--amber-bg)}
-.hu-card.fresh-valid{border-color:var(--green-border);background:var(--green-bg)}
 .hu-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px;flex-wrap:wrap}
 .hu-id{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-dim);padding:3px 10px;border-radius:6px;flex-shrink:0}
 .hu-badges{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
@@ -155,20 +330,11 @@ input,textarea,select{font-family:inherit}
 .hu-badge.miss{background:var(--red-bg);color:var(--red)}
 .hu-badge.adj{background:var(--amber-bg);color:var(--amber)}
 .hu-badge.ext{background:var(--cyan-bg);color:var(--cyan)}
-.hu-badge.sled-valid{background:var(--green-bg);color:var(--green)}
-.hu-badge.sled-expiring{background:var(--amber-bg);color:var(--amber)}
-.hu-badge.sled-expired{background:var(--red-bg);color:var(--red)}
 .hu-meta{display:flex;gap:16px;margin-bottom:6px;flex-wrap:wrap}
 .meta-item{display:flex;flex-direction:column}
 .meta-label{font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-3)}
 .meta-val{font-size:13px;font-weight:700;margin-top:1px}
 .hu-desc{font-size:10px;color:var(--text-2);margin-bottom:10px;line-height:1.4}
-.sled-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;background:var(--surface-2);border-radius:8px;border:1px solid var(--border)}
-.sled-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-3)}
-.sled-date{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;margin-left:auto}
-.sled-date.expired{color:var(--red)}
-.sled-date.expiring{color:var(--amber)}
-.sled-date.valid{color:var(--green)}
 .qty-row{display:flex;align-items:center;gap:6px;background:var(--surface-2);border-radius:12px;padding:6px;margin-bottom:8px}
 .qty-btn{width:60px;height:60px;border-radius:12px;background:var(--surface-3);font-size:26px;font-weight:900;color:var(--text-3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,color .15s}
 .qty-btn.plus{color:var(--accent)}
@@ -225,8 +391,11 @@ input,textarea,select{font-family:inherit}
 <body>
 <div id="toast" class="toast"><span id="toast-text"></span></div>
 
-<!-- ══ SCREEN 1: SETUP ══ -->
+<!-- ══════════════════════════════════════════
+     SCREEN 1 — SETUP
+══════════════════════════════════════════ -->
 <div id="screen-setup" class="screen active">
+
   <div class="header">
     <div>
       <h1>Cycle Counter</h1>
@@ -241,35 +410,62 @@ input,textarea,select{font-family:inherit}
     </div>
   </div>
 
-  <!-- Audit mode: Standard / Fresh -->
+  <!-- ── Audit mode: Standard / Fresh ── -->
   <div class="mode-bar">
     <button class="mode-btn active-std" id="mode-std"   onclick="setAuditMode('standard')">📦 Standard</button>
     <button class="mode-btn"            id="mode-fresh" onclick="setAuditMode('fresh')">🧊 Fresh / Perishable</button>
   </div>
 
-  <!-- Fresh sub-panel (hidden until fresh mode selected) -->
+  <!-- ── Fresh panel (visible when fresh mode) ── -->
   <div class="fresh-panel" id="fresh-panel">
-    <div class="fresh-submode-bar">
-      <button class="fresh-sub-btn active" id="submode-hu"     onclick="setFreshSubMode('hu')">🔍 Count by HU</button>
-      <button class="fresh-sub-btn"        id="submode-pallet" onclick="setFreshSubMode('pallet')">📦 Count by Pallet</button>
+
+    <!-- Step 1: Select SKU -->
+    <div class="fresh-sku-row">
+      <label class="fresh-sku-label">Step 1 — Select Fresh Product</label>
+      <select class="fresh-sku-select" id="fresh-sku-select">
+        <option value="">— Choose a product —</option>
+        <!-- Populated by buildSkuDropdown() -->
+      </select>
     </div>
+
+    <!-- Step 2: Choose counting method (hidden until SKU selected) -->
+    <div class="fresh-submode-bar" id="fresh-submode-bar">
+      <button class="fresh-sub-btn active" id="submode-hu"     onclick="setFreshSubMode('hu')">
+        🔍 Count by HU
+      </button>
+      <button class="fresh-sub-btn"        id="submode-pallet" onclick="setFreshSubMode('pallet')">
+        📦 Count by Pallet
+      </button>
+    </div>
+
+    <!-- Expiry threshold (HU mode only) -->
     <div class="fresh-threshold-row" id="fresh-threshold-row">
       <label>Expiry warning within</label>
       <input type="number" id="fresh-threshold-days" value="7" min="1" max="90">
       <span>days of today</span>
     </div>
+
+  </div><!-- /.fresh-panel -->
+
+  <!-- ── Fresh HU inline view (By HU mode with SKU selected) ── -->
+  <div class="fresh-hu-view" id="fresh-hu-view">
+    <div class="fresh-hu-header">
+      <div>
+        <div class="fresh-hu-title" id="fresh-hu-title">—</div>
+        <div class="fresh-hu-subtitle" id="fresh-hu-subtitle">—</div>
+      </div>
+      <button class="fresh-hu-submit" id="fresh-hu-submit" onclick="submitFreshHU()">
+        Submit All
+      </button>
+    </div>
+    <div class="fresh-hu-list" id="fresh-hu-list">
+      <!-- HU cards rendered here by renderFreshHUCards() -->
+    </div>
   </div>
 
-  <!-- Pallet count form (shown when fresh + pallet mode) -->
+  <!-- ── Pallet count form (By Pallet mode) ── -->
   <div class="pallet-form" id="pallet-form">
     <div class="pallet-section">
-      <div class="pallet-section-title">🧊 Fresh Pallet Count</div>
-
-      <label class="pallet-field-label">SKU / Product Number</label>
-      <select class="pallet-select" id="pallet-sku">
-        <option value="">— Select Fresh SKU —</option>
-      </select>
-
       <label class="pallet-field-label">Location / Bin</label>
       <input type="text" class="pallet-input mono" id="pallet-bin"
              placeholder="e.g. WA12A or Cooler Row 3"
@@ -285,13 +481,13 @@ input,textarea,select{font-family:inherit}
       <div class="pallet-hint">Enter total pallets at this location</div>
 
       <label class="pallet-field-label">Note (optional)</label>
-      <input type="text" class="pallet-input" id="pallet-note" placeholder="e.g. staging area, receiving dock…">
+      <input type="text" class="pallet-input" id="pallet-note"
+             placeholder="e.g. staging area, receiving dock…">
 
       <button class="pallet-submit-btn" id="pallet-submit-btn" onclick="submitPalletCount()">
         🧊 Log Pallet Count
       </button>
 
-      <!-- Recently logged pallet counts this session -->
       <div id="pallet-log-title" class="section-title" style="display:none;color:var(--fresh)">
         Logged This Session
       </div>
@@ -299,7 +495,7 @@ input,textarea,select{font-family:inherit}
     </div>
   </div>
 
-  <!-- Standard setup content (aisle grid + product search) -->
+  <!-- ── Standard setup content (aisle grid / product search) ── -->
   <div class="setup-content" id="setup-content">
     <div class="stat-row">
       <div class="stat-box"><div class="stat-val" id="stat-loaded">—</div><div class="stat-label">SAP Items</div></div>
@@ -322,9 +518,13 @@ input,textarea,select{font-family:inherit}
     <button class="nav-tab active">Count</button>
     <a href="index.html" class="nav-tab">Home</a>
   </div>
-</div>
 
-<!-- ══ SCREEN 2: COUNTING ══ -->
+</div><!-- /#screen-setup -->
+
+
+<!-- ══════════════════════════════════════════
+     SCREEN 2 — STANDARD COUNTING
+══════════════════════════════════════════ -->
 <div id="screen-counting" class="screen">
   <div class="header">
     <button class="hdr-btn" onclick="backToSetup()">← Back</button>
@@ -365,7 +565,10 @@ input,textarea,select{font-family:inherit}
   </div>
 </div>
 
-<!-- ══ MOVE MODAL ══ -->
+
+<!-- ══════════════════════════════════════════
+     MOVE MODAL
+══════════════════════════════════════════ -->
 <div id="modal-move" style="display:none;align-items:center;justify-content:center;padding:20px;">
   <div class="move-box">
     <h3 style="color:var(--purple);font-size:16px;font-weight:800;margin-bottom:16px">🔄 Move Item to Another Bin</h3>
@@ -389,82 +592,87 @@ input,textarea,select{font-family:inherit}
   </div>
 </div>
 
+
+<!-- ══════════════════════════════════════════
+     SCRIPTS
+══════════════════════════════════════════ -->
 <script src="novus-core.js"></script>
 <script>
 'use strict';
 
 // ─────────────────────────────────────────
-// FRESH SKU LIST — the 14 target products
+// FRESH SKU DICTIONARY
+// Maps the 14 target SKUs to their SAP Product Short Descriptions.
+// !! REPLACE the description values below with your exact SAP text !!
 // ─────────────────────────────────────────
-const FRESH_SKUS = [
-  '3305704','3307506','3307509','3307515','3307518','3307525',
-  '3307710','3308356','3309009','3309016','3309017','3309019',
-  '3309138','3309139',
-];
+const FRESH_SKU_DESCRIPTIONS = {
+  '3305704': 'Fresh Salsa Mild 16oz',
+  '3307506': 'Fresh Salsa Medium 16oz',
+  '3307509': 'Fresh Salsa Hot 16oz',
+  '3307515': 'Fresh Salsa Mild 32oz',
+  '3307518': 'Fresh Salsa Medium 32oz',
+  '3307525': 'Fresh Salsa Hot 32oz',
+  '3307710': 'Fresh Guacamole Classic',
+  '3308356': 'Fresh Pico de Gallo',
+  '3309009': 'Fresh Salsa Verde 16oz',
+  '3309016': 'Fresh Layered Dip 28oz',
+  '3309017': 'Fresh Layered Dip 42oz',
+  '3309019': 'Fresh Bean Dip',
+  '3309138': 'Fresh Queso Blanco',
+  '3309139': 'Fresh Salsa Roja Chunky',
+};
 
-// Populate the pallet SKU dropdown on load
+const FRESH_SKUS = Object.keys(FRESH_SKU_DESCRIPTIONS);
+
+// ─────────────────────────────────────────
+// POPULATE DROPDOWN WITH DESCRIPTIONS
+// Option text = description, option value = SKU number
+// ─────────────────────────────────────────
 (function buildSkuDropdown() {
-  const sel = document.getElementById('pallet-sku');
+  const sel = document.getElementById('fresh-sku-select');
   FRESH_SKUS.forEach(sku => {
     const opt = document.createElement('option');
-    opt.value = sku;
-    opt.textContent = sku;
+    opt.value       = sku;
+    opt.textContent = `${FRESH_SKU_DESCRIPTIONS[sku]} (${sku})`;
     sel.appendChild(opt);
   });
 })();
 
 // ─────────────────────────────────────────
-// FRESH SKU DROPDOWN — change event listener
-// Fires whenever the user selects a SKU from
-// the Fresh panel dropdown.
-//
-// Count by HU mode:  finds all bins for that SKU,
-//                    navigates to the first one,
-//                    and renders HU cards normally.
-//
-// Count by Pallet mode: does nothing extra — the
-//                       user fills the pallet form manually.
+// SKU DROPDOWN — change event
+// This is the master trigger for the entire Fresh workflow.
+// Step 1 → Step 2 reveal, then data load.
 // ─────────────────────────────────────────
-document.getElementById('pallet-sku').addEventListener('change', function () {
+document.getElementById('fresh-sku-select').addEventListener('change', function () {
   const sku = this.value;
-  if (!sku) return;
 
-  if (freshSubMode === 'hu') {
-    // Find every bin in SAP master that holds this SKU
-    const bins = [
-      ...new Set(
-        sapMaster
-          .filter(i => i.product.toUpperCase() === sku.toUpperCase())
-          .map(i => i.sapBin)
-      )
-    ].sort();
-
-    if (!bins.length) {
-      toast(`No SAP records found for ${sku}`, 'amber');
-      return;
-    }
-
-    // Set up navigation state and go to first bin
-    targetProduct = sku.toUpperCase();
-    activeAisle   = null;
-    aisleBins     = bins;
-    binIdx        = 0;
-
-    toast(`🧊 ${sku} — ${bins.length} bin(s) found`, 'pink');
-    navigateToBin(aisleBins[0]);
+  if (!sku) {
+    // Reset: hide everything downstream
+    document.getElementById('fresh-submode-bar').classList.remove('visible');
+    document.getElementById('fresh-threshold-row').classList.remove('visible');
+    document.getElementById('fresh-hu-view').classList.remove('visible');
+    document.getElementById('pallet-form').classList.remove('visible');
+    return;
   }
-  // In pallet mode the dropdown is just a form field —
-  // no navigation or HU rendering needed.
+
+  // Reveal counting method toggle (Step 2)
+  document.getElementById('fresh-submode-bar').classList.add('visible');
+
+  // Store selected SKU globally
+  activeFreshSKU = sku;
+
+  // Apply whichever sub-mode is currently active
+  setFreshSubMode(freshSubMode);
 });
 
 // ─────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────
-let sapMaster   = JSON.parse(localStorage.getItem('novus_sap') || '[]');
-let binIndex    = {}, huIndex = new Map();
+let sapMaster    = JSON.parse(localStorage.getItem('novus_sap') || '[]');
+let binIndex     = {}, huIndex = new Map();
 
-const _todayStr = new Date().toDateString();
-let _rawDone    = JSON.parse(localStorage.getItem('novus_done') || '{"date":"","bins":[]}');
+const _todayStr  = new Date().toDateString();
+let _rawDone     = JSON.parse(localStorage.getItem('novus_done') || '{"date":"","bins":[]}');
 let completedBins = new Set();
 if (Array.isArray(_rawDone) || _rawDone.date !== _todayStr) {
   localStorage.setItem('novus_done', JSON.stringify({ date: _todayStr, bins: [] }));
@@ -474,16 +682,25 @@ if (Array.isArray(_rawDone) || _rawDone.date !== _todayStr) {
 
 let offlineQueue  = JSON.parse(localStorage.getItem('novus_queue') || '[]');
 let auditorName   = NovusSettings.getUser();
+
+// Audit mode state
 let auditMode     = 'standard';  // 'standard' | 'fresh'
 let freshSubMode  = 'hu';        // 'hu' | 'pallet'
 let freshDays     = 7;
+let activeFreshSKU = '';         // currently selected fresh SKU
 
+// Standard counting state
 let currentBin    = '', currentItems = [], phase = 1;
 let aisleBins     = [], binIdx = 0, showingExtra = false;
 let targetProduct = null, activeAisle = null, activeMoveIdx = -1;
 let isOnline      = navigator.onLine;
 
-// Session pallet log (display only — persisted to GAS)
+// Fresh HU mode — flat list of all HU items for selected SKU
+// Each item: { hu, product, desc, batch, sapBin, sapQty, unit, sled,
+//              scannedQty, status, note }
+let freshHUItems = [];
+
+// Pallet mode session log
 let palletSessionLog = [];
 
 // ─────────────────────────────────────────
@@ -501,90 +718,423 @@ if (sapMaster.length > 0) { buildIndexes(); showSetup(); }
 else { pullCloud(); }
 
 // ─────────────────────────────────────────
-// AUDIT MODE
+// AUDIT MODE SWITCHER
 // ─────────────────────────────────────────
-
 function setAuditMode(mode) {
   auditMode = mode;
+
   document.getElementById('mode-std').className   = 'mode-btn' + (mode === 'standard' ? ' active-std'   : '');
   document.getElementById('mode-fresh').className = 'mode-btn' + (mode === 'fresh'    ? ' active-fresh'  : '');
-  document.getElementById('fresh-panel').classList.toggle('visible', mode === 'fresh');
+
+  const freshPanel = document.getElementById('fresh-panel');
+  freshPanel.classList.toggle('visible', mode === 'fresh');
 
   if (mode === 'fresh') {
-    setFreshSubMode(freshSubMode); // re-apply current sub-mode
-    toast('🧊 Fresh audit mode active', 'pink');
-  } else {
-    // Restore standard view
+    // Hide standard content; fresh views take over
+    document.getElementById('setup-content').style.display = 'none';
+    // Reset sequential flow
+    document.getElementById('fresh-sku-select').value = '';
+    document.getElementById('fresh-submode-bar').classList.remove('visible');
+    document.getElementById('fresh-threshold-row').classList.remove('visible');
+    document.getElementById('fresh-hu-view').classList.remove('visible');
     document.getElementById('pallet-form').classList.remove('visible');
+    activeFreshSKU = '';
+    toast('🧊 Fresh audit mode — select a product', 'pink');
+  } else {
+    // Restore standard content, hide all fresh views
     document.getElementById('setup-content').style.display = '';
+    document.getElementById('fresh-hu-view').classList.remove('visible');
+    document.getElementById('pallet-form').classList.remove('visible');
     toast('📦 Standard audit mode', 'blue');
   }
 }
 
 // ─────────────────────────────────────────
-// FRESH SUB-MODE: hu vs pallet
+// FRESH SUB-MODE SWITCHER
 // ─────────────────────────────────────────
-
 function setFreshSubMode(mode) {
   freshSubMode = mode;
+
   document.getElementById('submode-hu').classList.toggle('active',     mode === 'hu');
   document.getElementById('submode-pallet').classList.toggle('active', mode === 'pallet');
 
-  // Threshold row only relevant for HU mode
-  document.getElementById('fresh-threshold-row').style.display = mode === 'hu' ? 'flex' : 'none';
+  // Threshold only relevant in HU mode
+  document.getElementById('fresh-threshold-row').classList.toggle('visible', mode === 'hu');
 
-  if (mode === 'pallet') {
-    // Show pallet form, hide normal aisle grid
-    document.getElementById('pallet-form').classList.add('visible');
-    document.getElementById('setup-content').style.display = 'none';
+  const huView     = document.getElementById('fresh-hu-view');
+  const palletForm = document.getElementById('pallet-form');
+
+  if (mode === 'hu') {
+    palletForm.classList.remove('visible');
+    if (activeFreshSKU) {
+      // Load and render HU cards for the selected SKU
+      loadFreshHUItems(activeFreshSKU);
+      huView.classList.add('visible');
+    }
   } else {
-    // Show normal grid, hide pallet form
-    document.getElementById('pallet-form').classList.remove('visible');
-    document.getElementById('setup-content').style.display = '';
+    // Pallet mode
+    huView.classList.remove('visible');
+    if (activeFreshSKU) {
+      palletForm.classList.add('visible');
+    }
+  }
+}
+
+// ─────────────────────────────────────────
+// FRESH HU MODE — load + render
+// ─────────────────────────────────────────
+
+/**
+ * Pull all SAP records for the given SKU, build freshHUItems[],
+ * update the header, and render the cards.
+ */
+function loadFreshHUItems(sku) {
+  freshDays = parseInt(document.getElementById('fresh-threshold-days').value, 10) || 7;
+
+  // Filter SAP master to this SKU
+  const records = sapMaster.filter(i => i.product.toUpperCase() === sku.toUpperCase());
+
+  if (!records.length) {
+    toast(`No SAP records for ${sku}`, 'amber');
+    freshHUItems = [];
+    _updateFreshHUHeader(sku, 0);
+    renderFreshHUCards();
+    return;
+  }
+
+  // Build item state objects — one per HU line
+  freshHUItems = records.map(i => ({
+    hu:         String(i.hu      || '').trim(),
+    product:    String(i.product || '').trim(),
+    desc:       String(i.desc    || '').trim(),
+    batch:      String(i.batch   || '').trim(),
+    sapBin:     String(i.sapBin  || '').trim().toUpperCase(),
+    sapQty:     Number(i.sapQty) || 0,
+    unit:       String(i.unit    || 'LB').trim(),
+    sled:       String(i.sled    || '').trim(),
+    scannedQty: 0,
+    status:     'pending',  // pending | confirmed | adjusted | missing
+    note:       '',
+  }));
+
+  _updateFreshHUHeader(sku, freshHUItems.length);
+  renderFreshHUCards();
+}
+
+function _updateFreshHUHeader(sku, count) {
+  const desc = FRESH_SKU_DESCRIPTIONS[sku] || sku;
+  document.getElementById('fresh-hu-title').textContent   = desc;
+  document.getElementById('fresh-hu-subtitle').textContent =
+    count > 0
+      ? `SKU ${sku} · ${count} HU${count !== 1 ? 's' : ''} expected`
+      : `SKU ${sku} · No SAP records found`;
+  _updateFreshHUSubmitBtn();
+}
+
+function _updateFreshHUSubmitBtn() {
+  const btn     = document.getElementById('fresh-hu-submit');
+  const pending = freshHUItems.filter(i => i.status === 'pending').length;
+  const total   = freshHUItems.length;
+
+  if (total === 0) {
+    btn.disabled    = true;
+    btn.textContent = 'No Items';
+    return;
+  }
+  if (pending > 0) {
+    btn.disabled    = true;
+    btn.textContent = `${pending} Unchecked`;
+  } else {
+    btn.disabled    = false;
+    btn.textContent = `Submit ${total} Item${total !== 1 ? 's' : ''}`;
+  }
+}
+
+/**
+ * Render all HU cards into the fresh-hu-list container.
+ * Each card leads with a prominent Expected Location banner.
+ */
+function renderFreshHUCards() {
+  const list = document.getElementById('fresh-hu-list');
+
+  if (!freshHUItems.length) {
+    list.innerHTML = `
+      <div class="fresh-hu-empty">
+        <span class="icon">📭</span>
+        <p style="font-weight:700">No SAP records for this SKU</p>
+        <p style="font-size:11px;margin-top:4px">Upload a fresh SAP export from the Control Center</p>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = freshHUItems.map((item, idx) => _buildFreshHUCard(item, idx)).join('');
+  _updateFreshHUSubmitBtn();
+}
+
+/**
+ * Build HTML for a single fresh HU card.
+ * Expected_Bin (sapBin) is displayed first and most prominently.
+ */
+function _buildFreshHUCard(item, idx) {
+  const isPending  = item.status === 'pending';
+  const isOk       = item.status === 'confirmed';
+  const isMiss     = item.status === 'missing';
+  const isAdj      = item.status === 'adjusted';
+
+  const cardCls    = isOk ? 'confirmed' : isMiss ? 'missing' : isAdj ? 'adjusted' : '';
+
+  // Location badge
+  const badgeText  = isOk   ? 'Confirmed'
+                   : isMiss ? 'Missing'
+                   : isAdj  ? 'Adjusted'
+                   : 'Pending';
+  const badgeCls   = isOk ? 'ok' : isMiss ? 'miss' : isAdj ? 'adj' : 'pending';
+
+  // SLED
+  const ss         = item.sled ? sledStatus(item.sled) : 'unknown';
+  const sledCls    = ss === 'unknown' ? '' : ss;
+  const sledLabel  = ss === 'expired' ? '⚠ EXPIRED' : ss === 'expiring' ? '⚡ EXPIRING' : ss === 'valid' ? '✓ VALID' : '';
+  const sledRow    = item.sled ? `
+    <div class="fhu-sled">
+      <span class="fhu-sled-label">Best-By / SLED</span>
+      ${sledLabel ? `<span class="hu-badge sled-${ss}" style="margin-left:8px">${sledLabel}</span>` : ''}
+      <span class="fhu-sled-val ${sledCls}" style="margin-left:auto">${formatSLED(item.sled)}</span>
+    </div>` : '';
+
+  // Controls: active vs resolved
+  const qtyMatch   = item.scannedQty === item.sapQty;
+  let   controls   = '';
+
+  if (isPending || isAdj) {
+    controls = `
+      <div class="fhu-qty-row">
+        <button class="fhu-qty-btn" onclick="fhuAdjQty(${idx},-1)">−</button>
+        <input type="number" inputmode="numeric" class="fhu-qty-input"
+               id="fhu-qty-${idx}"
+               value="${item.scannedQty || ''}"
+               placeholder="${item.sapQty}"
+               onfocus="this.select()"
+               oninput="fhuSetQty(${idx},this.value)">
+        <button class="fhu-qty-btn" onclick="fhuAdjQty(${idx},1)">+</button>
+      </div>
+      <div class="fhu-sap-hint">SAP expects <strong>${item.sapQty} ${item.unit}</strong></div>
+      <div class="fhu-actions">
+        <button class="fhu-act confirm" onclick="fhuConfirm(${idx})">Confirm ${item.sapQty}</button>
+        <button class="fhu-act miss${isMiss ? ' active' : ''}" onclick="fhuMiss(${idx})">Missing</button>
+      </div>`;
+  } else {
+    controls = `
+      <div class="fhu-resolved">
+        <span class="fhu-resolved-label">Count</span>
+        <span class="fhu-resolved-val ${qtyMatch ? 'match' : 'mismatch'}">${item.scannedQty}</span>
+      </div>
+      <button class="fhu-undo" onclick="fhuUndo(${idx})">↺ Undo</button>`;
+  }
+
+  return `
+    <div class="fhu-card ${cardCls}" id="fhu-card-${idx}">
+
+      <!-- ── LOCATION — most prominent element ── -->
+      <div class="fhu-location">
+        <span class="fhu-location-icon">📍</span>
+        <div>
+          <div class="fhu-location-label">Expected Location</div>
+          <div class="fhu-location-bin">${item.sapBin || '— No Bin —'}</div>
+        </div>
+        <span class="fhu-location-badge ${badgeCls}">${badgeText}</span>
+      </div>
+
+      <!-- ── Card body ── -->
+      <div class="fhu-body">
+        <div class="fhu-meta-row">
+          <div class="fhu-meta">
+            <span class="fhu-meta-label">HU</span>
+            <span class="fhu-meta-val mono" style="font-size:12px">${item.hu || '—'}</span>
+          </div>
+          <div class="fhu-meta">
+            <span class="fhu-meta-label">SAP Qty</span>
+            <span class="fhu-meta-val mono">${item.sapQty} ${item.unit}</span>
+          </div>
+          ${item.batch ? `<div class="fhu-meta"><span class="fhu-meta-label">Batch</span><span class="fhu-meta-val mono" style="font-size:11px">${item.batch}</span></div>` : ''}
+        </div>
+
+        ${sledRow}
+        ${controls}
+
+        <!-- Note -->
+        <button class="fhu-note${item.note ? ' has' : ''}" onclick="fhuAddNote(${idx})">
+          📝 ${item.note ? item.note.substring(0, 34) + (item.note.length > 34 ? '…' : '') : 'Add Note'}
+        </button>
+      </div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────
+// FRESH HU — state actions
+// ─────────────────────────────────────────
+
+function fhuConfirm(idx) {
+  haptic();
+  if (!freshHUItems[idx].scannedQty) freshHUItems[idx].scannedQty = freshHUItems[idx].sapQty;
+  freshHUItems[idx].status = freshHUItems[idx].scannedQty === freshHUItems[idx].sapQty
+    ? 'confirmed' : 'adjusted';
+  renderFreshHUCards();
+}
+function fhuMiss(idx) {
+  haptic();
+  if (freshHUItems[idx].status === 'missing') {
+    freshHUItems[idx].status     = 'pending';
+    freshHUItems[idx].scannedQty = 0;
+  } else {
+    freshHUItems[idx].status     = 'missing';
+    freshHUItems[idx].scannedQty = 0;
+  }
+  renderFreshHUCards();
+}
+function fhuAdjQty(idx, delta) {
+  haptic();
+  freshHUItems[idx].scannedQty = Math.max(0, (freshHUItems[idx].scannedQty || 0) + delta);
+  freshHUItems[idx].status = 'adjusted';
+  renderFreshHUCards();
+}
+function fhuSetQty(idx, val) {
+  freshHUItems[idx].scannedQty = parseFloat(val) || 0;
+  if (freshHUItems[idx].scannedQty > 0) {
+    freshHUItems[idx].status = freshHUItems[idx].scannedQty === freshHUItems[idx].sapQty
+      ? 'confirmed' : 'adjusted';
+  }
+  _updateFreshHUSubmitBtn();
+}
+function fhuUndo(idx) {
+  haptic();
+  freshHUItems[idx].status     = 'pending';
+  freshHUItems[idx].scannedQty = 0;
+  renderFreshHUCards();
+}
+function fhuAddNote(idx) {
+  const note = prompt('Note for this item:', freshHUItems[idx].note || '');
+  if (note !== null) { freshHUItems[idx].note = note.trim(); renderFreshHUCards(); }
+}
+
+// ─────────────────────────────────────────
+// FRESH HU — submit all
+// Groups items by sapBin and sends one payload per bin.
+// ─────────────────────────────────────────
+async function submitFreshHU() {
+  const pending = freshHUItems.filter(i => i.status === 'pending').length;
+  if (pending > 0) { toast(`${pending} item(s) still unchecked`, 'amber'); return; }
+  if (!freshHUItems.length) return;
+
+  haptic();
+  const btn = document.getElementById('fresh-hu-submit');
+  btn.disabled    = true;
+  btn.textContent = '⏳ Submitting…';
+
+  // Group by sapBin so GAS receives one well-formed payload per bin
+  const byBin = {};
+  freshHUItems.forEach(item => {
+    const b = item.sapBin || 'UNKNOWN';
+    if (!byBin[b]) byBin[b] = [];
+    byBin[b].push(item);
+  });
+
+  let allOk = true;
+  const sessId = 'FHU-' + new Date().toISOString().split('T')[0];
+
+  for (const [bin, items] of Object.entries(byBin)) {
+    const payloadItems = items.map(i => {
+      let type = 'ok';
+      if      (i.status === 'missing')                              type = 'miss';
+      else if (i.scannedQty !== i.sapQty && i.status !== 'missing') type = 'adj';
+
+      return {
+        hu:         i.hu,
+        product:    i.product,
+        desc:       i.desc,
+        batch:      i.batch,
+        sapBin:     i.sapBin,
+        sapQty:     i.sapQty,
+        unit:       i.unit,
+        countQty:   i.scannedQty,
+        type,
+        note:       i.note,
+        sled:       i.sled    || '',
+        sledStatus: i.sled ? sledStatus(i.sled) : '',
+      };
+    });
+
+    const payload = {
+      action:         'logAudit',
+      user:           auditorName || 'Counter',
+      bin,
+      aisle:          bin.charAt(1) || '',
+      auditMode:      'fresh',
+      sessionId:      sessId,
+      idempotencyKey: `${sessId}|${bin}|${activeFreshSKU}|${auditorName}`,
+      items:          payloadItems,
+    };
+
+    const ok = await sendPayload(payload, null); // suppress individual toasts
+    if (!ok) allOk = false;
+  }
+
+  btn.disabled = false;
+
+  if (allOk) {
+    const total = freshHUItems.length;
+    toast(`🧊 ${total} HU${total !== 1 ? 's' : ''} for ${activeFreshSKU} submitted`, 'green');
+    // Reset for next SKU
+    freshHUItems = [];
+    document.getElementById('fresh-sku-select').value = '';
+    document.getElementById('fresh-submode-bar').classList.remove('visible');
+    document.getElementById('fresh-hu-view').classList.remove('visible');
+    document.getElementById('fresh-threshold-row').classList.remove('visible');
+    activeFreshSKU = '';
+    renderFreshHUCards();
+  } else {
+    btn.textContent = 'Retry Submit';
+    toast('Some items failed to sync — will retry', 'amber');
   }
 }
 
 // ─────────────────────────────────────────
 // PALLET COUNT — adjust / submit
 // ─────────────────────────────────────────
-
 function adjustPallets(delta) {
   const input = document.getElementById('pallet-qty');
-  const current = parseInt(input.value, 10) || 0;
-  input.value = Math.max(0, current + delta);
+  input.value = Math.max(0, (parseInt(input.value, 10) || 0) + delta);
 }
 
 async function submitPalletCount() {
-  const sku    = document.getElementById('pallet-sku').value.trim();
-  const bin    = document.getElementById('pallet-bin').value.trim().toUpperCase();
-  const qty    = parseInt(document.getElementById('pallet-qty').value, 10) || 0;
-  const note   = document.getElementById('pallet-note').value.trim();
+  const sku  = activeFreshSKU;
+  const bin  = document.getElementById('pallet-bin').value.trim().toUpperCase();
+  const qty  = parseInt(document.getElementById('pallet-qty').value, 10) || 0;
+  const note = document.getElementById('pallet-note').value.trim();
 
-  // Validation
-  if (!sku)  { _palletFieldError('pallet-sku',  'Select a SKU');       return; }
-  if (!bin)  { _palletFieldError('pallet-bin',  'Enter a location');   return; }
+  if (!sku)  { toast('No SKU selected', 'amber'); return; }
+  if (!bin)  { _palletFieldError('pallet-bin', 'Enter a location'); return; }
   if (qty <= 0) { _palletFieldError('pallet-qty', 'Enter pallet count'); return; }
 
   const btn = document.getElementById('pallet-submit-btn');
-  btn.disabled = true;
-  btn.innerHTML = '⏳ Logging…';
+  btn.disabled    = true;
+  btn.textContent = '⏳ Logging…';
 
-  const sessionId = 'PLT-' + new Date().toISOString().split('T')[0];
+  const sessId = 'PLT-' + new Date().toISOString().split('T')[0];
   const payload = {
     action:         'logAudit',
     user:           auditorName || 'Counter',
     bin,
     aisle:          bin.charAt(1) || '',
     auditMode:      'fresh',
-    sessionId,
-    idempotencyKey: `${sessionId}|${bin}|${sku}|${auditorName}|${qty}|${Date.now()}`,
+    sessionId:      sessId,
+    idempotencyKey: `${sessId}|${bin}|${sku}|${auditorName}|${qty}|${Date.now()}`,
     items: [{
-      hu:         '',          // no HU in pallet mode
+      hu:         '',
       product:    sku,
-      desc:       'Fresh Pallet Count',
+      desc:       FRESH_SKU_DESCRIPTIONS[sku] || 'Fresh Pallet Count',
       batch:      '',
       sapBin:     bin,
-      sapQty:     0,           // no SAP qty reference for bulk pallet count
+      sapQty:     0,
       unit:       'PALLET',
       countQty:   qty,
       type:       'pallet_count',
@@ -594,21 +1144,18 @@ async function submitPalletCount() {
     }],
   };
 
-  const success = await sendPayload(payload, `✓ ${qty} pallet(s) of ${sku} logged`);
+  const ok = await sendPayload(payload, `✓ ${qty} pallet(s) of ${FRESH_SKU_DESCRIPTIONS[sku] || sku} logged`);
 
-  if (success) {
-    // Add to session log
+  if (ok) {
     palletSessionLog.unshift({ sku, bin, qty, note });
     _renderPalletLog();
-
-    // Clear form fields (keep SKU selected for rapid re-entry)
     document.getElementById('pallet-bin').value  = '';
     document.getElementById('pallet-qty').value  = '';
     document.getElementById('pallet-note').value = '';
   }
 
-  btn.disabled = false;
-  btn.innerHTML = '🧊 Log Pallet Count';
+  btn.disabled    = false;
+  btn.textContent = '🧊 Log Pallet Count';
 }
 
 function _palletFieldError(id, msg) {
@@ -621,18 +1168,18 @@ function _palletFieldError(id, msg) {
 }
 
 function _renderPalletLog() {
-  const logEl = document.getElementById('pallet-log');
+  const logEl   = document.getElementById('pallet-log');
   const titleEl = document.getElementById('pallet-log-title');
   if (!palletSessionLog.length) { logEl.innerHTML = ''; titleEl.style.display = 'none'; return; }
   titleEl.style.display = '';
-  logEl.innerHTML = palletSessionLog.map(entry => `
+  logEl.innerHTML = palletSessionLog.map(e => `
     <div class="pallet-log-item">
       <span class="pallet-log-icon">🧊</span>
       <div class="pallet-log-info">
-        <div class="pallet-log-sku">${entry.sku}</div>
-        <div class="pallet-log-detail">📍 ${entry.bin}${entry.note ? ' · ' + entry.note : ''}</div>
+        <div class="pallet-log-sku">${FRESH_SKU_DESCRIPTIONS[e.sku] || e.sku} <span style="font-size:9px;opacity:.6">(${e.sku})</span></div>
+        <div class="pallet-log-detail">📍 ${e.bin}${e.note ? ' · ' + e.note : ''}</div>
       </div>
-      <div class="pallet-log-qty">${entry.qty}</div>
+      <div class="pallet-log-qty">${e.qty}</div>
     </div>`).join('');
 }
 
@@ -664,7 +1211,7 @@ function buildIndexes() {
     i.sapQty  = Number(i.sapQty  || i.expectedQty) || 0;
     i.unit    = String(i.unit    || 'LB').trim();
     i.sled    = String(i.sled    || '').trim();
-    if (i.sapBin) { if (!binIndex[i.sapBin]) binIndex[i.sapBin] = []; binIndex[i.sapBin].push(i); }
+    if (i.sapBin) { if (!binIndex[i.sapBin]) binIndex[i.sapBin]=[]; binIndex[i.sapBin].push(i); }
     if (i.hu) huIndex.set(i.hu, i);
   });
   document.getElementById('stat-loaded').textContent = sapMaster.length.toLocaleString();
@@ -689,7 +1236,7 @@ async function pullCloud() {
     } else { _showNoData(); }
   } catch {
     isOnline = false; updateSyncDot();
-    if (sapMaster.length > 0) { buildIndexes(); showSetup(); toast('Offline — using cached data', 'amber'); }
+    if (sapMaster.length > 0) { buildIndexes(); showSetup(); toast('Offline — cached data', 'amber'); }
     else _showNoData();
   } finally { NovusLoader.done(); }
 }
@@ -736,18 +1283,18 @@ function buildAisleGrid() {
   AISLE_ROWS.forEach(letter => {
     const bins = Object.keys(binIndex).filter(b => b.charAt(1) === letter);
     const done = bins.filter(b => completedBins.has(b)).length, total = bins.length;
-    const pct = total > 0 ? Math.round(done / total * 100) : 0;
+    const pct  = total > 0 ? Math.round(done / total * 100) : 0;
     const allDone = total > 0 && done >= total, inProg = done > 0 && !allDone;
     const btn = document.createElement('button');
     btn.className = `aisle-btn${allDone ? ' done' : inProg ? ' in-progress' : ''}`;
     btn.innerHTML = `<span class="a-letter">${letter}</span><span class="a-count">${done}/${total}</span><div class="aisle-prog" style="width:${pct}%"></div>`;
-    btn.onclick = () => selectAisle(letter);
+    btn.onclick   = () => selectAisle(letter);
     grid.appendChild(btn);
   });
 }
 
 // ─────────────────────────────────────────
-// NAVIGATION
+// STANDARD NAVIGATION
 // ─────────────────────────────────────────
 function selectAisle(letter) {
   targetProduct = null; activeAisle = letter;
@@ -782,24 +1329,20 @@ function navigateToBin(bin) {
   document.getElementById('count-bin-title').textContent = currentBin;
   document.getElementById('bin-input').value = currentBin;
   document.getElementById('count-aisle-label').textContent = activeAisle ? `Aisle ${currentBin.charAt(1)}` : '';
-  document.getElementById('btn-finalize').className = 'btn-pri' + (auditMode === 'fresh' ? ' fresh-mode' : '');
+  document.getElementById('btn-finalize').className = 'btn-pri';
   _updateAisleProgressBanner(); renderPhase(); renderStrip(); renderHUList(); updateFinalizeBtn();
 }
 function stepBin(dir) { const n = binIdx + dir; if (n >= 0 && n < aisleBins.length) navigateToBin(aisleBins[n]); }
 
-// ─────────────────────────────────────────
-// AISLE PROGRESS BANNER
-// ─────────────────────────────────────────
 function _updateAisleProgressBanner() {
   const banner = document.getElementById('aisle-progress-banner');
   if (!activeAisle) { banner.classList.remove('visible'); return; }
   const done = aisleBins.filter(b => completedBins.has(b)).length, total = aisleBins.length;
-  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+  const pct  = total > 0 ? Math.round(done / total * 100) : 0;
   document.getElementById('aisle-progress-text').textContent = `Aisle ${activeAisle}: ${done}/${total} bins`;
   document.getElementById('aisle-prog-fill').style.width = pct + '%';
   document.getElementById('aisle-progress-pct').textContent = pct + '%';
-  const fill = document.getElementById('aisle-prog-fill');
-  fill.style.background = pct === 100 ? 'var(--green)' : 'var(--amber)';
+  document.getElementById('aisle-prog-fill').style.background = pct === 100 ? 'var(--green)' : 'var(--amber)';
   banner.style.background  = pct === 100 ? 'var(--green-bg)'     : 'var(--amber-bg)';
   banner.style.borderColor = pct === 100 ? 'var(--green-border)' : 'var(--amber-border)';
   banner.style.color       = pct === 100 ? 'var(--green)'        : 'var(--amber)';
@@ -807,7 +1350,7 @@ function _updateAisleProgressBanner() {
 }
 
 // ─────────────────────────────────────────
-// RENDER
+// STANDARD COUNTING RENDER
 // ─────────────────────────────────────────
 function renderStrip() {
   const strip = document.getElementById('bin-strip'); strip.innerHTML = ''; const seen = {};
@@ -829,14 +1372,14 @@ function renderPhase() {
 }
 
 // ─────────────────────────────────────────
-// FRESH SLED HELPERS
+// SLED HELPERS
 // ─────────────────────────────────────────
 function parseSLED(s) { if(!s)return null; const d=new Date(s); if(!isNaN(d))return d; const m=s.match(/^(\d{2})\.(\d{2})\.(\d{4})$/); if(m)return new Date(`${m[3]}-${m[2]}-${m[1]}`); return null; }
 function sledStatus(s) { const d=parseSLED(s); if(!d)return'unknown'; const now=new Date(); now.setHours(0,0,0,0); const thr=new Date(now); thr.setDate(thr.getDate()+freshDays); if(d<now)return'expired'; if(d<=thr)return'expiring'; return'valid'; }
 function formatSLED(s) { const d=parseSLED(s); if(!d)return s||'—'; return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}); }
 
 // ─────────────────────────────────────────
-// HU LIST RENDER
+// STANDARD HU LIST RENDER
 // ─────────────────────────────────────────
 function renderHUList() {
   const list = document.getElementById('hu-list'); list.innerHTML = '';
@@ -850,23 +1393,17 @@ function renderHUList() {
 }
 function renderCard(item, idx) {
   const isPending=item.status==='pending',isOk=item.status==='confirmed',isMiss=item.status==='missing',isAdj=item.status==='adjusted';
-  let cardCls='';
-  if (auditMode==='fresh'&&item.sled&&!item.isExtra) { const ss=sledStatus(item.sled); cardCls=ss==='expired'?'fresh-expired':ss==='expiring'?'fresh-expiring':ss==='valid'?'fresh-valid':''; }
-  else { cardCls=isMiss?'missing':isOk?'confirmed':isAdj?'adjusted':item.isExtra?'extra':''; }
+  const cardCls=isMiss?'missing':isOk?'confirmed':isAdj?'adjusted':item.isExtra?'extra':'';
   const statusBadge=isOk?'<span class="hu-badge ok">✓ Confirmed</span>':isMiss?'<span class="hu-badge miss">✗ Missing</span>':isAdj?'<span class="hu-badge adj">± Adjusted</span>':item.isExtra?'<span class="hu-badge ext">+ Extra</span>':'';
-  let sledBadge='';
-  if (auditMode==='fresh'&&item.sled) { const ss=sledStatus(item.sled); if(ss!=='unknown'){const lbl=ss==='expired'?'⚠ EXPIRED':ss==='expiring'?'⚡ EXPIRING':'✓ VALID'; sledBadge=`<span class="hu-badge sled-${ss}">${lbl}</span>`;}}
-  let sledRow='';
-  if (auditMode==='fresh'&&item.sled) { const ss=sledStatus(item.sled),cls=ss==='unknown'?'':ss; sledRow=`<div class="sled-row"><span class="sled-label">Best-By / SLED</span><span class="sled-date ${cls}">${formatSLED(item.sled)}</span></div>`; }
-  const qtyMatch = item.scannedQty===item.sapQty;
+  const qtyMatch=item.scannedQty===item.sapQty;
   let body='';
-  if (isPending||isAdj) { body=`<div class="qty-row"><button class="qty-btn" onclick="adjustQty(${idx},-1)">−</button><input type="number" inputmode="numeric" class="qty-input" value="${item.scannedQty||''}" placeholder="${item.sapQty}" onfocus="this.select()" oninput="setQty(${idx},this.value)"><button class="qty-btn plus" onclick="adjustQty(${idx},1)">+</button></div><div class="sap-hint">SAP expects <strong>${item.sapQty} ${item.unit||'LB'}</strong></div><div class="hu-actions"><button class="act-btn confirm" onclick="confirmHU(${idx})">Confirm ${item.sapQty}</button><button class="act-btn miss${isMiss?' active':''}" onclick="markMissing(${idx})">Missing</button></div>`; }
-  else { body=`<div class="resolved-row"><span class="resolved-label">Count</span><span class="resolved-val ${qtyMatch?'match':'mismatch'}">${item.scannedQty}</span></div><button class="undo-btn" onclick="resetHU(${idx})">↺ Undo</button>`; }
-  return `<div class="hu-card ${cardCls}"><div class="hu-top"><span class="hu-id">HU ${item.hu||'—'}</span><div class="hu-badges">${statusBadge}${sledBadge}</div></div><div class="hu-meta"><div class="meta-item"><span class="meta-label">Product</span><span class="meta-val">${item.product}</span></div><div class="meta-item"><span class="meta-label">SAP Qty</span><span class="meta-val mono">${item.sapQty}</span></div>${item.batch?`<div class="meta-item"><span class="meta-label">Batch</span><span class="meta-val mono" style="font-size:11px">${item.batch}</span></div>`:''}</div>${item.desc?`<div class="hu-desc">${item.desc}</div>`:''}${sledRow}${body}<div class="card-actions-row"><button class="note-btn${item.note?' has':''}" onclick="addNote(${idx})">📝 ${item.note?item.note.substring(0,28)+(item.note.length>28?'…':''):'Add Note'}</button><button class="move-btn" onclick="openMoveModal(${idx})">🔄 Move</button></div></div>`;
+  if(isPending||isAdj){body=`<div class="qty-row"><button class="qty-btn" onclick="adjustQty(${idx},-1)">−</button><input type="number" inputmode="numeric" class="qty-input" value="${item.scannedQty||''}" placeholder="${item.sapQty}" onfocus="this.select()" oninput="setQty(${idx},this.value)"><button class="qty-btn plus" onclick="adjustQty(${idx},1)">+</button></div><div class="sap-hint">SAP expects <strong>${item.sapQty} ${item.unit||'LB'}</strong></div><div class="hu-actions"><button class="act-btn confirm" onclick="confirmHU(${idx})">Confirm ${item.sapQty}</button><button class="act-btn miss${isMiss?' active':''}" onclick="markMissing(${idx})">Missing</button></div>`;}
+  else{body=`<div class="resolved-row"><span class="resolved-label">Count</span><span class="resolved-val ${qtyMatch?'match':'mismatch'}">${item.scannedQty}</span></div><button class="undo-btn" onclick="resetHU(${idx})">↺ Undo</button>`;}
+  return `<div class="hu-card ${cardCls}"><div class="hu-top"><span class="hu-id">HU ${item.hu||'—'}</span><div class="hu-badges">${statusBadge}</div></div><div class="hu-meta"><div class="meta-item"><span class="meta-label">Product</span><span class="meta-val">${item.product}</span></div><div class="meta-item"><span class="meta-label">SAP Qty</span><span class="meta-val mono">${item.sapQty}</span></div>${item.batch?`<div class="meta-item"><span class="meta-label">Batch</span><span class="meta-val mono" style="font-size:11px">${item.batch}</span></div>`:''}</div>${item.desc?`<div class="hu-desc">${item.desc}</div>`:''}${body}<div class="card-actions-row"><button class="note-btn${item.note?' has':''}" onclick="addNote(${idx})">📝 ${item.note?item.note.substring(0,28)+(item.note.length>28?'…':''):'Add Note'}</button><button class="move-btn" onclick="openMoveModal(${idx})">🔄 Move</button></div></div>`;
 }
 
 // ─────────────────────────────────────────
-// HU STATE ACTIONS
+// STANDARD HU ACTIONS
 // ─────────────────────────────────────────
 function confirmHU(idx){haptic();if(!currentItems[idx].scannedQty)currentItems[idx].scannedQty=currentItems[idx].sapQty;currentItems[idx].status=currentItems[idx].scannedQty===currentItems[idx].sapQty?'confirmed':'adjusted';checkPhaseAdvance();renderHUList();}
 function markMissing(idx){haptic();if(currentItems[idx].status==='missing'){currentItems[idx].status='pending';currentItems[idx].scannedQty=0;}else{currentItems[idx].status='missing';currentItems[idx].scannedQty=0;}checkPhaseAdvance();renderHUList();}
@@ -889,7 +1426,7 @@ async function submitQuickMove(){
   if(item.isExtra)currentItems.splice(activeMoveIdx,1);else{item.scannedQty=0;item.status='missing';item.note=`Moved to ${scanBin}`;}
   renderHUList();checkPhaseAdvance();
   const sessId='MOVE-'+new Date().toISOString().split('T')[0];
-  const payload={action:'logAudit',user:auditorName||'Counter',bin:scanBin,aisle:scanBin.charAt(1),auditMode,sessionId:sessId,idempotencyKey:makeIdempotencyKey(scanBin,sessId),items:[{hu:item.hu,product:item.product,desc:item.desc,batch:item.batch,sapBin:item.sapBin,sapQty:item.sapQty,countQty:scanQty,type,note:`Moved from ${currentBin}`,sled:item.sled||'',sledStatus:sledStatus(item.sled)}]};
+  const payload={action:'logAudit',user:auditorName||'Counter',bin:scanBin,aisle:scanBin.charAt(1),auditMode,sessionId:sessId,idempotencyKey:makeIdempotencyKey(scanBin,sessId),items:[{hu:item.hu,product:item.product,desc:item.desc,batch:item.batch,sapBin:item.sapBin,sapQty:item.sapQty,countQty:scanQty,type,note:`Moved from ${currentBin}`,sled:item.sled||'',sledStatus:''}]};
   document.getElementById('modal-move').style.display='none';
   await sendPayload(payload,'Movement logged');
 }
@@ -902,17 +1439,17 @@ function extraLookup(){const hu=document.getElementById('extra-hu').value.trim()
 function addExtra(){const hu=document.getElementById('extra-hu').value.trim()||'0',product=document.getElementById('extra-product').value.trim(),qty=parseFloat(document.getElementById('extra-qty').value)||0;if(!product||!qty){toast('Enter product # and qty','amber');return;}const m=huIndex.get(hu);currentItems.push({hu,product,desc:m?m.desc:'FOUND (Extra)',batch:m?m.batch:'',sapBin:m?m.sapBin:'',sapQty:m?m.sapQty:0,unit:m?m.unit:'LB',sled:m?m.sled:'',scannedQty:qty,status:'confirmed',isExtra:true,note:''});showingExtra=false;renderHUList();toast('Extra item added','blue');}
 
 // ─────────────────────────────────────────
-// FINALIZE BIN
+// FINALIZE STANDARD BIN
 // ─────────────────────────────────────────
 function updateFinalizeBtn(){
-  const p=currentItems.filter(i=>i.status==='pending').length,btn=document.getElementById('btn-finalize'),fc=auditMode==='fresh'?' fresh-mode':'';
+  const p=currentItems.filter(i=>i.status==='pending').length,btn=document.getElementById('btn-finalize');
   if(p>0){btn.className='btn-pri disabled';btn.textContent=`${p} item${p>1?'s':''} unchecked`;}
-  else{btn.className='btn-pri'+fc;btn.textContent=currentItems.length===0?'Skip Empty Bin →':'Finalize & Next →';}
+  else{btn.className='btn-pri';btn.textContent=currentItems.length===0?'Skip Empty Bin →':'Finalize & Next →';}
   document.getElementById('btn-confirm-all').style.display=currentItems.filter(i=>!i.isExtra&&i.status==='pending').length<=1?'none':'';
 }
 async function finalizeBin(){
   if(currentItems.some(i=>i.status==='pending'))return; haptic();
-  const items=currentItems.map(i=>{let type='ok';if(i.status==='missing')type='miss';else if(i.isExtra)type=(i.sapBin&&i.sapBin!==currentBin)?(i.scannedQty===i.sapQty?'move':'move_adj'):'unexpected';else if(i.scannedQty!==i.sapQty)type='adj';return{hu:i.hu,product:i.product,desc:i.desc,batch:i.batch,sapBin:i.sapBin,sapQty:i.sapQty,unit:i.unit,countQty:i.scannedQty,type,note:i.note,sled:i.sled||'',sledStatus:auditMode==='fresh'?sledStatus(i.sled):''};});
+  const items=currentItems.map(i=>{let type='ok';if(i.status==='missing')type='miss';else if(i.isExtra)type=(i.sapBin&&i.sapBin!==currentBin)?(i.scannedQty===i.sapQty?'move':'move_adj'):'unexpected';else if(i.scannedQty!==i.sapQty)type='adj';return{hu:i.hu,product:i.product,desc:i.desc,batch:i.batch,sapBin:i.sapBin,sapQty:i.sapQty,unit:i.unit,countQty:i.scannedQty,type,note:i.note,sled:i.sled||'',sledStatus:''};});
   const sessId='S-'+new Date().toISOString().split('T')[0];
   const payload={action:'logAudit',user:auditorName||'Counter',bin:currentBin,aisle:currentBin.charAt(1),auditMode,sessionId:sessId,idempotencyKey:makeIdempotencyKey(currentBin,sessId,items),items};
   const ok=await sendPayload(payload,'Bin finalized ✓');
@@ -924,11 +1461,27 @@ async function finalizeBin(){
 // ─────────────────────────────────────────
 function makeIdempotencyKey(bin,sessId,items){const fp=items?`${items.length}|${items[0]?.hu||'empty'}`:'nofp';return`${sessId}|${bin}|${auditorName}|${fp}`;}
 async function sendPayload(payload,successMsg){
-  try{const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},redirect:'follow',body:JSON.stringify(payload)});const text=await res.text();let result;try{result=JSON.parse(text);}catch{_enqueue(payload);return true;}if(result.success===false){toast('Server error: '+(result.error||'unknown'),'red');return false;}if(result.skipped)toast('Already synced','amber');else if(successMsg)toast(successMsg,'green');isOnline=true;updateSyncDot();return true;}
-  catch{_enqueue(payload);isOnline=false;updateSyncDot();toast('Saved offline — will sync later','amber');return true;}
+  try{
+    const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},redirect:'follow',body:JSON.stringify(payload)});
+    const text=await res.text();let result;
+    try{result=JSON.parse(text);}catch{_enqueue(payload);return true;}
+    if(result.success===false){toast('Server error: '+(result.error||'unknown'),'red');return false;}
+    if(result.skipped)toast('Already synced','amber');
+    else if(successMsg)toast(successMsg,'green');
+    isOnline=true;updateSyncDot();return true;
+  }catch{_enqueue(payload);isOnline=false;updateSyncDot();toast('Saved offline — will sync later','amber');return true;}
 }
 function _enqueue(p){offlineQueue.push(p);localStorage.setItem('novus_queue',JSON.stringify(offlineQueue));updateQueueBadge();}
-async function flushQueue(){if(!offlineQueue.length)return;const batch=[...offlineQueue];offlineQueue=[];const failed=[];for(const p of batch){try{const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},redirect:'follow',body:JSON.stringify(p)});const text=await res.text();try{const r=JSON.parse(text);if(r.success===false)failed.push(p);}catch{failed.push(p);}}catch{failed.push(p);}}offlineQueue=failed;localStorage.setItem('novus_queue',JSON.stringify(offlineQueue));updateQueueBadge();if(!failed.length&&batch.length)toast(`${batch.length} queued item(s) synced`,'green');}
+async function flushQueue(){
+  if(!offlineQueue.length)return;
+  const batch=[...offlineQueue];offlineQueue=[];const failed=[];
+  for(const p of batch){
+    try{const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},redirect:'follow',body:JSON.stringify(p)});const text=await res.text();try{const r=JSON.parse(text);if(r.success===false)failed.push(p);}catch{failed.push(p);}}
+    catch{failed.push(p);}
+  }
+  offlineQueue=failed;localStorage.setItem('novus_queue',JSON.stringify(offlineQueue));updateQueueBadge();
+  if(!failed.length&&batch.length)toast(`${batch.length} queued item(s) synced`,'green');
+}
 setInterval(flushQueue,15000);
 
 // ─────────────────────────────────────────
