@@ -5,451 +5,371 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Cycle Counter — Novus Ops</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
-
-<!-- ── Shared core: API_URL, AISLE_ROWS, NovusSettings, toast, NovusLoader ── -->
 <script src="novus-core.js"></script>
-
 <style>
 /* ─────────────────────────────────────────
-   DESIGN TOKENS (overridden by NovusSettings theme)
+   TOKENS
 ───────────────────────────────────────── */
 :root {
-  --bg:#0f1117; --surface:#181a23; --surface-2:#1f2230; --surface-3:#2a2d3a;
-  --border:#313546; --text:#eceef4; --text-2:#9ba1b5; --text-3:#6c7189;
-  --accent:#5b9aff; --accent-dim:rgba(91,154,255,.1);
-  --green:#34d399; --green-bg:rgba(52,211,153,.1); --green-border:rgba(52,211,153,.25);
-  --red:#f87171; --red-bg:rgba(248,113,113,.1); --red-border:rgba(248,113,113,.25);
-  --amber:#fbbf24; --amber-bg:rgba(251,191,36,.1); --amber-border:rgba(251,191,36,.25);
-  --purple:#a78bfa; --purple-bg:rgba(167,139,250,.1);
-  --cyan:#22d3ee; --cyan-bg:rgba(34,211,238,.1);
-  --radius:14px; --radius-sm:10px;
+  --bg:#0f1117;--surface:#181a23;--surface-2:#1f2230;--surface-3:#2a2d3a;
+  --border:#313546;--text:#eceef4;--text-2:#9ba1b5;--text-3:#6c7189;
+  --accent:#5b9aff;--accent-dim:rgba(91,154,255,.1);
+  --green:#34d399;--green-bg:rgba(52,211,153,.1);--green-border:rgba(52,211,153,.25);
+  --red:#f87171;--red-bg:rgba(248,113,113,.1);--red-border:rgba(248,113,113,.25);
+  --amber:#fbbf24;--amber-bg:rgba(251,191,36,.1);--amber-border:rgba(251,191,36,.25);
+  --purple:#a78bfa;--purple-bg:rgba(167,139,250,.1);
+  --cyan:#22d3ee;--cyan-bg:rgba(34,211,238,.1);
+  --fresh:#f472b6;--fresh-bg:rgba(244,114,182,.1);--fresh-border:rgba(244,114,182,.25);
+  --radius:14px;--radius-sm:10px;
 }
-
-/* ─────────────────────────────────────────
-   RESET + BASE
-───────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-body   { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; height: 100dvh; }
-button { font-family: inherit; border: none; cursor: pointer; -webkit-appearance: none; }
-button:active { transform: scale(.96); }
-input, textarea { font-family: inherit; }
-.mono  { font-family: 'JetBrains Mono', monospace; }
-
-/* ─────────────────────────────────────────
-   SCREEN MANAGEMENT — fade transitions
-───────────────────────────────────────── */
-.screen { display: none; flex-direction: column; height: 100dvh; overflow: hidden; }
-.screen.active {
-  display: flex;
-  animation: screen-in .2s ease;
-}
-@keyframes screen-in { from { opacity: 0; } to { opacity: 1; } }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100dvh}
+button{font-family:inherit;border:none;cursor:pointer;-webkit-appearance:none}
+button:active{transform:scale(.96)}
+input,textarea,select{font-family:inherit}
+.mono{font-family:'JetBrains Mono',monospace}
 
 /* ─────────────────────────────────────────
    TOAST
 ───────────────────────────────────────── */
-.toast {
-  position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
-  padding: 10px 20px; border-radius: 12px; font-size: 12px; font-weight: 700;
-  z-index: 9998; pointer-events: none; opacity: 0;
-  transition: opacity .3s;
-  white-space: nowrap;
-}
-.toast.show  { opacity: 1; }
-.toast.green { background: var(--green-bg);   color: var(--green);  border: 1px solid var(--green-border); }
-.toast.red   { background: var(--red-bg);     color: var(--red);    border: 1px solid var(--red-border); }
-.toast.blue  { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(79,140,255,.2); }
-.toast.amber { background: var(--amber-bg);   color: var(--amber);  border: 1px solid var(--amber-border); }
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:12px;font-size:12px;font-weight:700;z-index:9998;pointer-events:none;opacity:0;transition:opacity .3s;white-space:nowrap}
+.toast.show{opacity:1}
+.toast.green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.toast.red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.toast.blue{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(79,140,255,.2)}
+.toast.amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.toast.pink{background:var(--fresh-bg);color:var(--fresh);border:1px solid var(--fresh-border)}
+
+/* ─────────────────────────────────────────
+   SCREEN TRANSITIONS
+───────────────────────────────────────── */
+.screen{display:none;flex-direction:column;height:100dvh;overflow:hidden}
+.screen.active{display:flex;animation:screen-in .18s ease}
+@keyframes screen-in{from{opacity:0}to{opacity:1}}
 
 /* ─────────────────────────────────────────
    HEADER
 ───────────────────────────────────────── */
-.header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 12px 16px; background: var(--surface);
-  border-bottom: 1px solid var(--border); flex-shrink: 0;
-}
-.header h1     { font-size: 15px; font-weight: 800; }
-.header-sub    { font-size: 10px; color: var(--text-2); font-weight: 600; }
-.header-right  { display: flex; align-items: center; gap: 8px; }
-.hdr-btn {
-  background: var(--surface-2); color: var(--text-2);
-  padding: 8px 12px; border-radius: var(--radius-sm);
-  font-size: 10px; font-weight: 700;
-  transition: background .15s, color .15s;
-}
-.hdr-btn:hover { background: var(--accent-dim); color: var(--accent); }
+.header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;gap:8px}
+.header h1{font-size:15px;font-weight:800;white-space:nowrap}
+.header-sub{font-size:10px;color:var(--text-2);font-weight:600}
+.header-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.hdr-btn{background:var(--surface-2);color:var(--text-2);padding:7px 11px;border-radius:var(--radius-sm);font-size:10px;font-weight:700;white-space:nowrap;transition:background .15s,color .15s}
+.hdr-btn:hover{background:var(--accent-dim);color:var(--accent)}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;transition:background .3s}
+.sync-dot.offline{background:var(--amber);animation:pulse 1.5s infinite}
+.queue-badge{background:var(--amber-bg);color:var(--amber);padding:3px 8px;border-radius:6px;font-size:9px;font-weight:800}
+@keyframes pulse{50%{opacity:.3}}
 
-/* ── Sync indicator ── */
-.sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0; transition: background .3s; }
-.sync-dot.offline { background: var(--amber); animation: pulse 1.5s infinite; }
-
-/* ── Offline queue badge ── */
-.queue-badge { background: var(--amber-bg); color: var(--amber); padding: 3px 8px; border-radius: 6px; font-size: 9px; font-weight: 800; }
-
-@keyframes pulse { 50% { opacity: .3; } }
+/* ─────────────────────────────────────────
+   AUDIT MODE TOGGLE (Standard / Fresh)
+───────────────────────────────────────── */
+.mode-bar{display:flex;gap:2px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.mode-btn{flex:1;padding:10px 0;border-radius:10px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;background:var(--surface-2);color:var(--text-3);border:1.5px solid var(--border);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
+.mode-btn.active-std{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.mode-btn.active-fresh{background:var(--fresh-bg);border-color:var(--fresh);color:var(--fresh)}
+.fresh-threshold-row{display:none;padding:8px 16px;background:var(--fresh-bg);border-bottom:1px solid var(--fresh-border);align-items:center;gap:10px;flex-shrink:0}
+.fresh-threshold-row.visible{display:flex}
+.fresh-threshold-row label{font-size:10px;font-weight:700;color:var(--fresh);flex-shrink:0}
+.fresh-threshold-row input{width:64px;padding:5px 8px;background:var(--surface);border:1.5px solid var(--fresh-border);border-radius:8px;font-size:12px;font-weight:700;color:var(--fresh);outline:none;text-align:center;font-family:'JetBrains Mono',monospace}
+.fresh-threshold-row span{font-size:10px;color:var(--fresh);opacity:.7}
 
 /* ─────────────────────────────────────────
    SETUP SCREEN
 ───────────────────────────────────────── */
-.setup-content {
-  flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 90px;
-  -webkit-overflow-scrolling: touch;
-}
-.setup-content::-webkit-scrollbar { display: none; }
+.setup-content{flex:1;overflow-y:auto;padding:16px;padding-bottom:90px;-webkit-overflow-scrolling:touch}
+.setup-content::-webkit-scrollbar{display:none}
 
-.stat-row { display: flex; gap: 8px; margin-bottom: 16px; }
-.stat-box {
-  flex: 1; background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 14px; text-align: center;
-  transition: border-color .2s;
-}
-.stat-box:hover { border-color: var(--accent); }
-.stat-val   { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 700; color: var(--accent); }
-.stat-label { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-3); margin-top: 4px; }
+.stat-row{display:flex;gap:8px;margin-bottom:16px}
+.stat-box{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;transition:border-color .2s}
+.stat-box:hover{border-color:var(--accent)}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--accent)}
+.stat-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);margin-top:4px}
 
-.section-title { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-3); margin: 18px 0 10px; }
-
-.aisle-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
-.aisle-btn {
-  background: var(--surface); border: 1.5px solid var(--border);
-  border-radius: var(--radius); padding: 20px 0;
-  text-align: center; font-size: 24px; font-weight: 900; color: var(--text);
-  position: relative; overflow: hidden;
-  transition: border-color .15s, background .15s, transform .1s;
-}
-.aisle-btn:hover  { border-color: var(--accent); background: var(--accent-dim); }
-.aisle-btn:active { transform: scale(.93); }
-.aisle-btn.done   { border-color: var(--green-border); background: var(--green-bg); }
-.aisle-btn .a-count {
-  position: absolute; top: 5px; right: 7px;
-  font-size: 8px; font-weight: 700; color: var(--text-3);
-}
+.section-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);margin:18px 0 10px}
 
 /* ─────────────────────────────────────────
-   COUNTING SCREEN — PHASE BAR
+   AISLE GRID + AISLE PROGRESS
 ───────────────────────────────────────── */
-.phase-bar    { display: flex; gap: 2px; padding: 10px 16px 0; background: var(--surface); }
-.phase-step   { flex: 1; height: 4px; border-radius: 2px; background: var(--surface-3); transition: background .3s; }
-.phase-step.active { background: var(--accent); }
-.phase-step.done   { background: var(--green); }
-.phase-labels {
-  display: flex; justify-content: space-between;
-  padding: 4px 16px 10px; font-size: 8px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-3);
-  background: var(--surface); border-bottom: 1px solid var(--border);
+.aisle-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.aisle-btn{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:0;text-align:center;
+  font-size:22px;font-weight:900;color:var(--text);
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:72px;
+  transition:border-color .15s,background .15s,transform .1s;
 }
-.phase-labels span.active { color: var(--accent); }
-.phase-labels span.done   { color: var(--green); }
+.aisle-btn:hover{border-color:var(--accent);background:var(--accent-dim)}
+.aisle-btn:active{transform:scale(.93)}
+.aisle-btn.done{border-color:var(--green-border);background:var(--green-bg)}
+.aisle-btn.in-progress{border-color:var(--amber-border);background:var(--amber-bg)}
+.aisle-btn .a-letter{font-size:22px;font-weight:900;line-height:1}
+.aisle-btn .a-count{font-size:8px;font-weight:700;color:var(--text-3);margin-top:2px}
+/* Progress bar inside each aisle card */
+.aisle-prog{
+  position:absolute;bottom:0;left:0;height:3px;
+  background:var(--accent);transition:width .4s ease;
+}
+.aisle-btn.done .aisle-prog{background:var(--green)}
+.aisle-btn.in-progress .aisle-prog{background:var(--amber)}
 
-/* ── Bin navigation bar ── */
-.bin-nav {
-  display: flex; gap: 6px; padding: 12px 16px;
-  background: var(--surface); border-bottom: 1px solid var(--border);
-  flex-shrink: 0; align-items: center;
-}
-.nav-btn {
-  width: 52px; height: 52px; border-radius: 12px;
-  background: var(--surface-2); color: var(--text-3);
-  font-size: 18px; font-weight: 900;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  transition: background .15s, color .15s;
-}
-.nav-btn:hover { background: var(--accent-dim); color: var(--accent); }
-.bin-input {
-  flex: 1; padding: 14px; background: var(--surface-2);
-  border: 2px solid var(--border); border-radius: 12px;
-  font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700;
-  color: var(--accent); text-transform: uppercase; text-align: center; outline: none;
-  transition: border-color .15s;
-}
-.bin-input:focus { border-color: var(--accent); }
+/* ─────────────────────────────────────────
+   PHASE BAR
+───────────────────────────────────────── */
+.phase-bar{display:flex;gap:2px;padding:10px 16px 0;background:var(--surface)}
+.phase-step{flex:1;height:4px;border-radius:2px;background:var(--surface-3);transition:background .3s}
+.phase-step.active{background:var(--accent)}
+.phase-step.done{background:var(--green)}
+.phase-labels{display:flex;justify-content:space-between;padding:4px 16px 10px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);background:var(--surface);border-bottom:1px solid var(--border)}
+.phase-labels span.active{color:var(--accent)}
+.phase-labels span.done{color:var(--green)}
 
-/* ── Bin strip (mini nav) ── */
-.bin-strip {
-  display: flex; gap: 3px; padding: 8px 16px;
-  overflow-x: auto; background: var(--surface);
-  scrollbar-width: none; flex-shrink: 0;
-}
-.bin-strip::-webkit-scrollbar { display: none; }
-.strip-dot {
-  min-width: 26px; height: 26px; border-radius: 7px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 8px; font-weight: 800;
-  background: var(--surface-2); color: var(--text-3); flex-shrink: 0;
-  cursor: pointer; transition: background .15s, color .15s;
-}
-.strip-dot:hover   { background: var(--accent-dim); color: var(--accent); }
-.strip-dot.current { min-width: 38px; font-size: 10px; background: var(--accent); color: #fff; cursor: default; }
-.strip-dot.done    { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+/* ─────────────────────────────────────────
+   BIN NAVIGATION
+───────────────────────────────────────── */
+.bin-nav{display:flex;gap:6px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;align-items:center}
+.nav-btn{width:50px;height:50px;border-radius:12px;background:var(--surface-2);color:var(--text-3);font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,color .15s}
+.nav-btn:hover{background:var(--accent-dim);color:var(--accent)}
+.bin-input{flex:1;padding:13px;background:var(--surface-2);border:2px solid var(--border);border-radius:12px;font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:var(--accent);text-transform:uppercase;text-align:center;outline:none;transition:border-color .15s}
+.bin-input:focus{border-color:var(--accent)}
+
+/* Aisle progress inline banner */
+.aisle-progress-banner{display:none;align-items:center;gap:10px;padding:7px 16px;background:var(--amber-bg);border-bottom:1px solid var(--amber-border);flex-shrink:0;font-size:10px;font-weight:700;color:var(--amber)}
+.aisle-progress-banner.visible{display:flex}
+.aisle-prog-bar-wrap{flex:1;height:4px;background:var(--surface-3);border-radius:2px;overflow:hidden}
+.aisle-prog-bar-fill{height:100%;background:var(--amber);border-radius:2px;transition:width .4s ease}
+
+/* ─────────────────────────────────────────
+   BIN STRIP
+───────────────────────────────────────── */
+.bin-strip{display:flex;gap:3px;padding:8px 16px;overflow-x:auto;background:var(--surface);scrollbar-width:none;flex-shrink:0}
+.bin-strip::-webkit-scrollbar{display:none}
+.strip-dot{min-width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;background:var(--surface-2);color:var(--text-3);flex-shrink:0;cursor:pointer;transition:background .15s,color .15s}
+.strip-dot:hover{background:var(--accent-dim);color:var(--accent)}
+.strip-dot.current{min-width:38px;font-size:10px;background:var(--accent);color:#fff;cursor:default}
+.strip-dot.done{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
 
 /* ─────────────────────────────────────────
    HU CARDS
 ───────────────────────────────────────── */
-.hu-list {
-  flex: 1; overflow-y: auto; padding: 12px 16px 260px;
-  -webkit-overflow-scrolling: touch;
-}
-.hu-list::-webkit-scrollbar { display: none; }
+.hu-list{flex:1;overflow-y:auto;padding:12px 16px 260px;-webkit-overflow-scrolling:touch}
+.hu-list::-webkit-scrollbar{display:none}
 
-.hu-card {
-  background: var(--surface); border: 1.5px solid var(--border);
-  border-radius: var(--radius); padding: 16px; margin-bottom: 8px;
-  transition: border-color .2s, background .2s;
-  animation: card-in .18s ease both;
-}
-@keyframes card-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.hu-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:8px;transition:border-color .2s,background .2s;animation:card-in .18s ease both}
+@keyframes card-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.hu-card.confirmed{border-color:var(--green-border);background:var(--green-bg)}
+.hu-card.missing{border-color:var(--red-border);opacity:.7;background:var(--red-bg)}
+.hu-card.adjusted{border-color:var(--amber-border);background:var(--amber-bg)}
+.hu-card.extra{border-color:rgba(6,182,212,.25);background:var(--cyan-bg)}
+/* Fresh-mode card states */
+.hu-card.fresh-expired{border-color:var(--red-border);background:var(--red-bg)}
+.hu-card.fresh-expiring{border-color:var(--amber-border);background:var(--amber-bg)}
+.hu-card.fresh-valid{border-color:var(--green-border);background:var(--green-bg)}
 
-.hu-card.confirmed { border-color: var(--green-border);              background: var(--green-bg); }
-.hu-card.missing   { border-color: var(--red-border);   opacity: .7; background: var(--red-bg); }
-.hu-card.adjusted  { border-color: var(--amber-border);              background: var(--amber-bg); }
-.hu-card.extra     { border-color: rgba(6,182,212,.25);              background: var(--cyan-bg); }
+.hu-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px;flex-wrap:wrap}
+.hu-id{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-dim);padding:3px 10px;border-radius:6px;flex-shrink:0}
+.hu-badges{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.hu-badge{font-size:8px;font-weight:800;text-transform:uppercase;padding:3px 8px;border-radius:5px;letter-spacing:.5px;white-space:nowrap}
+.hu-badge.ok{background:var(--green-bg);color:var(--green)}
+.hu-badge.miss{background:var(--red-bg);color:var(--red)}
+.hu-badge.adj{background:var(--amber-bg);color:var(--amber)}
+.hu-badge.ext{background:var(--cyan-bg);color:var(--cyan)}
+/* Fresh SLED badges */
+.hu-badge.sled-valid{background:var(--green-bg);color:var(--green)}
+.hu-badge.sled-expiring{background:var(--amber-bg);color:var(--amber)}
+.hu-badge.sled-expired{background:var(--red-bg);color:var(--red)}
 
-.hu-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.hu-id  {
-  font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
-  color: var(--accent); background: var(--accent-dim); padding: 3px 10px; border-radius: 6px;
-}
-.hu-badge { font-size: 8px; font-weight: 800; text-transform: uppercase; padding: 3px 10px; border-radius: 6px; letter-spacing: .5px; }
-.hu-badge.ok  { background: var(--green-bg);  color: var(--green); }
-.hu-badge.miss{ background: var(--red-bg);    color: var(--red); }
-.hu-badge.adj { background: var(--amber-bg);  color: var(--amber); }
-.hu-badge.ext { background: var(--cyan-bg);   color: var(--cyan); }
+.hu-meta{display:flex;gap:16px;margin-bottom:6px;flex-wrap:wrap}
+.meta-item{display:flex;flex-direction:column}
+.meta-label{font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-3)}
+.meta-val{font-size:13px;font-weight:700;margin-top:1px}
+.hu-desc{font-size:10px;color:var(--text-2);margin-bottom:10px;line-height:1.4}
 
-.hu-meta { display: flex; gap: 16px; margin-bottom: 6px; }
-.meta-label { display: block; font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-3); }
-.meta-val   { font-size: 13px; font-weight: 700; margin-top: 1px; }
-.hu-desc    { font-size: 10px; color: var(--text-2); margin-bottom: 10px; }
+/* SLED date display */
+.sled-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;background:var(--surface-2);border-radius:8px;border:1px solid var(--border)}
+.sled-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-3)}
+.sled-date{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;margin-left:auto}
+.sled-date.expired{color:var(--red)}
+.sled-date.expiring{color:var(--amber)}
+.sled-date.valid{color:var(--green)}
 
 /* ── Quantity row ── */
-.qty-row {
-  display: flex; align-items: center; gap: 6px;
-  background: var(--surface-2); border-radius: 12px; padding: 6px; margin-bottom: 8px;
-}
-.qty-btn {
-  width: 64px; height: 64px; border-radius: 12px;
-  background: var(--surface-3); font-size: 28px; font-weight: 900; color: var(--text-3);
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  transition: background .15s, color .15s;
-}
-.qty-btn:hover { background: var(--surface-2); }
-.qty-btn.plus  { color: var(--accent); }
-.qty-btn.plus:hover { background: var(--accent-dim); }
-.qty-input {
-  flex: 1; background: transparent; border: none;
-  text-align: center; font-family: 'JetBrains Mono', monospace;
-  font-size: 38px; font-weight: 700; color: var(--accent); outline: none; min-width: 0;
-}
-.qty-input::placeholder { color: var(--surface-3); }
-.sap-hint { text-align: center; font-size: 9px; font-weight: 700; color: var(--text-3); margin-bottom: 8px; }
+.qty-row{display:flex;align-items:center;gap:6px;background:var(--surface-2);border-radius:12px;padding:6px;margin-bottom:8px}
+.qty-btn{width:60px;height:60px;border-radius:12px;background:var(--surface-3);font-size:26px;font-weight:900;color:var(--text-3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,color .15s}
+.qty-btn:hover{background:var(--surface-2)}
+.qty-btn.plus{color:var(--accent)}
+.qty-btn.plus:hover{background:var(--accent-dim)}
+.qty-input{flex:1;background:transparent;border:none;text-align:center;font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:700;color:var(--accent);outline:none;min-width:0}
+.qty-input::placeholder{color:var(--surface-3)}
+.sap-hint{text-align:center;font-size:9px;font-weight:700;color:var(--text-3);margin-bottom:8px}
 
 /* ── Action buttons ── */
-.hu-actions { display: flex; gap: 6px; }
-.act-btn {
-  flex: 1; padding: 18px 0; border-radius: 12px;
-  font-size: 12px; font-weight: 800; text-transform: uppercase;
-  min-height: 56px; display: flex; align-items: center; justify-content: center;
-  transition: filter .15s, transform .1s;
-}
-.act-btn:hover  { filter: brightness(1.1); }
-.act-btn.confirm { background: var(--green); color: #fff; }
-.act-btn.miss    { background: var(--surface-3); color: var(--red); border: 1.5px solid var(--red-border); }
-.act-btn.miss.active { background: var(--red); color: #fff; border-color: transparent; }
+.hu-actions{display:flex;gap:6px}
+.act-btn{flex:1;padding:16px 0;border-radius:12px;font-size:12px;font-weight:800;text-transform:uppercase;min-height:54px;display:flex;align-items:center;justify-content:center;transition:filter .15s,transform .1s}
+.act-btn:hover{filter:brightness(1.1)}
+.act-btn.confirm{background:var(--green);color:#fff}
+.act-btn.miss{background:var(--surface-3);color:var(--red);border:1.5px solid var(--red-border)}
+.act-btn.miss.active{background:var(--red);color:#fff;border-color:transparent}
 
-/* ── Resolved / undo row ── */
-.resolved-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 10px 14px; background: var(--surface-2);
-  border-radius: var(--radius-sm); margin-bottom: 6px;
-}
-.resolved-label { font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--text-3); }
-.resolved-val   { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; }
-.resolved-val.match    { color: var(--green); }
-.resolved-val.mismatch { color: var(--amber); }
-.undo-btn { width: 100%; padding: 8px; background: none; color: var(--text-3); font-size: 9px; font-weight: 700; }
+/* ── Resolved row ── */
+.resolved-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface-2);border-radius:var(--radius-sm);margin-bottom:6px}
+.resolved-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text-3)}
+.resolved-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700}
+.resolved-val.match{color:var(--green)}
+.resolved-val.mismatch{color:var(--amber)}
+.undo-btn{width:100%;padding:8px;background:none;color:var(--text-3);font-size:9px;font-weight:700;transition:color .15s}
+.undo-btn:hover{color:var(--text-2)}
 
 /* ── Note / Move buttons ── */
-.note-btn {
-  width: 100%; margin-top: 6px; padding: 10px 14px;
-  background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); font-size: 10px; font-weight: 700;
-  color: var(--text-3); text-align: left;
-  transition: background .15s, border-color .15s, color .15s;
-}
-.note-btn:hover { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
-.note-btn.has   { background: var(--amber-bg); border-color: var(--amber-border); color: var(--amber); }
+.card-actions-row{display:flex;gap:6px;margin-top:6px}
+.note-btn{flex:1;padding:9px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:10px;font-weight:700;color:var(--text-3);text-align:left;transition:background .15s,border-color .15s,color .15s;cursor:pointer}
+.note-btn:hover{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.note-btn.has{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber)}
+.move-btn{flex:1;padding:9px 12px;background:var(--purple-bg);border:1px solid rgba(167,139,250,.3);border-radius:var(--radius-sm);font-size:10px;font-weight:700;color:var(--purple);cursor:pointer;transition:filter .15s}
+.move-btn:hover{filter:brightness(1.2)}
 
-/* ── Empty bin state ── */
-.empty-bin { text-align: center; padding: 48px 24px; color: var(--text-3); }
-.empty-bin .icon { font-size: 40px; margin-bottom: 10px; display: block; }
-
-/* ── Already-counted banner ── */
-.counted-banner {
-  display: flex; align-items: center; gap: 12px; padding: 10px 14px;
-  border-radius: var(--radius); margin-bottom: 8px;
-  background: var(--green-bg); border: 1px solid var(--green-border);
-  animation: card-in .18s ease;
-}
-.counted-banner strong { font-size: 11px; color: var(--green); font-weight: 800; }
-.counted-banner small  { font-size: 9px; color: var(--text-2); }
+/* ── Empty bin / counted banner ── */
+.empty-bin{text-align:center;padding:48px 24px;color:var(--text-3)}
+.empty-bin .icon{font-size:40px;margin-bottom:10px;display:block}
+.counted-banner{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--radius);margin-bottom:8px;background:var(--green-bg);border:1px solid var(--green-border);animation:card-in .18s ease}
+.counted-banner strong{font-size:11px;color:var(--green);font-weight:800}
+.counted-banner small{font-size:9px;color:var(--text-2)}
 
 /* ─────────────────────────────────────────
-   BOTTOM BAR (fixed)
+   BOTTOM BAR
 ───────────────────────────────────────── */
-.bottom-bar {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  padding: 10px 16px calc(env(safe-area-inset-bottom, 14px) + 10px);
-  background: rgba(11,12,16,.92); backdrop-filter: blur(20px);
-  border-top: 1px solid var(--border); z-index: 50;
-}
-.bottom-row { display: flex; gap: 6px; margin-bottom: 8px; }
-.btn-sec {
-  flex: 1; padding: 14px 0; border-radius: 12px; font-size: 11px; font-weight: 800;
-  text-transform: uppercase; background: var(--surface-2); color: var(--text-2);
-  border: 1.5px solid var(--border); text-align: center; min-height: 48px;
-  transition: background .15s, border-color .15s, color .15s;
-}
-.btn-sec:hover { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
-.btn-pri {
-  width: 100%; padding: 18px 0; border-radius: var(--radius);
-  font-size: 14px; font-weight: 800; text-transform: uppercase;
-  background: var(--green); color: #fff; min-height: 60px;
-  display: flex; align-items: center; justify-content: center;
-  transition: filter .15s;
-}
-.btn-pri:hover   { filter: brightness(1.1); }
-.btn-pri.disabled { background: var(--surface-3); color: var(--text-3); pointer-events: none; }
+.bottom-bar{position:fixed;bottom:0;left:0;right:0;padding:10px 16px calc(env(safe-area-inset-bottom,14px) + 10px);background:rgba(11,12,16,.93);backdrop-filter:blur(20px);border-top:1px solid var(--border);z-index:50}
+.bottom-row{display:flex;gap:6px;margin-bottom:8px}
+.btn-sec{flex:1;padding:13px 0;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;background:var(--surface-2);color:var(--text-2);border:1.5px solid var(--border);text-align:center;min-height:46px;transition:background .15s,border-color .15s,color .15s}
+.btn-sec:hover{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.btn-pri{width:100%;padding:17px 0;border-radius:var(--radius);font-size:14px;font-weight:800;text-transform:uppercase;background:var(--green);color:#fff;min-height:58px;display:flex;align-items:center;justify-content:center;transition:filter .15s}
+.btn-pri:hover{filter:brightness(1.1)}
+.btn-pri.disabled{background:var(--surface-3);color:var(--text-3);pointer-events:none}
+/* Fresh mode — primary btn style */
+.btn-pri.fresh-mode{background:var(--fresh)}
 
 /* ─────────────────────────────────────────
    SETUP BOTTOM NAV
 ───────────────────────────────────────── */
-.setup-nav {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  display: flex; gap: 6px;
-  padding: 10px 16px calc(env(safe-area-inset-bottom, 14px) + 10px);
-  background: rgba(11,12,16,.92); backdrop-filter: blur(20px);
-  border-top: 1px solid var(--border);
-}
-.setup-nav .nav-tab {
-  flex: 1; padding: 14px 0; border-radius: 12px;
-  font-size: 11px; font-weight: 800; text-transform: uppercase;
-  background: var(--surface-2); color: var(--text-2); border: 1.5px solid var(--border);
-  text-align: center; min-height: 48px;
-  transition: background .15s, color .15s;
-}
-.setup-nav .nav-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.setup-nav{position:fixed;bottom:0;left:0;right:0;display:flex;gap:6px;padding:10px 16px calc(env(safe-area-inset-bottom,14px) + 10px);background:rgba(11,12,16,.93);backdrop-filter:blur(20px);border-top:1px solid var(--border)}
+.setup-nav .nav-tab{flex:1;padding:13px 0;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;background:var(--surface-2);color:var(--text-2);border:1.5px solid var(--border);text-align:center;min-height:46px;transition:background .15s,color .15s;text-decoration:none;display:flex;align-items:center;justify-content:center}
+.setup-nav .nav-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 
 /* ─────────────────────────────────────────
    EXTRA ITEM FORM
 ───────────────────────────────────────── */
-.extra-form {
-  background: var(--surface); border: 1.5px dashed var(--border);
-  border-radius: var(--radius); padding: 16px; margin-bottom: 8px;
-  animation: card-in .18s ease;
-}
-.extra-form h3 {
-  font-size: 10px; font-weight: 800; text-transform: uppercase;
-  letter-spacing: 1px; color: var(--cyan); margin-bottom: 10px;
-}
-.field {
-  width: 100%; padding: 14px; background: var(--surface-2);
-  border: 1.5px solid var(--border); border-radius: 12px;
-  font-size: 15px; font-weight: 600; color: var(--text); outline: none; margin-bottom: 6px;
-  transition: border-color .15s;
-}
-.field:focus { border-color: var(--accent); }
-.field::placeholder { color: var(--text-3); }
-.field-row { display: flex; gap: 6px; }
-.hidden { display: none !important; }
+.extra-form{background:var(--surface);border:1.5px dashed var(--border);border-radius:var(--radius);padding:16px;margin-bottom:8px;animation:card-in .18s ease}
+.extra-form h3{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--cyan);margin-bottom:10px}
+.field{width:100%;padding:13px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:12px;font-size:14px;font-weight:600;color:var(--text);outline:none;margin-bottom:6px;transition:border-color .15s}
+.field:focus{border-color:var(--accent)}
+.field::placeholder{color:var(--text-3)}
+.field-row{display:flex;gap:6px}
+.hidden{display:none!important}
 
 /* ─────────────────────────────────────────
    MOVE MODAL
 ───────────────────────────────────────── */
-#modal-move {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,.8); backdrop-filter: blur(5px);
-  z-index: 100; align-items: center; justify-content: center; padding: 20px;
-}
-#modal-move .move-box {
-  background: var(--surface); width: 100%; max-width: 400px;
-  padding: 20px; border-radius: var(--radius); border: 1px solid var(--purple);
-  animation: ns-slide-up .25s cubic-bezier(.34,1.56,.64,1);
-}
+#modal-move{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(5px);z-index:100;align-items:center;justify-content:center;padding:20px}
+#modal-move .move-box{background:var(--surface);width:100%;max-width:400px;padding:20px;border-radius:var(--radius);border:1px solid var(--purple);animation:card-in .2s ease}
 </style>
 </head>
 <body>
 
-<!-- ── Global toast ── -->
 <div id="toast" class="toast"><span id="toast-text"></span></div>
 
 <!-- ══════════════════════════════════════════
-     SCREEN 1: SETUP / AISLE SELECTION
+     SCREEN 1 — SETUP
 ══════════════════════════════════════════ -->
 <div id="screen-setup" class="screen active">
+
   <div class="header">
     <div>
       <h1>Cycle Counter</h1>
-      <div class="header-sub"><span id="stat-progress">0 / 0</span> bins counted</div>
+      <div class="header-sub"><span id="stat-progress">0 / 0</span> bins today</div>
     </div>
     <div class="header-right">
-      <!-- Offline queue indicator -->
       <span class="queue-badge hidden" id="queue-badge">0 queued</span>
-      <!-- Refresh SAP data from cloud -->
-      <button class="hdr-btn" id="refresh-btn" onclick="refreshAll()">↻ Refresh</button>
-      <!-- Online / offline dot -->
+      <button class="hdr-btn" id="refresh-btn" onclick="refreshAll()">↻</button>
       <div class="sync-dot" id="sync-dot"></div>
-      <!-- Settings modal trigger -->
       <button class="hdr-btn" onclick="NovusSettings.openModal()">⚙</button>
-      <!-- Quick name setter -->
       <button class="hdr-btn" onclick="setName()">👤 <span id="name-display">Set Name</span></button>
     </div>
   </div>
 
+  <!-- ── Audit mode toggle ── -->
+  <div class="mode-bar">
+    <button class="mode-btn active-std" id="mode-std"   onclick="setAuditMode('standard')">📦 Standard</button>
+    <button class="mode-btn"            id="mode-fresh" onclick="setAuditMode('fresh')">🧊 Fresh / Perishable</button>
+  </div>
+
+  <!-- ── Fresh threshold row (shown only in Fresh mode) ── -->
+  <div class="fresh-threshold-row" id="fresh-threshold-row">
+    <label>Expiry warning within</label>
+    <input type="number" id="fresh-threshold-days" value="7" min="1" max="90">
+    <span>days of today</span>
+  </div>
+
   <div class="setup-content">
-    <!-- KPI bar -->
+
+    <!-- KPI stats -->
     <div class="stat-row">
       <div class="stat-box"><div class="stat-val" id="stat-loaded">—</div><div class="stat-label">SAP Items</div></div>
-      <div class="stat-box"><div class="stat-val" id="stat-bins">—</div><div class="stat-label">Bins</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat-bins">—</div><div class="stat-label">Total Bins</div></div>
       <div class="stat-box"><div class="stat-val" id="stat-done">0</div><div class="stat-label">Done Today</div></div>
     </div>
 
     <!-- Product search -->
     <div class="section-title">Count By Product</div>
-    <div style="display:flex; gap:8px; margin-bottom:24px">
+    <div style="display:flex;gap:8px;margin-bottom:24px">
       <input type="text" id="product-search" class="field mono"
              placeholder="Enter Product #…"
-             style="flex:1; padding:12px; border-radius:12px; background:var(--surface);
-                    border:1px solid var(--border); color:var(--accent); font-weight:700; outline:none; margin:0;">
-      <button class="hdr-btn"
-              style="background:var(--accent); color:#fff; font-size:12px; padding:0 16px;"
+             style="flex:1;padding:12px;border-radius:12px;background:var(--surface);border:1px solid var(--border);color:var(--accent);font-weight:700;outline:none;margin:0">
+      <button class="hdr-btn" style="background:var(--accent);color:#fff;font-size:12px;padding:0 16px"
               onclick="searchProduct()">Search</button>
     </div>
 
-    <!-- Aisle grid (skeleton on load, then real buttons) -->
+    <!-- Aisle grid -->
     <div class="section-title">Select Aisle</div>
     <div class="aisle-grid" id="aisle-grid">
-      <!-- Filled by buildAisleGrid() or skeletonAisleCards() -->
+      <!-- Populated by buildAisleGrid() -->
     </div>
-  </div>
+
+  </div><!-- /.setup-content -->
 
   <div class="setup-nav">
     <button class="nav-tab active">Count</button>
-    <a href="index.html" class="nav-tab"
-       style="text-decoration:none; display:flex; align-items:center; justify-content:center">Home</a>
+    <a href="index.html" class="nav-tab">Home</a>
   </div>
-</div>
+
+</div><!-- /#screen-setup -->
+
 
 <!-- ══════════════════════════════════════════
-     SCREEN 2: BIN COUNTING
+     SCREEN 2 — COUNTING
 ══════════════════════════════════════════ -->
 <div id="screen-counting" class="screen">
+
   <div class="header">
     <button class="hdr-btn" onclick="backToSetup()">← Back</button>
-    <h1 id="count-bin-title">—</h1>
-    <div class="sync-dot"></div>
+    <div style="flex:1;text-align:center">
+      <h1 id="count-bin-title">—</h1>
+      <div class="header-sub" id="count-aisle-label"></div>
+    </div>
+    <div class="sync-dot" id="sync-dot-2"></div>
   </div>
 
-  <!-- 3-phase progress bar -->
+  <!-- Aisle-level progress banner -->
+  <div class="aisle-progress-banner" id="aisle-progress-banner">
+    <span id="aisle-progress-text">Aisle —</span>
+    <div class="aisle-prog-bar-wrap">
+      <div class="aisle-prog-bar-fill" id="aisle-prog-fill" style="width:0%"></div>
+    </div>
+    <span id="aisle-progress-pct">0%</span>
+  </div>
+
+  <!-- 3-phase progress -->
   <div class="phase-bar">
     <div class="phase-step" id="ph1"></div>
     <div class="phase-step" id="ph2"></div>
@@ -461,58 +381,53 @@ input, textarea { font-family: inherit; }
     <span id="phl3">Finalize</span>
   </div>
 
-  <!-- Bin input + prev/next navigation -->
+  <!-- Bin navigation -->
   <div class="bin-nav">
     <button class="nav-btn" onclick="stepBin(-1)">◀</button>
     <input type="text" class="bin-input" id="bin-input" placeholder="SCAN BIN…">
     <button class="nav-btn" onclick="stepBin(1)">▶</button>
   </div>
 
-  <!-- Scrollable mini-map of bins in current aisle -->
+  <!-- Bin mini-map strip -->
   <div class="bin-strip" id="bin-strip"></div>
 
-  <!-- HU cards list -->
+  <!-- HU card list -->
   <div class="hu-list" id="hu-list"></div>
 
   <!-- Fixed bottom actions -->
-  <div class="bottom-bar" id="bottom-bar">
+  <div class="bottom-bar">
     <div class="bottom-row">
       <button class="btn-sec" onclick="toggleExtra()">+ Found Extra</button>
-      <button class="btn-sec" id="btn-confirm-all" onclick="confirmAll()">✓ Confirm All</button>
+      <button class="btn-sec" id="btn-confirm-all" onclick="confirmAll()">✓ All</button>
     </div>
-    <button class="btn-pri" id="btn-finalize" onclick="finalizeBin()">Finalize & Next Bin →</button>
+    <button class="btn-pri" id="btn-finalize" onclick="finalizeBin()">Finalize & Next →</button>
   </div>
-</div>
+
+</div><!-- /#screen-counting -->
+
 
 <!-- ══════════════════════════════════════════
-     MOVE / RELOCATION MODAL
+     MOVE MODAL
 ══════════════════════════════════════════ -->
-<div id="modal-move" style="display:none; align-items:center; justify-content:center; padding:20px;">
+<div id="modal-move" style="display:none;align-items:center;justify-content:center;padding:20px;">
   <div class="move-box">
-    <h3 style="color:var(--purple); font-size:16px; font-weight:800; margin-bottom:16px;">🔄 Move Item to Another Bin</h3>
-
-    <label style="font-size:8px; font-weight:700; text-transform:uppercase; letter-spacing:1.2px; color:var(--text-3); display:block; margin-bottom:6px">Scan / Enter HU</label>
-    <input type="text" id="qm-hu" class="field mono" placeholder="HU Number" style="margin-bottom:0;" readonly>
-
-    <!-- SAP info pulled from huIndex -->
-    <div id="qm-info" style="margin:8px 0 16px; font-size:11px; color:var(--text-2); min-height:40px; background:var(--surface-2); padding:8px; border-radius:8px;">
-      Enter HU to load SAP info…
-    </div>
-
-    <div style="display:flex; gap:8px;">
+    <h3 style="color:var(--purple);font-size:16px;font-weight:800;margin-bottom:16px">🔄 Move Item to Another Bin</h3>
+    <label style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);display:block;margin-bottom:6px">HU Number</label>
+    <input type="text" id="qm-hu" class="field mono" placeholder="HU Number" style="margin-bottom:0" readonly>
+    <div id="qm-info" style="margin:8px 0 16px;font-size:11px;color:var(--text-2);min-height:40px;background:var(--surface-2);padding:8px;border-radius:8px"></div>
+    <div style="display:flex;gap:8px">
       <div style="flex:2">
-        <label style="font-size:8px; font-weight:700; text-transform:uppercase; letter-spacing:1.2px; color:var(--text-3); display:block; margin-bottom:6px">Found In Bin</label>
-        <input type="text" id="qm-bin" class="field mono" placeholder="e.g. WA12A" style="text-transform:uppercase;">
+        <label style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);display:block;margin-bottom:6px">Found In Bin</label>
+        <input type="text" id="qm-bin" class="field mono" placeholder="e.g. WA12A" style="text-transform:uppercase">
       </div>
       <div style="flex:1">
-        <label style="font-size:8px; font-weight:700; text-transform:uppercase; letter-spacing:1.2px; color:var(--text-3); display:block; margin-bottom:6px">Actual Qty</label>
+        <label style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);display:block;margin-bottom:6px">Actual Qty</label>
         <input type="number" inputmode="numeric" id="qm-qty" class="field mono" placeholder="Qty">
       </div>
     </div>
-
-    <div style="display:flex; gap:8px; margin-top:24px;">
+    <div style="display:flex;gap:8px;margin-top:24px">
       <button class="btn-sec" onclick="document.getElementById('modal-move').style.display='none'" style="flex:1">Cancel</button>
-      <button class="act-btn" style="flex:2; background:var(--purple); color:#fff; border:none;" onclick="submitQuickMove()">Log Movement</button>
+      <button class="act-btn" style="flex:2;background:var(--purple);color:#fff;border:none" onclick="submitQuickMove()">Log Movement</button>
     </div>
   </div>
 </div>
@@ -522,37 +437,44 @@ input, textarea { font-family: inherit; }
      PAGE LOGIC
 ══════════════════════════════════════════ -->
 <script>
+'use strict';
+
 // ─────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────
 
-let sapMaster  = JSON.parse(localStorage.getItem('novus_sap') || '[]');
-let binIndex   = {};       // { 'WA01A': [item, …] }
-let huIndex    = new Map();// huNumber → item
+// SAP master data from localStorage (refreshed from GAS)
+let sapMaster = JSON.parse(localStorage.getItem('novus_sap') || '[]');
+let binIndex  = {};        // { 'WA01A': [sapItem, …] }
+let huIndex   = new Map(); // hu# → sapItem
 
-// ── Daily cache expiration ──────────────
+// Daily completed-bins cache (resets automatically each day)
 const _todayStr = new Date().toDateString();
 let _rawDone    = JSON.parse(localStorage.getItem('novus_done') || '{"date":"","bins":[]}');
 let completedBins = new Set();
 
 if (Array.isArray(_rawDone) || _rawDone.date !== _todayStr) {
-  // Legacy array OR new day — reset
   localStorage.setItem('novus_done', JSON.stringify({ date: _todayStr, bins: [] }));
 } else {
   completedBins = new Set(_rawDone.bins);
 }
-// ────────────────────────────────────────
 
-let auditorName   = NovusSettings.getUser();
-let currentBin    = '';
-let currentItems  = [];    // HU objects for the active bin
-let phase         = 1;
-let aisleBins     = [];    // ordered bin list for current aisle/product
-let binIdx        = 0;
-let showingExtra  = false;
-let targetProduct = null;  // set when searching by product
+// Offline write queue
+let offlineQueue = JSON.parse(localStorage.getItem('novus_queue') || '[]');
 
-let offlineQueue  = JSON.parse(localStorage.getItem('novus_queue') || '[]');
+// Per-session state
+let auditorName  = NovusSettings.getUser();
+let auditMode    = 'standard';   // 'standard' | 'fresh'
+let freshDays    = 7;            // expiry warning threshold
+
+let currentBin   = '';
+let currentItems = [];
+let phase        = 1;
+let aisleBins    = [];
+let binIdx       = 0;
+let showingExtra = false;
+let targetProduct = null;    // set when browsing by product #
+let activeAisle  = null;     // current aisle letter (A–P)
 let activeMoveIdx = -1;
 let isOnline      = navigator.onLine;
 
@@ -564,11 +486,11 @@ document.getElementById('name-display').textContent = auditorName || 'Set Name';
 updateQueueBadge();
 updateSyncDot();
 
+// Show skeleton aisle grid immediately
+document.getElementById('aisle-grid').innerHTML = NovusLoader.skeletonAisleCards(14);
+
 window.addEventListener('online',  () => { isOnline = true;  updateSyncDot(); flushQueue(); });
 window.addEventListener('offline', () => { isOnline = false; updateSyncDot(); });
-
-// Show skeleton immediately, then try to hydrate
-document.getElementById('aisle-grid').innerHTML = NovusLoader.skeletonAisleCards(14);
 
 if (sapMaster.length > 0) {
   buildIndexes();
@@ -578,13 +500,34 @@ if (sapMaster.length > 0) {
 }
 
 // ─────────────────────────────────────────
+// AUDIT MODE
+// ─────────────────────────────────────────
+
+/**
+ * Switch between 'standard' and 'fresh' audit modes.
+ * Fresh mode enables SLED-date inspection and expiry badges.
+ */
+function setAuditMode(mode) {
+  auditMode = mode;
+  const stdBtn   = document.getElementById('mode-std');
+  const freshBtn = document.getElementById('mode-fresh');
+  const threshRow = document.getElementById('fresh-threshold-row');
+
+  stdBtn.className   = 'mode-btn' + (mode === 'standard' ? ' active-std'   : '');
+  freshBtn.className = 'mode-btn' + (mode === 'fresh'    ? ' active-fresh'  : '');
+  threshRow.classList.toggle('visible', mode === 'fresh');
+
+  toast(mode === 'fresh' ? '🧊 Fresh audit mode — SLED dates active' : '📦 Standard audit mode', mode === 'fresh' ? 'pink' : 'blue');
+}
+
+// ─────────────────────────────────────────
 // SYNC INDICATORS
 // ─────────────────────────────────────────
 
 function updateSyncDot() {
-  document.querySelectorAll('.sync-dot').forEach(d => {
-    d.className = isOnline ? 'sync-dot' : 'sync-dot offline';
-  });
+  document.querySelectorAll('.sync-dot').forEach(d =>
+    d.className = isOnline ? 'sync-dot' : 'sync-dot offline'
+  );
 }
 
 function updateQueueBadge() {
@@ -598,26 +541,29 @@ function updateQueueBadge() {
 }
 
 // ─────────────────────────────────────────
-// INDEX BUILDERS
+// INDEXES
 // ─────────────────────────────────────────
 
 function buildIndexes() {
   binIndex = {};
   huIndex  = new Map();
 
-  sapMaster.forEach(i => {
-    i.sapBin   = String(i.sapBin   || i.expectedBin || '').trim().toUpperCase();
-    i.hu       = String(i.hu       || '').trim();
-    i.product  = String(i.product  || '').trim();
-    i.batch    = String(i.batch    || '').trim();
-    i.desc     = String(i.desc     || '');
-    i.sapQty   = Number(i.sapQty   || i.expectedQty) || 0;
+  sapMaster.forEach(item => {
+    // Normalise fields
+    item.sapBin  = String(item.sapBin  || item.expectedBin || '').trim().toUpperCase();
+    item.hu      = String(item.hu      || '').trim();
+    item.product = String(item.product || '').trim();
+    item.batch   = String(item.batch   || '').trim();
+    item.desc    = String(item.desc    || '');
+    item.sapQty  = Number(item.sapQty  || item.expectedQty) || 0;
+    item.unit    = String(item.unit    || 'LB').trim();
+    item.sled    = String(item.sled    || '').trim(); // SLED / BBD date string
 
-    if (i.sapBin) {
-      if (!binIndex[i.sapBin]) binIndex[i.sapBin] = [];
-      binIndex[i.sapBin].push(i);
+    if (item.sapBin) {
+      if (!binIndex[item.sapBin]) binIndex[item.sapBin] = [];
+      binIndex[item.sapBin].push(item);
     }
-    if (i.hu) huIndex.set(i.hu, i);
+    if (item.hu) huIndex.set(item.hu, item);
   });
 
   document.getElementById('stat-loaded').textContent = sapMaster.length.toLocaleString();
@@ -631,15 +577,14 @@ function showSetup() {
 }
 
 // ─────────────────────────────────────────
-// CLOUD DATA FETCH
+// CLOUD FETCH
 // ─────────────────────────────────────────
 
 async function pullCloud() {
   NovusLoader.start();
   try {
-    const res  = await fetch(API_URL + '?type=sapdata');
-    const data = await res.json();
-
+    const res  = await fetch(API_URL + '?type=sapdata', { redirect: 'follow' });
+    const data = JSON.parse(await res.text());
     if (data.sapData && data.sapData.length > 0) {
       sapMaster = data.sapData;
       localStorage.setItem('novus_sap', JSON.stringify(sapMaster));
@@ -655,7 +600,7 @@ async function pullCloud() {
     if (sapMaster.length > 0) {
       buildIndexes();
       showSetup();
-      toast('Offline — showing cached data', 'amber');
+      toast('Offline — using cached SAP data', 'amber');
     } else {
       _showNoData();
     }
@@ -666,25 +611,23 @@ async function pullCloud() {
 
 function _showNoData() {
   showSetup();
-  document.getElementById('aisle-grid').innerHTML =
-    `<div style="grid-column:1/-1; text-align:center; padding:40px 20px; color:var(--text-3)">
-      <span style="font-size:36px; display:block; margin-bottom:10px">📭</span>
+  document.getElementById('aisle-grid').innerHTML = `
+    <div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--text-3)">
+      <span style="font-size:36px;display:block;margin-bottom:10px">📭</span>
       <p style="font-weight:700">No SAP data yet</p>
-      <p style="font-size:11px; margin-top:4px">Upload from Control Center first</p>
+      <p style="font-size:11px;margin-top:4px">Upload an export from the Control Center first</p>
     </div>`;
 }
 
 async function refreshAll() {
   const btn = document.getElementById('refresh-btn');
+  btn.textContent = '…';
   btn.style.opacity = '.5';
   btn.style.pointerEvents = 'none';
-  btn.textContent = '↻ …';
-
   NovusLoader.start();
   try {
-    const res  = await fetch(API_URL + '?type=sapdata');
-    const data = await res.json();
-
+    const res  = await fetch(API_URL + '?type=sapdata', { redirect: 'follow' });
+    const data = JSON.parse(await res.text());
     if (data.sapData && data.sapData.length > 0) {
       sapMaster = data.sapData;
       localStorage.setItem('novus_sap', JSON.stringify(sapMaster));
@@ -693,7 +636,6 @@ async function refreshAll() {
       isOnline = true;
       updateSyncDot();
 
-      // Prompt to clear daily "done" state on fresh SAP data
       if (completedBins.size > 0) {
         if (confirm('New SAP data loaded!\n\nClear "Already Counted" bins to start a fresh cycle?')) {
           completedBins.clear();
@@ -710,14 +652,14 @@ async function refreshAll() {
     toast('Refresh failed — offline mode', 'red');
   } finally {
     NovusLoader.done();
+    btn.textContent = '↻';
     btn.style.opacity = '';
     btn.style.pointerEvents = '';
-    btn.textContent = '↻ Refresh';
   }
 }
 
 // ─────────────────────────────────────────
-// AISLE GRID
+// DONE COUNT
 // ─────────────────────────────────────────
 
 function updateDoneCount() {
@@ -726,19 +668,29 @@ function updateDoneCount() {
   document.getElementById('stat-progress').textContent = `${completedBins.size} / ${totalBins}`;
 }
 
+// ─────────────────────────────────────────
+// AISLE GRID (setup screen)
+// ─────────────────────────────────────────
+
 function buildAisleGrid() {
   const grid = document.getElementById('aisle-grid');
   grid.innerHTML = '';
 
   AISLE_ROWS.forEach(letter => {
-    const bins   = Object.keys(binIndex).filter(b => b.charAt(1) === letter);
-    const done   = bins.filter(b => completedBins.has(b)).length;
-    const allDone = bins.length > 0 && done >= bins.length;
+    const bins    = Object.keys(binIndex).filter(b => b.charAt(1) === letter);
+    const done    = bins.filter(b => completedBins.has(b)).length;
+    const total   = bins.length;
+    const allDone = total > 0 && done >= total;
+    const inProg  = done > 0 && !allDone;
+    const pct     = total > 0 ? Math.round(done / total * 100) : 0;
 
     const btn = document.createElement('button');
-    btn.className = `aisle-btn${allDone ? ' done' : ''}`;
-    btn.innerHTML  = `${letter}<span class="a-count">${done}/${bins.length}</span>`;
-    btn.onclick    = () => selectAisle(letter);
+    btn.className = `aisle-btn${allDone ? ' done' : inProg ? ' in-progress' : ''}`;
+    btn.innerHTML = `
+      <span class="a-letter">${letter}</span>
+      <span class="a-count">${done}/${total}</span>
+      <div class="aisle-prog" style="width:${pct}%"></div>`;
+    btn.onclick = () => selectAisle(letter);
     grid.appendChild(btn);
   });
 }
@@ -747,11 +699,14 @@ function buildAisleGrid() {
 // NAVIGATION
 // ─────────────────────────────────────────
 
+/**
+ * Select an entire aisle — builds ordered bin list A→Z, 01→38.
+ */
 function selectAisle(letter) {
   targetProduct = null;
-  // B and C aisles are shorter
-  const limit = 'BC'.includes(letter) ? 25 : 38;
-  aisleBins = [];
+  activeAisle   = letter;
+  const limit   = 'BC'.includes(letter) ? 25 : 38;
+  aisleBins     = [];
   for (let n = 0; n <= limit; n++) {
     ['A','B','C'].forEach(s => aisleBins.push(`W${letter}${String(n).padStart(2,'0')}${s}`));
   }
@@ -762,20 +717,15 @@ function selectAisle(letter) {
 function searchProduct() {
   const prod = document.getElementById('product-search').value.trim().toUpperCase();
   if (!prod) return;
-
-  const binsWithProduct = [...new Set(
+  const bins = [...new Set(
     sapMaster.filter(i => i.product.toUpperCase() === prod).map(i => i.sapBin)
   )].sort();
-
-  if (binsWithProduct.length === 0) {
-    toast(`Product ${prod} not found in SAP`, 'amber');
-    return;
-  }
-
+  if (bins.length === 0) { toast(`Product ${prod} not found in SAP`, 'amber'); return; }
   targetProduct = prod;
-  aisleBins     = binsWithProduct;
+  activeAisle   = null;
+  aisleBins     = bins;
   binIdx        = 0;
-  toast(`Found ${prod} in ${binsWithProduct.length} bin(s)`, 'blue');
+  toast(`${prod} found in ${bins.length} bin(s)`, 'blue');
   navigateToBin(aisleBins[0]);
 }
 
@@ -785,21 +735,26 @@ function navigateToBin(bin) {
   binIdx     = aisleBins.indexOf(currentBin);
   if (binIdx < 0) binIdx = 0;
 
-  // Build item list — filter to target product if set
+  // Filter expected items; optionally restrict to target product
   let expected = binIndex[currentBin] || [];
   if (targetProduct) expected = expected.filter(i => i.product.toUpperCase() === targetProduct);
 
+  // Get fresh threshold
+  freshDays = parseInt(document.getElementById('fresh-threshold-days').value, 10) || 7;
+
   currentItems = expected.map(i => ({
-    hu:        i.hu,
-    product:   i.product,
-    desc:      i.desc,
-    batch:     i.batch,
-    sapBin:    i.sapBin,
-    sapQty:    i.sapQty,
+    hu:         i.hu,
+    product:    i.product,
+    desc:       i.desc,
+    batch:      i.batch,
+    sapBin:     i.sapBin,
+    sapQty:     i.sapQty,
+    unit:       i.unit,
+    sled:       i.sled,      // SLED date string from SAP
     scannedQty: 0,
-    status:    'pending', // pending → confirmed | adjusted | missing
-    isExtra:   false,
-    note:      '',
+    status:     'pending',   // pending | confirmed | adjusted | missing
+    isExtra:    false,
+    note:       '',
   }));
 
   phase        = 1;
@@ -808,6 +763,18 @@ function navigateToBin(bin) {
   switchScreen('counting');
   document.getElementById('count-bin-title').textContent = currentBin;
   document.getElementById('bin-input').value             = currentBin;
+
+  // Aisle label in counting header
+  const aisleLetter = currentBin.charAt(1);
+  document.getElementById('count-aisle-label').textContent =
+    activeAisle ? `Aisle ${aisleLetter}` : '';
+
+  // Update aisle progress banner
+  _updateAisleProgressBanner();
+
+  // Audit mode styling on finalize button
+  document.getElementById('btn-finalize').className =
+    'btn-pri' + (auditMode === 'fresh' ? ' fresh-mode' : '');
 
   renderPhase();
   renderStrip();
@@ -821,6 +788,31 @@ function stepBin(dir) {
 }
 
 // ─────────────────────────────────────────
+// AISLE PROGRESS BANNER
+// ─────────────────────────────────────────
+
+function _updateAisleProgressBanner() {
+  const banner = document.getElementById('aisle-progress-banner');
+  if (!activeAisle) { banner.classList.remove('visible'); return; }
+
+  const allInAisle  = aisleBins.length;
+  const doneInAisle = aisleBins.filter(b => completedBins.has(b)).length;
+  const pct         = allInAisle > 0 ? Math.round(doneInAisle / allInAisle * 100) : 0;
+
+  document.getElementById('aisle-progress-text').textContent = `Aisle ${activeAisle}: ${doneInAisle}/${allInAisle} bins`;
+  document.getElementById('aisle-prog-fill').style.width     = pct + '%';
+  document.getElementById('aisle-progress-pct').textContent  = pct + '%';
+  banner.classList.add('visible');
+
+  // Colour shift: amber → green when complete
+  const fill = document.getElementById('aisle-prog-fill');
+  fill.style.background = pct === 100 ? 'var(--green)' : 'var(--amber)';
+  banner.style.background    = pct === 100 ? 'var(--green-bg)'  : 'var(--amber-bg)';
+  banner.style.borderColor   = pct === 100 ? 'var(--green-border)' : 'var(--amber-border)';
+  banner.style.color         = pct === 100 ? 'var(--green)' : 'var(--amber)';
+}
+
+// ─────────────────────────────────────────
 // RENDER — STRIP + PHASE BAR
 // ─────────────────────────────────────────
 
@@ -828,22 +820,18 @@ function renderStrip() {
   const strip = document.getElementById('bin-strip');
   strip.innerHTML = '';
   const seen = {};
-
   aisleBins.forEach(b => {
     const num = b.substring(2, 4);
     if (seen[num]) return;
     seen[num] = true;
-
     const isCurrent = currentBin.substring(2, 4) === num;
     const isDone    = aisleBins.filter(x => x.substring(2,4) === num).some(x => completedBins.has(x));
-
     const dot = document.createElement('button');
-    dot.className = `strip-dot${isCurrent ? ' current' : ''}${isDone && !isCurrent ? ' done' : ''}`;
+    dot.className   = `strip-dot${isCurrent ? ' current' : ''}${isDone && !isCurrent ? ' done' : ''}`;
     dot.textContent = isCurrent ? num : (isDone ? '✓' : num);
     dot.onclick     = () => navigateToBin(`W${currentBin.charAt(1)}${num}A`);
     strip.appendChild(dot);
   });
-
   setTimeout(() => {
     const cur = strip.querySelector('.current');
     if (cur) cur.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
@@ -852,16 +840,55 @@ function renderStrip() {
 
 function renderPhase() {
   ['ph1','ph2','ph3'].forEach((id, i) => {
-    const el = document.getElementById(id);
-    el.className = 'phase-step' +
-      (phase === i + 1 ? ' active' : '') +
-      (phase > i + 1   ? ' done'   : '');
+    document.getElementById(id).className =
+      'phase-step' + (phase === i+1 ? ' active' : '') + (phase > i+1 ? ' done' : '');
   });
   ['phl1','phl2','phl3'].forEach((id, i) => {
     document.getElementById(id).className =
-      (phase === i + 1 ? 'active' : '') +
-      (phase > i + 1   ? ' done'  : '');
+      (phase === i+1 ? 'active' : '') + (phase > i+1 ? ' done' : '');
   });
+}
+
+// ─────────────────────────────────────────
+// FRESH — SLED HELPERS
+// ─────────────────────────────────────────
+
+/**
+ * Parse a SLED string (various formats) into a Date, or null.
+ */
+function parseSLED(sledStr) {
+  if (!sledStr) return null;
+  // Try ISO, MM/DD/YYYY, DD.MM.YYYY
+  const d = new Date(sledStr);
+  if (!isNaN(d)) return d;
+  // DD.MM.YYYY
+  const m = sledStr.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (m) return new Date(`${m[3]}-${m[2]}-${m[1]}`);
+  return null;
+}
+
+/**
+ * Returns 'expired' | 'expiring' | 'valid' | 'unknown' based on SLED date.
+ */
+function sledStatus(sledStr) {
+  const d = parseSLED(sledStr);
+  if (!d) return 'unknown';
+  const now       = new Date();
+  now.setHours(0, 0, 0, 0);
+  const threshold = new Date(now);
+  threshold.setDate(threshold.getDate() + freshDays);
+  if (d < now)       return 'expired';
+  if (d <= threshold) return 'expiring';
+  return 'valid';
+}
+
+/**
+ * Format a SLED date for display.
+ */
+function formatSLED(sledStr) {
+  const d = parseSLED(sledStr);
+  if (!d) return sledStr || '—';
+  return d.toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
 }
 
 // ─────────────────────────────────────────
@@ -879,7 +906,7 @@ function renderHUList() {
         <span>✅</span>
         <div>
           <strong>Already Counted Today</strong>
-          <small>Counting again will replace previous results</small>
+          <small>Counting again replaces previous results</small>
         </div>
       </div>`;
   }
@@ -897,9 +924,9 @@ function renderHUList() {
   }
 
   // Expected HU cards
-  currentItems.filter(i => !i.isExtra).forEach((item, idx) => {
-    list.innerHTML += renderCard(item, idx);
-  });
+  currentItems.filter(i => !i.isExtra).forEach((item, idx) =>
+    list.innerHTML += renderCard(item, idx)
+  );
 
   // Extra items section
   const extras = currentItems.filter(i => i.isExtra);
@@ -908,20 +935,20 @@ function renderHUList() {
     extras.forEach(item => list.innerHTML += renderCard(item, currentItems.indexOf(item)));
   }
 
-  // Inline extra form
+  // Inline add-extra form
   if (showingExtra) {
     list.innerHTML += `
       <div class="extra-form">
         <h3>🔍 Found Extra Item</h3>
         <input type="text" class="field mono" id="extra-hu"
-               placeholder="HU number (0 if no label)" oninput="extraLookup()">
+               placeholder="HU number (0 if none)" oninput="extraLookup()">
         <div id="extra-autofill"></div>
         <div class="field-row">
           <input type="text"   class="field"      id="extra-product" placeholder="Product #" style="flex:1">
           <input type="number" inputmode="numeric" class="field mono" id="extra-qty"
-                 placeholder="Qty" style="width:90px; text-align:center">
+                 placeholder="Qty" style="width:80px;text-align:center">
         </div>
-        <div style="display:flex; gap:8px; margin-top:10px">
+        <div style="display:flex;gap:8px;margin-top:10px">
           <button class="btn-sec" onclick="toggleExtra()" style="flex:1">Cancel</button>
           <button class="act-btn confirm" onclick="addExtra()" style="flex:2">Add Item</button>
         </div>
@@ -932,27 +959,58 @@ function renderHUList() {
 }
 
 /**
- * Build a single HU card's HTML.
- * @param {object} item
- * @param {number} idx  — index in currentItems[]
+ * Build HTML for a single HU card.
+ * In Fresh mode, adds SLED date row + expiry badge.
  */
 function renderCard(item, idx) {
+  const isPending = item.status === 'pending';
   const isOk      = item.status === 'confirmed';
   const isMiss    = item.status === 'missing';
   const isAdj     = item.status === 'adjusted';
-  const isPending = item.status === 'pending';
 
-  const cardCls = isMiss ? 'missing' : isOk ? 'confirmed' : isAdj ? 'adjusted' : item.isExtra ? 'extra' : '';
+  // Card background class
+  let cardCls = '';
+  if (auditMode === 'fresh' && item.sled && !item.isExtra) {
+    const ss = sledStatus(item.sled);
+    if      (ss === 'expired')  cardCls = 'fresh-expired';
+    else if (ss === 'expiring') cardCls = 'fresh-expiring';
+    else if (ss === 'valid')    cardCls = 'fresh-valid';
+  } else {
+    cardCls = isMiss ? 'missing' : isOk ? 'confirmed' : isAdj ? 'adjusted' : item.isExtra ? 'extra' : '';
+  }
 
-  const badgeHTML =
+  // Status badge
+  const statusBadge =
     isOk    ? '<span class="hu-badge ok">✓ Confirmed</span>'  :
     isMiss  ? '<span class="hu-badge miss">✗ Missing</span>'  :
     isAdj   ? '<span class="hu-badge adj">± Adjusted</span>'  :
     item.isExtra ? '<span class="hu-badge ext">+ Extra</span>' : '';
 
+  // Fresh SLED badge
+  let sledBadge = '';
+  if (auditMode === 'fresh' && item.sled) {
+    const ss = sledStatus(item.sled);
+    if (ss !== 'unknown') {
+      const label = ss === 'expired' ? '⚠ EXPIRED' : ss === 'expiring' ? '⚡ EXPIRING' : '✓ VALID';
+      sledBadge = `<span class="hu-badge sled-${ss}">${label}</span>`;
+    }
+  }
+
+  // SLED date display row (Fresh mode only)
+  let sledRow = '';
+  if (auditMode === 'fresh' && item.sled) {
+    const ss  = sledStatus(item.sled);
+    const cls = ss === 'unknown' ? '' : ss;
+    sledRow = `
+      <div class="sled-row">
+        <span class="sled-label">Best-By / SLED</span>
+        <span class="sled-date ${cls}">${formatSLED(item.sled)}</span>
+      </div>`;
+  }
+
   const qtyMatch = item.scannedQty === item.sapQty;
 
-  // ── Body: active counting controls OR resolved summary ──
+  // Active counting controls vs resolved summary
   let body = '';
   if (isPending || isAdj) {
     body = `
@@ -965,7 +1023,7 @@ function renderCard(item, idx) {
                 oninput="setQty(${idx},this.value)">
         <button class="qty-btn plus" onclick="adjustQty(${idx},1)">+</button>
       </div>
-      <div class="sap-hint">SAP expects <strong>${item.sapQty}</strong></div>
+      <div class="sap-hint">SAP expects <strong>${item.sapQty} ${item.unit || 'LB'}</strong></div>
       <div class="hu-actions">
         <button class="act-btn confirm" onclick="confirmHU(${idx})">Confirm ${item.sapQty}</button>
         <button class="act-btn miss${isMiss ? ' active' : ''}" onclick="markMissing(${idx})">Missing</button>
@@ -983,25 +1041,21 @@ function renderCard(item, idx) {
     <div class="hu-card ${cardCls}">
       <div class="hu-top">
         <span class="hu-id">HU ${item.hu || '—'}</span>
-        ${badgeHTML}
+        <div class="hu-badges">${statusBadge}${sledBadge}</div>
       </div>
       <div class="hu-meta">
-        <div><span class="meta-label">Product</span><span class="meta-val">${item.product}</span></div>
-        <div><span class="meta-label">SAP Qty</span><span class="meta-val mono">${item.sapQty}</span></div>
+        <div class="meta-item"><span class="meta-label">Product</span><span class="meta-val">${item.product}</span></div>
+        <div class="meta-item"><span class="meta-label">SAP Qty</span><span class="meta-val mono">${item.sapQty}</span></div>
+        ${item.batch ? `<div class="meta-item"><span class="meta-label">Batch</span><span class="meta-val mono" style="font-size:11px">${item.batch}</span></div>` : ''}
       </div>
       ${item.desc ? `<div class="hu-desc">${item.desc}</div>` : ''}
+      ${sledRow}
       ${body}
-      <!-- Notes + Move controls -->
-      <div style="display:flex; gap:6px; margin-top:6px;">
-        <button class="note-btn${item.note ? ' has' : ''}" style="margin-top:0; flex:1;"
-                onclick="addNote(${idx})">
-          📝 ${item.note ? item.note.substring(0, 30) : 'Add Note'}
+      <div class="card-actions-row">
+        <button class="note-btn${item.note ? ' has' : ''}" onclick="addNote(${idx})">
+          📝 ${item.note ? item.note.substring(0,28) + (item.note.length > 28 ? '…' : '') : 'Add Note'}
         </button>
-        <button class="note-btn" style="margin-top:0; flex:1; color:var(--purple);
-                border-color:rgba(167,139,250,.3); background:var(--purple-bg);"
-                onclick="openMoveModal(${idx})">
-          🔄 Move Bin
-        </button>
+        <button class="move-btn" onclick="openMoveModal(${idx})">🔄 Move</button>
       </div>
     </div>`;
 }
@@ -1012,9 +1066,9 @@ function renderCard(item, idx) {
 
 function confirmHU(idx) {
   haptic();
-  currentItems[idx].scannedQty = currentItems[idx].scannedQty || currentItems[idx].sapQty;
-  currentItems[idx].status = currentItems[idx].scannedQty === currentItems[idx].sapQty
-    ? 'confirmed' : 'adjusted';
+  if (!currentItems[idx].scannedQty) currentItems[idx].scannedQty = currentItems[idx].sapQty;
+  currentItems[idx].status =
+    currentItems[idx].scannedQty === currentItems[idx].sapQty ? 'confirmed' : 'adjusted';
   checkPhaseAdvance();
   renderHUList();
 }
@@ -1022,11 +1076,10 @@ function confirmHU(idx) {
 function markMissing(idx) {
   haptic();
   if (currentItems[idx].status === 'missing') {
-    // Toggle off → back to pending
-    currentItems[idx].status    = 'pending';
+    currentItems[idx].status     = 'pending';
     currentItems[idx].scannedQty = 0;
   } else {
-    currentItems[idx].status    = 'missing';
+    currentItems[idx].status     = 'missing';
     currentItems[idx].scannedQty = 0;
   }
   checkPhaseAdvance();
@@ -1043,15 +1096,15 @@ function adjustQty(idx, delta) {
 function setQty(idx, val) {
   currentItems[idx].scannedQty = parseFloat(val) || 0;
   if (currentItems[idx].scannedQty > 0) {
-    currentItems[idx].status = currentItems[idx].scannedQty === currentItems[idx].sapQty
-      ? 'confirmed' : 'adjusted';
+    currentItems[idx].status =
+      currentItems[idx].scannedQty === currentItems[idx].sapQty ? 'confirmed' : 'adjusted';
   }
   updateFinalizeBtn();
 }
 
 function resetHU(idx) {
   haptic();
-  currentItems[idx].status    = 'pending';
+  currentItems[idx].status     = 'pending';
   currentItems[idx].scannedQty = 0;
   phase = 1;
   renderPhase();
@@ -1071,12 +1124,11 @@ function confirmAll() {
 }
 
 /**
- * Add or edit a free-text note on any HU.
- * Notes are included in the audit payload sent to GAS.
+ * Add or edit a free-text note on an HU.
+ * Notes flow through to GAS Audit_Log and appear in Monitor.
  */
 function addNote(idx) {
-  const existing = currentItems[idx].note || '';
-  const note = prompt('Note for this item:', existing);
+  const note = prompt('Note for this item:', currentItems[idx].note || '');
   if (note !== null) {
     currentItems[idx].note = note.trim();
     renderHUList();
@@ -1084,8 +1136,7 @@ function addNote(idx) {
 }
 
 function checkPhaseAdvance() {
-  const expected = currentItems.filter(i => !i.isExtra);
-  if (expected.every(i => i.status !== 'pending') && phase === 1) {
+  if (currentItems.filter(i => !i.isExtra).every(i => i.status !== 'pending') && phase === 1) {
     phase = 2;
     renderPhase();
   }
@@ -1101,9 +1152,9 @@ function openMoveModal(idx) {
   document.getElementById('qm-hu').value  = item.hu;
   document.getElementById('qm-qty').value = item.scannedQty || item.sapQty || 0;
   document.getElementById('qm-bin').value = '';
-  document.getElementById('qm-info').innerHTML =
-    `<span style="color:var(--accent); font-weight:800;">Moving from ${currentBin}</span><br>
-     Product: ${item.product} · SAP Qty: ${item.sapQty}`;
+  document.getElementById('qm-info').innerHTML = `
+    <strong style="color:var(--accent)">Moving from ${currentBin}</strong><br>
+    Product: ${item.product} · SAP Qty: ${item.sapQty} ${item.unit}`;
   document.getElementById('modal-move').style.display = 'flex';
 }
 
@@ -1111,17 +1162,11 @@ async function submitQuickMove() {
   const hu      = document.getElementById('qm-hu').value.trim();
   const scanBin = document.getElementById('qm-bin').value.trim().toUpperCase();
   const scanQty = parseFloat(document.getElementById('qm-qty').value);
-
   if (!hu || !scanBin || isNaN(scanQty)) { toast('Fill all fields', 'amber'); return; }
-  if (activeMoveIdx < 0)                  { toast('No item selected', 'red');   return; }
+  if (activeMoveIdx < 0) { toast('No item selected', 'red'); return; }
 
   const item = currentItems[activeMoveIdx];
-  const { sapBin, sapQty, product, desc, batch } = item;
-
-  // ── Classify the move ──────────────────
-  // move     : different bin, same qty
-  // move_adj : different bin, different qty
-  const type = scanQty === sapQty ? 'move' : 'move_adj';
+  const type = scanQty === item.sapQty ? 'move' : 'move_adj';
 
   if (item.isExtra) {
     currentItems.splice(activeMoveIdx, 1);
@@ -1130,18 +1175,24 @@ async function submitQuickMove() {
     item.status     = 'missing';
     item.note       = `Moved to ${scanBin}`;
   }
-
   renderHUList();
   checkPhaseAdvance();
 
   const sessionId = 'MOVE-' + new Date().toISOString().split('T')[0];
   const payload = {
-    action: 'logAudit',
-    user: auditorName || 'Counter',
-    bin: scanBin,
+    action:         'logAudit',
+    user:           auditorName || 'Counter',
+    bin:            scanBin,
+    aisle:          scanBin.charAt(1),
+    auditMode,
     sessionId,
     idempotencyKey: makeIdempotencyKey(scanBin, sessionId),
-    items: [{ hu, product, desc, batch, sapBin, sapQty, countQty: scanQty, type, note: `Moved from ${currentBin}` }],
+    items: [{
+      hu: item.hu, product: item.product, desc: item.desc,
+      batch: item.batch, sapBin: item.sapBin, sapQty: item.sapQty,
+      countQty: scanQty, type, note: `Moved from ${currentBin}`,
+      sled: item.sled || '', sledStatus: sledStatus(item.sled),
+    }],
   };
 
   document.getElementById('modal-move').style.display = 'none';
@@ -1152,21 +1203,16 @@ async function submitQuickMove() {
 // EXTRA ITEMS
 // ─────────────────────────────────────────
 
-function toggleExtra() {
-  showingExtra = !showingExtra;
-  renderHUList();
-}
+function toggleExtra() { showingExtra = !showingExtra; renderHUList(); }
 
 function extraLookup() {
-  const hu = document.getElementById('extra-hu').value.trim();
-  if (hu.length < 6) return;
+  const hu    = document.getElementById('extra-hu').value.trim();
+  if (hu.length < 4) return;
   const match = huIndex.get(hu);
   if (match) {
     document.getElementById('extra-product').value = match.product;
     document.getElementById('extra-autofill').innerHTML =
-      '<span style="font-size:9px;font-weight:700;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:6px;margin-bottom:6px;display:inline-block">Auto-filled from SAP</span>';
-  } else {
-    document.getElementById('extra-autofill').innerHTML = '';
+      '<span style="font-size:9px;font-weight:700;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:6px;margin-bottom:6px;display:inline-block">✓ Auto-filled from SAP</span>';
   }
 }
 
@@ -1174,57 +1220,62 @@ function addExtra() {
   const hu      = document.getElementById('extra-hu').value.trim() || '0';
   const product = document.getElementById('extra-product').value.trim();
   const qty     = parseFloat(document.getElementById('extra-qty').value) || 0;
-
   if (!product || !qty) { toast('Enter product # and qty', 'amber'); return; }
 
   const match = huIndex.get(hu);
   currentItems.push({
     hu, product,
-    desc:      match ? match.desc  : 'FOUND (Extra)',
-    batch:     match ? match.batch : '',
+    desc:      match ? match.desc   : 'FOUND (Extra)',
+    batch:     match ? match.batch  : '',
     sapBin:    match ? match.sapBin : '',
     sapQty:    match ? match.sapQty : 0,
+    unit:      match ? match.unit   : 'LB',
+    sled:      match ? match.sled   : '',
     scannedQty: qty,
     status:    'confirmed',
     isExtra:   true,
     note:      '',
   });
-
   showingExtra = false;
   renderHUList();
   toast('Extra item added', 'blue');
 }
 
 // ─────────────────────────────────────────
-// FINALIZE BIN — BUSINESS LOGIC CLASSIFIER
+// FINALIZE BIN — STATE CLASSIFICATION
 // ─────────────────────────────────────────
 
 function updateFinalizeBtn() {
   const pendingCount = currentItems.filter(i => i.status === 'pending').length;
-  const btn          = document.getElementById('btn-finalize');
+  const btn = document.getElementById('btn-finalize');
+  const freshCls = auditMode === 'fresh' ? ' fresh-mode' : '';
 
   if (pendingCount > 0) {
     btn.className   = 'btn-pri disabled';
     btn.textContent = `${pendingCount} item${pendingCount > 1 ? 's' : ''} unchecked`;
   } else {
-    btn.className   = 'btn-pri';
-    btn.textContent = currentItems.length === 0 ? 'Skip Empty Bin →' : 'Finalize & Next Bin →';
+    btn.className   = 'btn-pri' + freshCls;
+    btn.textContent = currentItems.length === 0 ? 'Skip Empty Bin →' : 'Finalize & Next →';
   }
 
-  // Hide "Confirm All" when all cards are resolved or there's only one
   const unresolved = currentItems.filter(i => !i.isExtra && i.status === 'pending').length;
-  document.getElementById('btn-confirm-all').style.display =
-    (unresolved <= 1) ? 'none' : '';
+  document.getElementById('btn-confirm-all').style.display = (unresolved <= 1) ? 'none' : '';
 }
 
 /**
- * State classification rules (from system prompt):
+ * Classify each item and POST the audit payload to GAS.
+ *
+ * State rules (from spec):
  *   ok         — same bin, same qty
  *   adj        — same bin, different qty
  *   move       — different bin, same qty
  *   move_adj   — different bin, different qty
- *   missing    — expected but not found (status='missing')
- *   unexpected — scanned but not in SAP
+ *   miss       — not found (GAS promotes to missing_temp → missing)
+ *   unexpected — scanned HU not in SAP
+ *
+ * Fresh mode adds:
+ *   sled, sledStatus ('valid' | 'expiring' | 'expired' | 'unknown')
+ *   auditMode: 'fresh'
  */
 async function finalizeBin() {
   if (currentItems.some(i => i.status === 'pending')) return;
@@ -1232,46 +1283,44 @@ async function finalizeBin() {
 
   const items = currentItems.map(i => {
     let type = 'ok';
-
     if (i.status === 'missing') {
-      // Phase 1: flag as missing_temp; GAS promotes to missing after full count
       type = 'miss';
     } else if (i.isExtra) {
-      if (i.sapBin && i.sapBin !== currentBin) {
-        // Found in wrong bin
-        type = i.scannedQty === i.sapQty ? 'move' : 'move_adj';
-      } else {
-        // Not in SAP at all
-        type = 'unexpected';
-      }
+      type = (i.sapBin && i.sapBin !== currentBin)
+        ? (i.scannedQty === i.sapQty ? 'move' : 'move_adj')
+        : 'unexpected';
     } else if (i.scannedQty !== i.sapQty) {
       type = 'adj';
     }
-
     return {
-      hu:        i.hu,
-      product:   i.product,
-      desc:      i.desc,
-      batch:     i.batch,
-      sapBin:    i.sapBin,
-      sapQty:    i.sapQty,
-      countQty:  i.scannedQty,
+      hu:         i.hu,
+      product:    i.product,
+      desc:       i.desc,
+      batch:      i.batch,
+      sapBin:     i.sapBin,
+      sapQty:     i.sapQty,
+      unit:       i.unit,
+      countQty:   i.scannedQty,
       type,
-      note:      i.note, // ← user-entered notes flow through here
+      note:       i.note,
+      sled:       i.sled || '',
+      sledStatus: auditMode === 'fresh' ? sledStatus(i.sled) : '',
     };
   });
 
   const sessionId = 'S-' + new Date().toISOString().split('T')[0];
   const payload   = {
-    action: 'logAudit',
-    user:   auditorName || 'Counter',
-    bin:    currentBin,
-    items,
+    action:         'logAudit',
+    user:           auditorName || 'Counter',
+    bin:            currentBin,
+    aisle:          currentBin.charAt(1),
+    auditMode,
     sessionId,
     idempotencyKey: makeIdempotencyKey(currentBin, sessionId, items),
+    items,
   };
 
-  const success = await sendPayload(payload, 'Bin finalized');
+  const success = await sendPayload(payload, 'Bin finalized ✓');
 
   if (success) {
     completedBins.add(currentBin);
@@ -1280,6 +1329,7 @@ async function finalizeBin() {
       bins: [...completedBins],
     }));
     updateDoneCount();
+    _updateAisleProgressBanner();
     stepBin(1);
   }
 }
@@ -1288,12 +1338,13 @@ async function finalizeBin() {
 // NETWORK
 // ─────────────────────────────────────────
 
-/** Deterministic idempotency key to prevent double-writes if GAS request retries */
+/**
+ * Deterministic idempotency key — prevents double-writes on GAS retry.
+ * Key = sessionId | bin | user | item-count | first-HU
+ */
 function makeIdempotencyKey(bin, sessionId, items) {
-  const fingerprint = items
-    ? `${items.length}|${(items[0]?.hu || 'empty')}`
-    : 'nofp';
-  return `${sessionId}|${bin}|${auditorName}|${fingerprint}`;
+  const fp = items ? `${items.length}|${items[0]?.hu || 'empty'}` : 'nofp';
+  return `${sessionId}|${bin}|${auditorName}|${fp}`;
 }
 
 async function sendPayload(payload, successMsg) {
@@ -1305,40 +1356,26 @@ async function sendPayload(payload, successMsg) {
       body:    JSON.stringify(payload),
     });
     const text = await res.text();
-
     let result;
-    try {
-      result = JSON.parse(text);
-    } catch {
-      // GAS returned non-JSON (common during cold start) — queue for retry
-      _queuePayload(payload);
-      return true;
-    }
+    try   { result = JSON.parse(text); }
+    catch { _enqueue(payload); return true; }
 
-    if (result.success === false) {
-      toast('Server error: ' + (result.error || 'unknown'), 'red');
-      return false;
-    }
-
-    if (result.skipped) {
-      toast('Already synced (duplicate)', 'amber');
-    } else if (successMsg) {
-      toast(successMsg, 'green');
-    }
-
+    if (result.success === false) { toast('Server error: ' + (result.error || 'unknown'), 'red'); return false; }
+    if (result.skipped) { toast('Already synced', 'amber'); }
+    else if (successMsg) { toast(successMsg, 'green'); }
     isOnline = true;
     updateSyncDot();
     return true;
   } catch {
-    _queuePayload(payload);
+    _enqueue(payload);
     isOnline = false;
     updateSyncDot();
     toast('Saved offline — will sync later', 'amber');
-    return true; // allow local completion
+    return true;
   }
 }
 
-function _queuePayload(payload) {
+function _enqueue(payload) {
   offlineQueue.push(payload);
   localStorage.setItem('novus_queue', JSON.stringify(offlineQueue));
   updateQueueBadge();
@@ -1346,42 +1383,27 @@ function _queuePayload(payload) {
 
 async function flushQueue() {
   if (!offlineQueue.length) return;
-  const batch  = [...offlineQueue];
+  const batch = [...offlineQueue];
   offlineQueue = [];
   const failed = [];
-
-  for (const payload of batch) {
+  for (const p of batch) {
     try {
-      const res  = await fetch(API_URL, {
-        method:  'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        redirect: 'follow',
-        body:    JSON.stringify(payload),
-      });
+      const res  = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, redirect: 'follow', body: JSON.stringify(p) });
       const text = await res.text();
-      try {
-        const result = JSON.parse(text);
-        if (result.success === false) failed.push(payload);
-      } catch { failed.push(payload); }
-    } catch {
-      failed.push(payload);
-    }
+      try { const r = JSON.parse(text); if (r.success === false) failed.push(p); }
+      catch { failed.push(p); }
+    } catch { failed.push(p); }
   }
-
   offlineQueue = failed;
   localStorage.setItem('novus_queue', JSON.stringify(offlineQueue));
   updateQueueBadge();
-
-  if (failed.length === 0 && batch.length > 0) {
-    toast(`${batch.length} queued item(s) synced`, 'green');
-  }
+  if (!failed.length && batch.length) toast(`${batch.length} queued item(s) synced`, 'green');
 }
 
-// Periodic queue flush (every 15 s)
 setInterval(flushQueue, 15000);
 
 // ─────────────────────────────────────────
-// UI UTILITIES
+// UTILITIES
 // ─────────────────────────────────────────
 
 function switchScreen(name) {
@@ -1391,6 +1413,7 @@ function switchScreen(name) {
 
 function backToSetup() {
   targetProduct = null;
+  activeAisle   = null;
   document.getElementById('product-search').value = '';
   switchScreen('setup');
   buildAisleGrid();
@@ -1409,15 +1432,13 @@ function haptic() {
   if (NovusSettings.get('hapticFeedback') && navigator.vibrate) navigator.vibrate(15);
 }
 
-// Re-sync auditor name if settings change from modal
 window.addEventListener('novus-settings-changed', () => {
   auditorName = NovusSettings.getUser();
   document.getElementById('name-display').textContent = auditorName || 'Set Name';
 });
 
-// Keyboard shortcut: Enter in bin input → navigate
 document.getElementById('bin-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') navigateToBin(e.target.value);
+  if (e.key === 'Enter') navigateToBin(e.target.value.trim());
 });
 </script>
 </body>
