@@ -1636,13 +1636,74 @@ function updateFinalizeBtn(){
   else{btn.className='btn-pri';btn.textContent=currentItems.length===0?'Skip Empty Bin →':'Finalize & Next →';}
   document.getElementById('btn-confirm-all').style.display=currentItems.filter(i=>!i.isExtra&&i.status==='pending').length<=1?'none':'';
 }
-async function finalizeBin(){
-  if(currentItems.some(i=>i.status==='pending'))return; haptic();
-  const items=currentItems.map(i=>{let type='ok';if(i.status==='missing')type='miss';else if(i.isExtra)type=(i.sapBin&&i.sapBin!==currentBin)?(i.scannedQty===i.sapQty?'move':'move_adj'):'unexpected';else if(i.scannedQty!==i.sapQty)type='adj';return{hu:i.hu,product:i.product,desc:i.desc,batch:i.batch,sapBin:i.sapBin,sapQty:i.sapQty,unit:i.unit,countQty:i.scannedQty,type,note:i.note,sled:i.sled||'',sledStatus:''};});
-  const sessId='S-'+new Date().toISOString().split('T')[0];
-  const payload={action:'logAudit',user:auditorName||'Counter',bin:currentBin,aisle:currentBin.charAt(1),auditMode,sessionId:sessId,idempotencyKey:makeIdempotencyKey(currentBin,sessId,items),items};
-  const ok=await sendPayload(payload,'Bin finalized ✓');
-  if(ok){completedBins.add(currentBin);localStorage.setItem('novus_done',JSON.stringify({date:new Date().toDateString(),bins:[...completedBins]}));updateDoneCount();_updateAisleProgressBanner();stepBin(1);}
+async function finalizeBin() {
+  if (currentItems.some(i => i.status === 'pending')) return;
+
+  const btn = document.getElementById('btn-finalize');
+
+  // ── Immediate disable — prevents any double-tap/click ──
+  btn.disabled = true;
+  btn.classList.add('loading');
+  btn.textContent = 'Finalizing…';
+
+  haptic();
+
+  const items = currentItems.map(i => {
+    let type = 'ok';
+    if      (i.status === 'missing')                              type = 'miss';
+    else if (i.isExtra && i.sapBin && i.sapBin !== currentBin)   type = i.scannedQty === i.sapQty ? 'move' : 'move_adj';
+    else if (i.isExtra)                                           type = 'unexpected';
+    else if (i.scannedQty !== i.sapQty)                          type = 'adj';
+    return {
+      hu:         i.hu,
+      product:    i.product,
+      desc:       i.desc,
+      batch:      i.batch,
+      sapBin:     i.sapBin,
+      sapQty:     i.sapQty,
+      unit:       i.unit,
+      countQty:   i.scannedQty,
+      type,
+      note:       i.note,
+      sled:       i.sled       || '',
+      sledStatus: i.sled ? sledStatus(i.sled) : '',
+    };
+  });
+
+  const sessId = 'S-' + new Date().toISOString().split('T')[0];
+  const payload = {
+    action:         'logAudit',
+    user:           auditorName || 'Counter',
+    bin:            currentBin,
+    aisle:          currentBin.charAt(1),
+    auditMode,
+    sessionId:      sessId,
+    idempotencyKey: makeIdempotencyKey(currentBin, sessId, items),
+    items,
+  };
+
+  let ok = false;
+  try {
+    ok = await sendPayload(payload, 'Bin finalized ✓');
+  } finally {
+    // ── Always re-enable, whether success or error ──
+    btn.disabled = false;
+    btn.classList.remove('loading');
+  }
+
+  if (ok) {
+    completedBins.add(currentBin);
+    localStorage.setItem('novus_done', JSON.stringify({
+      date: new Date().toDateString(),
+      bins: [...completedBins],
+    }));
+    updateDoneCount();
+    _updateAisleProgressBanner();
+    stepBin(1);          // advances to next bin — restores button text naturally via updateFinalizeBtn()
+  } else {
+    // Restore button label so the worker can try again
+    updateFinalizeBtn();
+  }
 }
 
 /* ══════════════════════════════════════════════
