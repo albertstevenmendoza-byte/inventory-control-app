@@ -97,6 +97,7 @@ tr:hover{background:var(--surface-2)}
 .status-tag.move{background:var(--purple-bg);color:var(--purple)}
 .status-tag.move_adj{background:var(--surface-2);color:var(--purple);border:1px dashed var(--purple)}
 .status-tag.found_moved{background:var(--green-bg);color:var(--green);border:1px dashed var(--green)}
+.status-tag.pallet_count{background:var(--fresh-bg);color:var(--fresh);border:1px solid var(--fresh-border)}
 .fresh-tag{font-size:8px;font-weight:800;text-transform:uppercase;padding:2px 6px;border-radius:4px;margin-left:4px}
 .fresh-tag.expired{background:var(--red-bg);color:var(--red)}
 .fresh-tag.expiring{background:var(--amber-bg);color:var(--amber)}
@@ -264,6 +265,10 @@ tr:hover{background:var(--surface-2)}
     <div class="metric"><span class="m-label">Bin Acc.</span><span class="m-val green" id="m-bin-acc">—</span></div>
     <div class="metric"><span class="m-label">Inv. Acc.</span><span class="m-val green" id="m-inv-acc">—</span></div>
     <div class="metric"><span class="m-label">Fresh Expired</span><span class="m-val pink" id="m-expired">—</span></div>
+    <div class="metric">
+      <span class="m-label">Pallet Counts</span>
+      <span class="m-val pink" id="m-pallet">—</span>
+    </div>
     <div class="metric"><span class="m-label">Open Safety</span><span class="m-val red" id="m-open-safety">—</span></div>
   </div>
   <div class="panes">
@@ -375,17 +380,53 @@ function updateFreshness(){
   meta.innerHTML=`<strong>Last upload:</strong> ${ts.toLocaleString()}<br><strong>By:</strong> ${sapMeta.uploader||'—'}<br><strong>File:</strong> ${sapMeta.filename||'—'}`;
 }
 function updateMetrics(){
-  const total=report.length,ok=report.filter(r=>r.type==='ok').length,pending=report.filter(r=>r.type==='missing_temp').length;
-  const binsMap={};report.forEach(r=>{if(!r.scanBin)return;if(!binsMap[r.scanBin])binsMap[r.scanBin]=[];binsMap[r.scanBin].push(r);});
-  const totalBins=Object.keys(binsMap).length,perfectBins=Object.values(binsMap).filter(items=>items.every(i=>i.type==='ok')).length;
-  const binAcc=totalBins>0?(perfectBins/totalBins*100).toFixed(1):'—',invAcc=total>0?(ok/total*100).toFixed(1):'—';
-  const expiredCount=report.filter(r=>r.sledStatus==='expired').length;
-  document.getElementById('m-bins').textContent=totalBins;document.getElementById('m-total').textContent=total;document.getElementById('m-ok').textContent=ok;document.getElementById('m-pending').textContent=pending;
-  document.getElementById('m-bin-acc').textContent=binAcc!=='—'?binAcc+'%':'—';document.getElementById('m-inv-acc').textContent=invAcc!=='—'?invAcc+'%':'—';document.getElementById('m-expired').textContent=expiredCount||'—';
+  // Exclude pallet_count rows from HU-level accuracy calculations —
+  // they are aggregate bulk entries, not individual HU comparisons.
+  const huRows     = report.filter(r => r.type !== 'pallet_count');
+  const total      = huRows.length;
+  const ok         = huRows.filter(r => r.type === 'ok').length;
+  const pending    = huRows.filter(r => r.type === 'missing_temp').length;
+  const palletRows = report.filter(r => r.type === 'pallet_count').length;
+
+  // Bin accuracy: bins where every HU-level item is OK
+  const binsMap = {};
+  huRows.forEach(r => {
+    if (!r.scanBin) return;
+    if (!binsMap[r.scanBin]) binsMap[r.scanBin] = [];
+    binsMap[r.scanBin].push(r);
+  });
+  const totalBins   = Object.keys(binsMap).length;
+  const perfectBins = Object.values(binsMap).filter(items => items.every(i => i.type === 'ok')).length;
+  const binAcc      = totalBins > 0 ? (perfectBins / totalBins * 100).toFixed(1) : '—';
+  const invAcc      = total     > 0 ? (ok          / total     * 100).toFixed(1) : '—';
+
+  const expiredCount = report.filter(r => r.sledStatus === 'expired').length;
+
+  document.getElementById('m-bins').textContent    = totalBins;
+  document.getElementById('m-total').textContent   = total;
+  document.getElementById('m-ok').textContent      = ok;
+  document.getElementById('m-pending').textContent = pending;
+  document.getElementById('m-bin-acc').textContent = binAcc !== '—' ? binAcc + '%' : '—';
+  document.getElementById('m-inv-acc').textContent = invAcc !== '—' ? invAcc + '%' : '—';
+  document.getElementById('m-expired').textContent = expiredCount || '—';
+
+  // Update pallet count metric if the element exists
+  const palletEl = document.getElementById('m-pallet');
+  if (palletEl) palletEl.textContent = palletRows || '—';
 }
 
-const PILL_DEFS=[{key:'all',label:'All',color:''},{key:'ok',label:'OK',color:'green'},{key:'adj',label:'Adjustments',color:'amber'},{key:'move',label:'Movements',color:'purple'},{key:'move_adj',label:'Move+Adj',color:'purple'},{key:'missing_temp',label:'Pending',color:'amber'},{key:'missing',label:'Missing',color:'red'},{key:'unexpected',label:'Not in SAP',color:'cyan'},{key:'fresh_expired',label:'Expired',color:'pink'}];
-
+const PILL_DEFS=[
+  {key:'all',          label:'All',           color:''},
+  {key:'ok',           label:'OK',            color:'green'},
+  {key:'adj',          label:'Adjustments',   color:'amber'},
+  {key:'move',         label:'Movements',     color:'purple'},
+  {key:'move_adj',     label:'Move+Adj',      color:'purple'},
+  {key:'missing_temp', label:'Pending',       color:'amber'},
+  {key:'missing',      label:'Missing',       color:'red'},
+  {key:'unexpected',   label:'Not in SAP',    color:'cyan'},
+  {key:'pallet_count', label:'Pallet Counts', color:'pink'},  // ← NEW
+  {key:'fresh_expired',label:'Expired',       color:'pink'},
+];
 function renderPills(){
   const counts={all:report.length};report.forEach(r=>{counts[r.type]=(counts[r.type]||0)+1;if(r.sledStatus==='expired')counts['fresh_expired']=(counts['fresh_expired']||0)+1;});
   document.getElementById('status-pills').innerHTML=PILL_DEFS.map(cat=>{const count=counts[cat.key]||0;if(!count&&cat.key!=='all')return'';const active=currentStatusFilter===cat.key?'active':'';return`<div class="pill ${active}" onclick="filterTable('${cat.key}')"><span class="pill-count ${cat.color}">${count}</span><span class="pill-label">${cat.label}</span></div>`;}).join('');
@@ -394,17 +435,106 @@ function filterTable(status){currentStatusFilter=status;currentPage=0;renderPill
 function setAisleFilter(letter){currentAisleFilter=letter;currentPage=0;document.getElementById('aisle-filter-text').textContent=`Filtered: Aisle ${letter}`;document.getElementById('aisle-filter-bar').classList.add('visible');showView('audit');renderTable();}
 function clearAisleFilter(){currentAisleFilter=null;document.getElementById('aisle-filter-bar').classList.remove('visible');currentPage=0;renderTable();}
 
-const TAG_LABELS={ok:'OK',adj:'Adjusted',move:'Moved',move_adj:'Move+Adj',missing_temp:'Pending',missing:'Missing',found_moved:'Found',unexpected:'Not in SAP'};
+const TAG_LABELS={
+    ok:'OK', adj:'Adjusted', move:'Moved', move_adj:'Move+Adj',
+    missing_temp:'Pending', missing:'Missing', found_moved:'Found',
+    unexpected:'Not in SAP',
+    pallet_count:'Pallet Count',  // ← NEW
+  };
+  
 function renderTable(){
-  let filtered=currentStatusFilter==='all'?report:currentStatusFilter==='fresh_expired'?report.filter(r=>r.sledStatus==='expired'):report.filter(r=>r.type===currentStatusFilter);
-  if(currentAisleFilter)filtered=filtered.filter(r=>r.aisle===currentAisleFilter||(r.scanBin&&r.scanBin.charAt(1)===currentAisleFilter));
-  const wrap=document.getElementById('table-wrap'),totalPages=Math.ceil(filtered.length/PAGE_SIZE);
-  if(!filtered.length){wrap.innerHTML=report.length===0?'<div class="empty-main"><span>📡</span><h2>Upload SAP data & start counting</h2></div>':`<div class="empty-main"><span>🔍</span><h2>No ${currentStatusFilter.toUpperCase()} items${currentAisleFilter?' in Aisle '+currentAisleFilter:''}</h2></div>`;return;}
-  currentPage=Math.max(0,Math.min(currentPage,totalPages-1));
-  const start=currentPage*PAGE_SIZE,pageItems=filtered.slice(start,start+PAGE_SIZE);
-  const rowsHTML=pageItems.map(r=>{const variance=(r.scanQty||0)-(r.sapQty||0),vCls=variance<0?'red':variance>0?'amber':'';let timeStr='—';try{timeStr=new Date(r.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}catch{}const sledCls=r.sledStatus==='expired'?'expired':r.sledStatus==='expiring'?'expiring':r.sledStatus==='valid'?'valid':'';const sledCell=sledCls?`<span class="fresh-tag ${sledCls}">${r.sledStatus}</span>`:'—';const aisleLetter=r.aisle||(r.scanBin?r.scanBin.charAt(1):'—');return`<tr><td style="font-size:9px;color:var(--text-3)">${timeStr}</td><td style="font-size:10px">${escHtml(r.user||'—')}</td><td class="mono" style="font-weight:800;color:var(--accent);font-size:13px">${aisleLetter}</td><td class="mono" style="color:var(--accent);font-weight:700;font-size:11px">${r.scanBin||'—'}</td><td class="mono" style="font-size:10px">${String(r.hu||'').slice(-6)}</td><td style="font-size:11px">${escHtml(r.prod||'—')}</td><td class="mono">${r.sapQty??'—'}</td><td class="mono">${r.scanQty??'—'}</td><td class="mono ${vCls}">${variance>0?'+':''}${variance}</td><td><span class="status-tag ${r.type}">${TAG_LABELS[r.type]||r.type}</span></td><td>${sledCell}</td><td style="font-size:9px;color:var(--text-3);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(r.note||'')}">${escHtml(r.note||'')}</td></tr>`;}).join('');
-  const pagerHTML=filtered.length>PAGE_SIZE?`<div class="pager"><span class="pager-info">${start+1}–${Math.min(start+PAGE_SIZE,filtered.length)} of ${filtered.length.toLocaleString()}</span><div class="pager-btns"><button class="pager-btn" onclick="goPage(0)" ${currentPage===0?'disabled':''}>⟨⟨</button><button class="pager-btn" onclick="goPage(${currentPage-1})" ${currentPage===0?'disabled':''}>← Prev</button><button class="pager-btn" onclick="goPage(${currentPage+1})" ${currentPage>=totalPages-1?'disabled':''}>Next →</button><button class="pager-btn" onclick="goPage(${totalPages-1})" ${currentPage>=totalPages-1?'disabled':''}>⟩⟩</button></div></div>`:'';
-  wrap.innerHTML=`<table><thead><tr><th>Time</th><th>User</th><th>Aisle</th><th>Bin</th><th>HU</th><th>Product</th><th>SAP Qty</th><th>Count</th><th>Var</th><th>Status</th><th>SLED</th><th>Note</th></tr></thead><tbody>${rowsHTML}</tbody></table>${pagerHTML}`;
+  let filtered = currentStatusFilter === 'all'
+    ? report
+    : currentStatusFilter === 'fresh_expired'
+      ? report.filter(r => r.sledStatus === 'expired')
+      : report.filter(r => r.type === currentStatusFilter);
+
+  if (currentAisleFilter) {
+    filtered = filtered.filter(r =>
+      r.aisle === currentAisleFilter ||
+      (r.scanBin && r.scanBin.charAt(1) === currentAisleFilter)
+    );
+  }
+
+  const wrap       = document.getElementById('table-wrap');
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+
+  if (!filtered.length) {
+    wrap.innerHTML = report.length === 0
+      ? '<div class="empty-main"><span>📡</span><h2>Upload SAP data &amp; start counting</h2></div>'
+      : `<div class="empty-main"><span>🔍</span><h2>No ${currentStatusFilter.toUpperCase()} items${currentAisleFilter ? ' in Aisle ' + currentAisleFilter : ''}</h2></div>`;
+    return;
+  }
+
+  currentPage = Math.max(0, Math.min(currentPage, totalPages - 1));
+  const start     = currentPage * PAGE_SIZE;
+  const pageItems = filtered.slice(start, start + PAGE_SIZE);
+
+  const rowsHTML = pageItems.map(r => {
+    const isPallet  = r.type === 'pallet_count';
+    const variance  = isPallet ? null : (r.scanQty || 0) - (r.sapQty || 0);
+    const vCls      = variance == null ? '' : variance < 0 ? 'red' : variance > 0 ? 'amber' : '';
+
+    let timeStr = '—';
+    try { timeStr = new Date(r.timestamp).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }); } catch {}
+
+    const sledCls  = r.sledStatus === 'expired'  ? 'expired'
+                   : r.sledStatus === 'expiring' ? 'expiring'
+                   : r.sledStatus === 'valid'    ? 'valid' : '';
+    const sledCell = sledCls
+      ? `<span class="fresh-tag ${sledCls}">${r.sledStatus}</span>`
+      : '—';
+
+    const aisleLetter = r.aisle || (r.scanBin ? r.scanBin.charAt(1) : '—');
+
+    // Count column: pallet counts show qty + "pallets" label
+    const countCell = isPallet
+      ? `${r.scanQty} <span style="font-size:8px;color:var(--fresh);font-weight:800">pallets</span>`
+      : (r.scanQty ?? '—');
+
+    // Variance column: not meaningful for pallet counts
+    const varianceCell = isPallet
+      ? '<span style="color:var(--text-3)">—</span>'
+      : `${variance > 0 ? '+' : ''}${variance}`;
+
+    return `<tr>
+      <td style="font-size:9px;color:var(--text-3)">${timeStr}</td>
+      <td style="font-size:10px">${escHtml(r.user || '—')}</td>
+      <td class="mono" style="font-weight:800;color:var(--accent);font-size:13px">${aisleLetter}</td>
+      <td class="mono" style="color:var(--accent);font-weight:700;font-size:11px">${r.scanBin || '—'}</td>
+      <td class="mono" style="font-size:10px">${isPallet ? '—' : String(r.hu || '').slice(-6)}</td>
+      <td style="font-size:11px">${escHtml(r.prod || '—')}</td>
+      <td class="mono">${isPallet ? '—' : (r.sapQty ?? '—')}</td>
+      <td class="mono">${countCell}</td>
+      <td class="mono ${vCls}">${varianceCell}</td>
+      <td><span class="status-tag ${r.type}">${TAG_LABELS[r.type] || r.type}</span></td>
+      <td>${sledCell}</td>
+      <td style="font-size:9px;color:var(--text-3);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+          title="${escHtml(r.note || '')}">${escHtml(r.note || '')}</td>
+    </tr>`;
+  }).join('');
+
+  const pagerHTML = filtered.length > PAGE_SIZE ? `
+    <div class="pager">
+      <span class="pager-info">${start + 1}–${Math.min(start + PAGE_SIZE, filtered.length)} of ${filtered.length.toLocaleString()}</span>
+      <div class="pager-btns">
+        <button class="pager-btn" onclick="goPage(0)"                      ${currentPage === 0             ? 'disabled' : ''}>⟨⟨</button>
+        <button class="pager-btn" onclick="goPage(${currentPage - 1})"     ${currentPage === 0             ? 'disabled' : ''}>← Prev</button>
+        <button class="pager-btn" onclick="goPage(${currentPage + 1})"     ${currentPage >= totalPages - 1 ? 'disabled' : ''}>Next →</button>
+        <button class="pager-btn" onclick="goPage(${totalPages - 1})"      ${currentPage >= totalPages - 1 ? 'disabled' : ''}>⟩⟩</button>
+      </div>
+    </div>` : '';
+
+  wrap.innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Time</th><th>User</th><th>Aisle</th><th>Bin</th><th>HU</th>
+        <th>Product</th><th>SAP Qty</th><th>Count</th><th>Var</th>
+        <th>Status</th><th>SLED</th><th>Note</th>
+      </tr></thead>
+      <tbody>${rowsHTML}</tbody>
+    </table>
+    ${pagerHTML}`;
 }
 function goPage(p){currentPage=p;renderTable();const w=document.getElementById('table-wrap');if(w)w.scrollTop=0;}
 
