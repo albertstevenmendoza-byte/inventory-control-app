@@ -6,280 +6,453 @@
 <title>Cycle Counter — Novus Ops</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-/* ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
    TOKENS
-───────────────────────────────────────── */
-:root{
-  --bg:#0f1117;--surface:#181a23;--surface-2:#1f2230;--surface-3:#2a2d3a;
-  --border:#313546;--text:#eceef4;--text-2:#9ba1b5;--text-3:#6c7169;
-  --accent:#5b9aff;--accent-dim:rgba(91,154,255,.1);
-  --green:#34d399;--green-bg:rgba(52,211,153,.1);--green-border:rgba(52,211,153,.25);
-  --red:#f87171;--red-bg:rgba(248,113,113,.1);--red-border:rgba(248,113,113,.25);
-  --amber:#fbbf24;--amber-bg:rgba(251,191,36,.1);--amber-border:rgba(251,191,36,.25);
+══════════════════════════════════════════════ */
+:root {
+  --bg:#0f1117; --surface:#181a23; --surface-2:#1f2230; --surface-3:#2a2d3a;
+  --border:#313546; --text:#eceef4; --text-2:#9ba1b5; --text-3:#6c7169;
+  --accent:#5b9aff; --accent-dim:rgba(91,154,255,.1);
+  --green:#34d399; --green-bg:rgba(52,211,153,.1); --green-border:rgba(52,211,153,.25);
+  --red:#f87171;   --red-bg:rgba(248,113,113,.1);   --red-border:rgba(248,113,113,.25);
+  --amber:#fbbf24; --amber-bg:rgba(251,191,36,.1);  --amber-border:rgba(251,191,36,.25);
   --purple:#a78bfa;--purple-bg:rgba(167,139,250,.1);
-  --cyan:#22d3ee;--cyan-bg:rgba(34,211,238,.1);
-  --fresh:#f472b6;--fresh-bg:rgba(244,114,182,.1);--fresh-border:rgba(244,114,182,.25);
-  --radius:14px;--radius-sm:10px;
+  --cyan:#22d3ee;  --cyan-bg:rgba(34,211,238,.1);
+  --fresh:#f472b6; --fresh-bg:rgba(244,114,182,.1); --fresh-border:rgba(244,114,182,.25);
+  --fresh-glow:rgba(244,114,182,.2);
+  --r:14px; --r-sm:10px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100dvh}
 button{font-family:inherit;border:none;cursor:pointer;-webkit-appearance:none}
 button:active{transform:scale(.96)}
-input,textarea,select{font-family:inherit}
+input,select,textarea{font-family:inherit}
 .mono{font-family:'JetBrains Mono',monospace}
 
-/* ─────────────────────────────────────────
-   TOAST
-───────────────────────────────────────── */
+/* ── Toast ── */
 .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:12px;font-size:12px;font-weight:700;z-index:9998;pointer-events:none;opacity:0;transition:opacity .3s;white-space:nowrap}
 .toast.show{opacity:1}
 .toast.green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
-.toast.red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
-.toast.blue{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(79,140,255,.2)}
+.toast.red  {background:var(--red-bg);  color:var(--red);  border:1px solid var(--red-border)}
+.toast.blue {background:var(--accent-dim);color:var(--accent);border:1px solid rgba(79,140,255,.2)}
 .toast.amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
-.toast.pink{background:var(--fresh-bg);color:var(--fresh);border:1px solid var(--fresh-border)}
+.toast.pink {background:var(--fresh-bg);color:var(--fresh);border:1px solid var(--fresh-border)}
 
-/* ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
    SCREENS
-───────────────────────────────────────── */
+══════════════════════════════════════════════ */
 .screen{display:none;flex-direction:column;height:100dvh;overflow:hidden}
 .screen.active{display:flex;animation:screen-in .18s ease}
 @keyframes screen-in{from{opacity:0}to{opacity:1}}
 
-/* ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
    HEADER
-───────────────────────────────────────── */
+══════════════════════════════════════════════ */
 .header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;gap:8px}
 .header h1{font-size:15px;font-weight:800;white-space:nowrap}
 .header-sub{font-size:10px;color:var(--text-2);font-weight:600}
 .header-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
-.hdr-btn{background:var(--surface-2);color:var(--text-2);padding:7px 11px;border-radius:var(--radius-sm);font-size:10px;font-weight:700;white-space:nowrap;transition:background .15s,color .15s}
+.hdr-btn{background:var(--surface-2);color:var(--text-2);padding:7px 11px;border-radius:var(--r-sm);font-size:10px;font-weight:700;white-space:nowrap;transition:background .15s,color .15s}
 .hdr-btn:hover{background:var(--accent-dim);color:var(--accent)}
 .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;transition:background .3s}
 .sync-dot.offline{background:var(--amber);animation:pulse 1.5s infinite}
 .queue-badge{background:var(--amber-bg);color:var(--amber);padding:3px 8px;border-radius:6px;font-size:9px;font-weight:800}
 @keyframes pulse{50%{opacity:.3}}
 
-/* ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
    AUDIT MODE BAR
-───────────────────────────────────────── */
+══════════════════════════════════════════════ */
 .mode-bar{display:flex;gap:2px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
 .mode-btn{flex:1;padding:10px 0;border-radius:10px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;background:var(--surface-2);color:var(--text-3);border:1.5px solid var(--border);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
-.mode-btn.active-std{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.mode-btn.active-std  {background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
 .mode-btn.active-fresh{background:var(--fresh-bg);border-color:var(--fresh);color:var(--fresh)}
 
-/* ─────────────────────────────────────────
-   FRESH PANEL
-   (shown when Fresh mode active)
-───────────────────────────────────────── */
-.fresh-panel{display:none;flex-direction:column;background:var(--fresh-bg);border-bottom:1px solid var(--fresh-border);flex-shrink:0}
-.fresh-panel.visible{display:flex}
+/* ══════════════════════════════════════════════
+   FRESH AUDIT — PROGRESSIVE DISCLOSURE SHELL
+══════════════════════════════════════════════ */
 
-/* SKU dropdown row */
-.fresh-sku-row{padding:12px 16px 10px}
-.fresh-sku-label{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--fresh);display:block;margin-bottom:8px}
+/* Outer container visible when fresh mode active */
+.fresh-shell{
+  display:none;
+  flex-direction:column;
+  flex:1;
+  overflow:hidden;
+  background:var(--bg);
+}
+.fresh-shell.visible{display:flex}
+
+/* ── Step 1: Product dropdown ── */
+.fresh-step-1{
+  padding:20px 16px 0;
+  flex-shrink:0;
+}
+.fresh-step-label{
+  font-size:8px;font-weight:800;text-transform:uppercase;
+  letter-spacing:2px;color:var(--fresh);
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:10px;
+}
+.fresh-step-label::after{
+  content:'';flex:1;height:1px;
+  background:linear-gradient(90deg,var(--fresh-border),transparent);
+}
 .fresh-sku-select{
-  width:100%;padding:13px 16px;
+  width:100%;padding:16px 18px;
   background:var(--surface);
   border:1.5px solid var(--fresh-border);
-  border-radius:12px;
-  font-size:14px;font-weight:700;color:var(--text);
+  border-radius:14px;
+  font-size:15px;font-weight:700;color:var(--text);
   outline:none;cursor:pointer;
   appearance:none;-webkit-appearance:none;
-  transition:border-color .15s;
+  transition:border-color .2s,box-shadow .2s;
+  box-shadow:0 4px 24px rgba(244,114,182,.07);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23f472b6' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 16px center;
+  padding-right:42px;
 }
-.fresh-sku-select:focus{border-color:var(--fresh)}
+.fresh-sku-select:focus{border-color:var(--fresh);box-shadow:0 0 0 3px rgba(244,114,182,.12)}
 .fresh-sku-select option{background:var(--surface-2);color:var(--text)}
 
-/* Sub-mode toggle — HIDDEN until SKU chosen */
-.fresh-submode-bar{
-  display:none; /* hidden by default — revealed after SKU selected */
-  gap:2px;padding:0 16px 10px;
+/* ── Step 2: HU / Pallet toggle (hidden until SKU chosen) ── */
+.fresh-step-2{
+  padding:14px 16px 0;
+  flex-shrink:0;
+  opacity:0;
+  transform:translateY(8px);
+  pointer-events:none;
+  transition:opacity .3s ease, transform .3s ease;
 }
-.fresh-submode-bar.visible{display:flex}
-.fresh-sub-btn{
-  flex:1;padding:10px 0;border-radius:9px;
-  font-size:11px;font-weight:800;text-transform:uppercase;
-  background:transparent;color:var(--fresh);
-  border:1.5px solid var(--fresh-border);
-  transition:all .2s;display:flex;align-items:center;justify-content:center;gap:5px;
-  opacity:.6;
+.fresh-step-2.revealed{
+  opacity:1;
+  transform:translateY(0);
+  pointer-events:all;
 }
-.fresh-sub-btn.active{background:var(--fresh);color:#fff;border-color:var(--fresh);opacity:1}
+.fresh-method-toggle{
+  display:flex;gap:6px;
+}
+.fresh-method-btn{
+  flex:1;padding:13px 0;border-radius:12px;
+  font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;
+  background:var(--surface);border:1.5px solid var(--border);color:var(--text-3);
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  transition:all .2s;
+}
+.fresh-method-btn:hover{border-color:var(--fresh-border);color:var(--fresh)}
+.fresh-method-btn.active{
+  background:var(--fresh);color:#fff;
+  border-color:var(--fresh);
+  box-shadow:0 4px 20px var(--fresh-glow);
+}
 
-/* Expiry threshold row (HU mode only) */
-.fresh-threshold-row{display:none;align-items:center;gap:10px;padding:0 16px 10px}
+/* Expiry threshold (visible in HU mode) */
+.fresh-threshold-row{
+  display:none;align-items:center;gap:10px;
+  margin-top:10px;padding:8px 12px;
+  background:var(--surface);border-radius:10px;
+  border:1px solid var(--fresh-border);
+}
 .fresh-threshold-row.visible{display:flex}
 .fresh-threshold-row label{font-size:10px;font-weight:700;color:var(--fresh);flex-shrink:0}
-.fresh-threshold-row input{width:64px;padding:5px 8px;background:var(--surface);border:1.5px solid var(--fresh-border);border-radius:8px;font-size:12px;font-weight:700;color:var(--fresh);outline:none;text-align:center;font-family:'JetBrains Mono',monospace}
-.fresh-threshold-row span{font-size:10px;color:var(--fresh);opacity:.7}
+.fresh-threshold-row input{width:60px;padding:5px 8px;background:var(--bg);border:1.5px solid var(--fresh-border);border-radius:8px;font-size:12px;font-weight:700;color:var(--fresh);outline:none;text-align:center;font-family:'JetBrains Mono',monospace}
+.fresh-threshold-row span{font-size:10px;color:var(--text-3)}
 
-/* ─────────────────────────────────────────
-   FRESH HU VIEW
-   Inline card list for "Count by HU" mode.
-   Replaces aisle grid; shown in setup screen.
-───────────────────────────────────────── */
-.fresh-hu-view{display:none;flex:1;flex-direction:column;overflow:hidden}
+/* ── Step 3a: Pallet count form ── */
+.fresh-pallet-view{
+  display:none;
+  flex-direction:column;
+  flex:1;
+  overflow-y:auto;
+  padding:16px 16px 100px;
+}
+.fresh-pallet-view.visible{display:flex}
+.fresh-pallet-view::-webkit-scrollbar{display:none}
+
+/* Big pallet card */
+.pallet-card{
+  background:var(--surface);
+  border:1.5px solid var(--fresh-border);
+  border-radius:20px;
+  padding:28px 24px 24px;
+  box-shadow:0 8px 40px rgba(244,114,182,.08);
+  margin-top:12px;
+}
+.pallet-card-sku{
+  font-size:11px;font-weight:800;color:var(--fresh);
+  text-transform:uppercase;letter-spacing:1px;
+  margin-bottom:4px;
+}
+.pallet-card-desc{
+  font-size:15px;font-weight:800;color:var(--text);
+  margin-bottom:20px;line-height:1.3;
+}
+/* Location field */
+.pallet-field-label{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);display:block;margin-bottom:6px;margin-top:16px}
+.pallet-field-label:first-of-type{margin-top:0}
+.pallet-loc-input{
+  width:100%;padding:14px 16px;
+  background:var(--bg);border:1.5px solid var(--border);border-radius:12px;
+  font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;
+  color:var(--accent);text-transform:uppercase;outline:none;
+  transition:border-color .15s;
+}
+.pallet-loc-input:focus{border-color:var(--fresh)}
+.pallet-loc-input::placeholder{color:var(--text-3);text-transform:none;font-size:13px}
+
+/* Big incrementer */
+.pallet-counter{
+  display:flex;align-items:center;gap:8px;
+  background:var(--surface-2);border-radius:16px;padding:8px;
+  margin-top:6px;
+}
+.pallet-counter-btn{
+  width:72px;height:72px;border-radius:12px;
+  background:var(--surface-3);
+  font-size:30px;font-weight:900;color:var(--text-3);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  transition:background .15s,color .15s,transform .1s;
+}
+.pallet-counter-btn:hover{background:var(--fresh-bg);color:var(--fresh)}
+.pallet-counter-display{
+  flex:1;text-align:center;
+  font-family:'JetBrains Mono',monospace;font-size:52px;font-weight:700;
+  color:var(--fresh);line-height:1;
+  min-width:0;
+}
+.pallet-counter-display input{
+  width:100%;background:transparent;border:none;outline:none;
+  text-align:center;font-family:'JetBrains Mono',monospace;
+  font-size:52px;font-weight:700;color:var(--fresh);
+  -moz-appearance:textfield;
+}
+.pallet-counter-display input::-webkit-outer-spin-button,
+.pallet-counter-display input::-webkit-inner-spin-button{-webkit-appearance:none}
+.pallet-unit{text-align:center;font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:1.5px;margin-top:4px}
+
+/* Note field */
+.pallet-note-input{
+  width:100%;padding:12px 14px;
+  background:var(--bg);border:1.5px solid var(--border);border-radius:12px;
+  font-size:13px;font-weight:600;color:var(--text);outline:none;
+  transition:border-color .15s;
+  margin-top:6px;
+}
+.pallet-note-input:focus{border-color:var(--fresh)}
+.pallet-note-input::placeholder{color:var(--text-3)}
+
+/* Submit button */
+.pallet-submit{
+  width:100%;padding:20px;border-radius:16px;
+  font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;
+  background:var(--fresh);color:#fff;
+  box-shadow:0 6px 28px var(--fresh-glow);
+  margin-top:20px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:filter .15s,box-shadow .15s;
+}
+.pallet-submit:hover{filter:brightness(1.08);box-shadow:0 8px 36px var(--fresh-glow)}
+.pallet-submit:disabled{background:var(--surface-3);color:var(--text-3);box-shadow:none;pointer-events:none}
+
+/* Session log */
+.pallet-log-section{margin-top:20px}
+.pallet-log-title{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:var(--text-3);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.pallet-log-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.pallet-log-item{
+  display:flex;align-items:center;gap:14px;
+  padding:12px 14px;
+  background:var(--surface);border:1px solid var(--fresh-border);border-radius:12px;
+  margin-bottom:6px;
+  animation:card-in .18s ease;
+}
+@keyframes card-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.pallet-log-sku{font-size:11px;font-weight:800;color:var(--fresh)}
+.pallet-log-detail{font-size:10px;color:var(--text-2);margin-top:2px}
+.pallet-log-qty{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:var(--fresh);flex-shrink:0;margin-left:auto}
+
+/* ── Step 3b: HU card list ── */
+.fresh-hu-view{
+  display:none;
+  flex-direction:column;
+  flex:1;
+  overflow:hidden;
+}
 .fresh-hu-view.visible{display:flex}
 
 .fresh-hu-header{
   display:flex;justify-content:space-between;align-items:center;
-  padding:10px 16px;background:var(--surface);
-  border-bottom:1px solid var(--border);flex-shrink:0;
+  padding:14px 16px;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  flex-shrink:0;
 }
-.fresh-hu-title{font-size:12px;font-weight:800;color:var(--fresh)}
-.fresh-hu-subtitle{font-size:9px;color:var(--text-3);font-weight:600;margin-top:2px}
-.fresh-hu-submit{
-  padding:10px 20px;border-radius:10px;
+.fresh-hu-header-info{}
+.fresh-hu-header-sku{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--fresh)}
+.fresh-hu-header-subtitle{font-size:11px;color:var(--text-3);font-weight:600;margin-top:2px}
+.fresh-hu-submit-btn{
+  padding:11px 20px;border-radius:10px;
   background:var(--fresh);color:#fff;
-  font-size:11px;font-weight:800;text-transform:uppercase;
-  transition:filter .15s;flex-shrink:0;
+  font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;
+  flex-shrink:0;
+  box-shadow:0 4px 16px var(--fresh-glow);
+  transition:filter .15s;
 }
-.fresh-hu-submit:hover{filter:brightness(1.1)}
-.fresh-hu-submit:disabled{background:var(--surface-3);color:var(--text-3);pointer-events:none}
+.fresh-hu-submit-btn:hover{filter:brightness(1.08)}
+.fresh-hu-submit-btn:disabled{background:var(--surface-3);color:var(--text-3);box-shadow:none;pointer-events:none}
 
-.fresh-hu-list{flex:1;overflow-y:auto;padding:12px 16px 100px;-webkit-overflow-scrolling:touch}
+/* HU card list scroller */
+.fresh-hu-list{
+  flex:1;overflow-y:auto;
+  padding:12px 16px 120px;
+  -webkit-overflow-scrolling:touch;
+}
 .fresh-hu-list::-webkit-scrollbar{display:none}
 
-/* Fresh HU card — location-first design */
+/* ── Fresh HU card — clean, location-first ── */
 .fhu-card{
-  background:var(--surface);border:1.5px solid var(--border);
-  border-radius:var(--radius);padding:0;margin-bottom:10px;
+  background:var(--surface);
+  border-radius:16px;
+  margin-bottom:10px;
   overflow:hidden;
+  box-shadow:0 4px 24px rgba(0,0,0,.3);
+  /* No harsh border in default state — uses subtle shadow only */
+  border:1.5px solid transparent;
+  transition:border-color .2s,box-shadow .2s;
   animation:card-in .18s ease both;
-  transition:border-color .2s;
 }
-@keyframes card-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
-.fhu-card.confirmed{border-color:var(--green-border)}
-.fhu-card.missing{border-color:var(--red-border);opacity:.75}
-.fhu-card.adjusted{border-color:var(--amber-border)}
+.fhu-card.confirmed { border-color:var(--green-border); box-shadow:0 4px 24px rgba(52,211,153,.1); }
+.fhu-card.missing   { border-color:var(--red-border);   opacity:.72; }
+.fhu-card.adjusted  { border-color:var(--amber-border); }
 
-/* Location banner — the most prominent element on each card */
+/* Location banner — most prominent element */
 .fhu-location{
-  display:flex;align-items:center;gap:10px;
-  padding:10px 14px;
+  display:flex;align-items:center;gap:12px;
+  padding:14px 16px;
   background:var(--surface-2);
   border-bottom:1px solid var(--border);
 }
-.fhu-location-icon{font-size:16px;flex-shrink:0}
-.fhu-location-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3)}
+.fhu-location-pin{
+  font-size:20px;flex-shrink:0;
+  line-height:1;
+  filter:drop-shadow(0 0 8px rgba(91,154,255,.4));
+}
+.fhu-location-text{}
+.fhu-location-label{font-size:7px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3)}
 .fhu-location-bin{
   font-family:'JetBrains Mono',monospace;
-  font-size:20px;font-weight:900;color:var(--accent);
-  letter-spacing:1px;
+  font-size:22px;font-weight:900;
+  color:var(--accent);letter-spacing:1px;
+  line-height:1.1;margin-top:1px;
 }
-.fhu-location-badge{
-  margin-left:auto;font-size:8px;font-weight:800;
-  text-transform:uppercase;padding:4px 10px;border-radius:6px;
-  flex-shrink:0;
+.fhu-status-badge{
+  margin-left:auto;flex-shrink:0;
+  font-size:8px;font-weight:800;text-transform:uppercase;
+  padding:5px 12px;border-radius:20px;letter-spacing:.5px;
 }
-.fhu-location-badge.ok{background:var(--green-bg);color:var(--green)}
-.fhu-location-badge.miss{background:var(--red-bg);color:var(--red)}
-.fhu-location-badge.adj{background:var(--amber-bg);color:var(--amber)}
-.fhu-location-badge.pending{background:var(--surface-3);color:var(--text-3)}
+.fhu-status-badge.pending  {background:var(--surface-3);color:var(--text-3)}
+.fhu-status-badge.confirmed{background:var(--green-bg); color:var(--green);border:1px solid var(--green-border)}
+.fhu-status-badge.missing  {background:var(--red-bg);   color:var(--red);  border:1px solid var(--red-border)}
+.fhu-status-badge.adjusted {background:var(--amber-bg); color:var(--amber);border:1px solid var(--amber-border)}
 
-/* Card body */
-.fhu-body{padding:12px 14px}
-.fhu-meta-row{display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap}
+/* Card body — clean whitespace */
+.fhu-body{padding:14px 16px}
+
+.fhu-meta-row{display:flex;gap:20px;margin-bottom:12px;flex-wrap:wrap}
 .fhu-meta{display:flex;flex-direction:column}
 .fhu-meta-label{font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-3)}
-.fhu-meta-val{font-size:13px;font-weight:700;margin-top:1px}
+.fhu-meta-val  {font-size:13px;font-weight:700;margin-top:2px;color:var(--text)}
 
-/* SLED row inside fresh HU card */
+/* SLED row — clean pill style */
 .fhu-sled{
-  display:flex;align-items:center;gap:8px;
-  padding:7px 10px;background:var(--surface-2);
-  border-radius:8px;border:1px solid var(--border);margin-bottom:10px;
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 12px;border-radius:20px;
+  background:var(--surface-2);
+  margin-bottom:12px;
 }
 .fhu-sled-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-3)}
-.fhu-sled-val{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;margin-left:auto}
-.fhu-sled-val.expired{color:var(--red)}
+.fhu-sled-val  {font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700}
+.fhu-sled-val.expired {color:var(--red)}
 .fhu-sled-val.expiring{color:var(--amber)}
-.fhu-sled-val.valid{color:var(--green)}
+.fhu-sled-val.valid   {color:var(--green)}
+.fhu-sled-badge{font-size:8px;font-weight:800;text-transform:uppercase;padding:2px 8px;border-radius:10px}
+.fhu-sled-badge.expired {background:var(--red-bg);  color:var(--red)}
+.fhu-sled-badge.expiring{background:var(--amber-bg);color:var(--amber)}
+.fhu-sled-badge.valid   {background:var(--green-bg);color:var(--green)}
 
-/* Qty controls inside fresh HU card */
-.fhu-qty-row{display:flex;align-items:center;gap:6px;background:var(--surface-2);border-radius:12px;padding:6px;margin-bottom:8px}
-.fhu-qty-btn{width:56px;height:56px;border-radius:10px;background:var(--surface-3);font-size:24px;font-weight:900;color:var(--text-3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,color .15s}
+/* Qty controls */
+.fhu-qty-row{
+  display:flex;align-items:center;gap:6px;
+  background:var(--surface-2);border-radius:14px;padding:6px;margin-bottom:10px;
+}
+.fhu-qty-btn{
+  width:60px;height:60px;border-radius:12px;
+  background:var(--surface-3);font-size:26px;font-weight:900;color:var(--text-3);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:background .15s,color .15s;
+}
 .fhu-qty-btn:hover{background:var(--fresh-bg);color:var(--fresh)}
-.fhu-qty-input{flex:1;background:transparent;border:none;text-align:center;font-family:'JetBrains Mono',monospace;font-size:34px;font-weight:700;color:var(--fresh);outline:none;min-width:0}
+.fhu-qty-input{
+  flex:1;background:transparent;border:none;text-align:center;
+  font-family:'JetBrains Mono',monospace;font-size:38px;font-weight:700;
+  color:var(--fresh);outline:none;min-width:0;
+  -moz-appearance:textfield;
+}
+.fhu-qty-input::-webkit-outer-spin-button,
+.fhu-qty-input::-webkit-inner-spin-button{-webkit-appearance:none}
 .fhu-qty-input::placeholder{color:var(--surface-3)}
-.fhu-sap-hint{text-align:center;font-size:9px;font-weight:700;color:var(--text-3);margin-bottom:8px}
+.fhu-sap-hint{text-align:center;font-size:9px;font-weight:700;color:var(--text-3);margin-bottom:10px}
 
-/* Action buttons inside fresh HU card */
+/* Action row */
 .fhu-actions{display:flex;gap:6px}
-.fhu-act{flex:1;padding:14px 0;border-radius:10px;font-size:12px;font-weight:800;text-transform:uppercase;min-height:50px;display:flex;align-items:center;justify-content:center;transition:filter .15s}
+.fhu-act{
+  flex:1;padding:15px 0;border-radius:12px;
+  font-size:12px;font-weight:800;text-transform:uppercase;
+  min-height:52px;display:flex;align-items:center;justify-content:center;
+  transition:filter .15s;
+}
 .fhu-act:hover{filter:brightness(1.1)}
 .fhu-act.confirm{background:var(--green);color:#fff}
 .fhu-act.miss{background:var(--surface-3);color:var(--red);border:1.5px solid var(--red-border)}
 .fhu-act.miss.active{background:var(--red);color:#fff;border-color:transparent}
 
-/* Resolved summary row */
-.fhu-resolved{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface-2);border-radius:var(--radius-sm);margin-bottom:6px}
+/* Resolved summary */
+.fhu-resolved{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:11px 14px;background:var(--surface-2);border-radius:12px;margin-bottom:8px;
+}
 .fhu-resolved-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text-3)}
-.fhu-resolved-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700}
-.fhu-resolved-val.match{color:var(--green)}
+.fhu-resolved-val{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700}
+.fhu-resolved-val.match  {color:var(--green)}
 .fhu-resolved-val.mismatch{color:var(--amber)}
-.fhu-undo{width:100%;padding:6px;background:none;color:var(--text-3);font-size:9px;font-weight:700}
+.fhu-undo{width:100%;padding:7px;background:none;color:var(--text-3);font-size:9px;font-weight:700}
 
-/* Note button inside fresh HU card */
+/* Note button */
 .fhu-note{
-  width:100%;margin-top:6px;padding:9px 12px;
+  width:100%;margin-top:8px;padding:10px 13px;
   background:var(--surface-2);border:1px solid var(--border);
-  border-radius:var(--radius-sm);font-size:10px;font-weight:700;
-  color:var(--text-3);text-align:left;cursor:pointer;
+  border-radius:var(--r-sm);font-size:10px;font-weight:700;color:var(--text-3);
+  text-align:left;cursor:pointer;
   transition:background .15s,color .15s,border-color .15s;
 }
 .fhu-note:hover{background:var(--fresh-bg);border-color:var(--fresh-border);color:var(--fresh)}
 .fhu-note.has{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber)}
 
 /* Empty state */
-.fresh-hu-empty{text-align:center;padding:48px 24px;color:var(--text-3)}
-.fresh-hu-empty .icon{font-size:40px;margin-bottom:10px;display:block}
+.fresh-hu-empty{text-align:center;padding:60px 24px;color:var(--text-3)}
+.fresh-hu-empty .icon{font-size:42px;margin-bottom:12px;display:block;opacity:.5}
 
-/* ─────────────────────────────────────────
-   PALLET COUNT FORM
-   (shown when Fresh + By Pallet selected)
-───────────────────────────────────────── */
-.pallet-form{display:none;flex:1;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.pallet-form.visible{display:flex}
-.pallet-form::-webkit-scrollbar{display:none}
-.pallet-section{padding:16px 16px 90px}
-.pallet-field-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);display:block;margin-bottom:6px;margin-top:16px}
-.pallet-field-label:first-of-type{margin-top:0}
-.pallet-input{width:100%;padding:14px 16px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;font-size:15px;font-weight:600;color:var(--text);outline:none;transition:border-color .15s}
-.pallet-input:focus{border-color:var(--fresh)}
-.pallet-input::placeholder{color:var(--text-3)}
-.pallet-qty-row{display:flex;align-items:center;gap:8px;background:var(--surface-2);border-radius:12px;padding:8px;margin-top:6px}
-.pallet-qty-btn{width:64px;height:64px;border-radius:12px;background:var(--surface-3);font-size:28px;font-weight:900;color:var(--text-3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,color .15s}
-.pallet-qty-btn:hover{background:var(--fresh-bg);color:var(--fresh)}
-.pallet-qty-input{flex:1;background:transparent;border:none;text-align:center;font-family:'JetBrains Mono',monospace;font-size:40px;font-weight:700;color:var(--fresh);outline:none;min-width:0}
-.pallet-qty-input::placeholder{color:var(--surface-3)}
-.pallet-hint{font-size:9px;font-weight:700;color:var(--text-3);text-align:center;margin-top:4px}
-.pallet-submit-btn{width:100%;padding:20px;border-radius:var(--radius);font-size:14px;font-weight:800;text-transform:uppercase;background:var(--fresh);color:#fff;min-height:60px;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:20px;transition:filter .15s}
-.pallet-submit-btn:hover{filter:brightness(1.1)}
-.pallet-submit-btn:disabled{background:var(--surface-3);color:var(--text-3);pointer-events:none}
-/* Session log */
-.pallet-log{margin-top:16px;display:flex;flex-direction:column;gap:6px}
-.pallet-log-item{background:var(--surface);border:1px solid var(--fresh-border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;animation:card-in .18s ease}
-.pallet-log-icon{font-size:20px;flex-shrink:0}
-.pallet-log-info{flex:1;min-width:0}
-.pallet-log-sku{font-size:12px;font-weight:800;color:var(--fresh)}
-.pallet-log-detail{font-size:10px;color:var(--text-2);margin-top:2px}
-.pallet-log-qty{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--fresh);flex-shrink:0}
-
-/* ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
    STANDARD SETUP CONTENT
-───────────────────────────────────────── */
+══════════════════════════════════════════════ */
 .setup-content{flex:1;overflow-y:auto;padding:16px;padding-bottom:90px;-webkit-overflow-scrolling:touch}
 .setup-content::-webkit-scrollbar{display:none}
 .stat-row{display:flex;gap:8px;margin-bottom:16px}
-.stat-box{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;transition:border-color .2s}
+.stat-box{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center;transition:border-color .2s}
 .stat-box:hover{border-color:var(--accent)}
 .stat-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--accent)}
 .stat-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);margin-top:4px}
 .section-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);margin:18px 0 10px}
 .aisle-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.aisle-btn{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:0;text-align:center;font-size:22px;font-weight:900;color:var(--text);position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:72px;transition:border-color .15s,background .15s,transform .1s}
+.aisle-btn{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:0;text-align:center;font-size:22px;font-weight:900;color:var(--text);position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:72px;transition:border-color .15s,background .15s,transform .1s}
 .aisle-btn:hover{border-color:var(--accent);background:var(--accent-dim)}
 .aisle-btn:active{transform:scale(.93)}
 .aisle-btn.done{border-color:var(--green-border);background:var(--green-bg)}
@@ -290,16 +463,16 @@ input,textarea,select{font-family:inherit}
 .aisle-btn.done .aisle-prog{background:var(--green)}
 .aisle-btn.in-progress .aisle-prog{background:var(--amber)}
 
-/* ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
    STANDARD COUNTING SCREEN
-───────────────────────────────────────── */
+══════════════════════════════════════════════ */
 .phase-bar{display:flex;gap:2px;padding:10px 16px 0;background:var(--surface)}
 .phase-step{flex:1;height:4px;border-radius:2px;background:var(--surface-3);transition:background .3s}
 .phase-step.active{background:var(--accent)}
-.phase-step.done{background:var(--green)}
+.phase-step.done  {background:var(--green)}
 .phase-labels{display:flex;justify-content:space-between;padding:4px 16px 10px;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);background:var(--surface);border-bottom:1px solid var(--border)}
 .phase-labels span.active{color:var(--accent)}
-.phase-labels span.done{color:var(--green)}
+.phase-labels span.done  {color:var(--green)}
 .bin-nav{display:flex;gap:6px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;align-items:center}
 .nav-btn{width:50px;height:50px;border-radius:12px;background:var(--surface-2);color:var(--text-3);font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,color .15s}
 .nav-btn:hover{background:var(--accent-dim);color:var(--accent)}
@@ -317,19 +490,19 @@ input,textarea,select{font-family:inherit}
 .strip-dot.done{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
 .hu-list{flex:1;overflow-y:auto;padding:12px 16px 260px;-webkit-overflow-scrolling:touch}
 .hu-list::-webkit-scrollbar{display:none}
-.hu-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:8px;transition:border-color .2s,background .2s;animation:card-in .18s ease both}
+.hu-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:8px;transition:border-color .2s,background .2s;animation:card-in .18s ease both}
 .hu-card.confirmed{border-color:var(--green-border);background:var(--green-bg)}
-.hu-card.missing{border-color:var(--red-border);opacity:.7;background:var(--red-bg)}
-.hu-card.adjusted{border-color:var(--amber-border);background:var(--amber-bg)}
-.hu-card.extra{border-color:rgba(6,182,212,.25);background:var(--cyan-bg)}
+.hu-card.missing  {border-color:var(--red-border);opacity:.7;background:var(--red-bg)}
+.hu-card.adjusted {border-color:var(--amber-border);background:var(--amber-bg)}
+.hu-card.extra    {border-color:rgba(6,182,212,.25);background:var(--cyan-bg)}
 .hu-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px;flex-wrap:wrap}
 .hu-id{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-dim);padding:3px 10px;border-radius:6px;flex-shrink:0}
 .hu-badges{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
 .hu-badge{font-size:8px;font-weight:800;text-transform:uppercase;padding:3px 8px;border-radius:5px;letter-spacing:.5px;white-space:nowrap}
-.hu-badge.ok{background:var(--green-bg);color:var(--green)}
-.hu-badge.miss{background:var(--red-bg);color:var(--red)}
-.hu-badge.adj{background:var(--amber-bg);color:var(--amber)}
-.hu-badge.ext{background:var(--cyan-bg);color:var(--cyan)}
+.hu-badge.ok  {background:var(--green-bg);color:var(--green)}
+.hu-badge.miss{background:var(--red-bg);  color:var(--red)}
+.hu-badge.adj {background:var(--amber-bg);color:var(--amber)}
+.hu-badge.ext {background:var(--cyan-bg); color:var(--cyan)}
 .hu-meta{display:flex;gap:16px;margin-bottom:6px;flex-wrap:wrap}
 .meta-item{display:flex;flex-direction:column}
 .meta-label{font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-3)}
@@ -348,35 +521,34 @@ input,textarea,select{font-family:inherit}
 .act-btn.confirm{background:var(--green);color:#fff}
 .act-btn.miss{background:var(--surface-3);color:var(--red);border:1.5px solid var(--red-border)}
 .act-btn.miss.active{background:var(--red);color:#fff;border-color:transparent}
-.resolved-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface-2);border-radius:var(--radius-sm);margin-bottom:6px}
+.resolved-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface-2);border-radius:var(--r-sm);margin-bottom:6px}
 .resolved-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text-3)}
 .resolved-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700}
-.resolved-val.match{color:var(--green)}
+.resolved-val.match  {color:var(--green)}
 .resolved-val.mismatch{color:var(--amber)}
 .undo-btn{width:100%;padding:8px;background:none;color:var(--text-3);font-size:9px;font-weight:700}
 .card-actions-row{display:flex;gap:6px;margin-top:6px}
-.note-btn{flex:1;padding:9px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:10px;font-weight:700;color:var(--text-3);text-align:left;transition:background .15s,border-color .15s,color .15s;cursor:pointer}
+.note-btn{flex:1;padding:9px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-sm);font-size:10px;font-weight:700;color:var(--text-3);text-align:left;transition:background .15s,border-color .15s,color .15s;cursor:pointer}
 .note-btn:hover{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
 .note-btn.has{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber)}
-.move-btn{flex:1;padding:9px 12px;background:var(--purple-bg);border:1px solid rgba(167,139,250,.3);border-radius:var(--radius-sm);font-size:10px;font-weight:700;color:var(--purple);cursor:pointer;transition:filter .15s}
+.move-btn{flex:1;padding:9px 12px;background:var(--purple-bg);border:1px solid rgba(167,139,250,.3);border-radius:var(--r-sm);font-size:10px;font-weight:700;color:var(--purple);cursor:pointer;transition:filter .15s}
 .move-btn:hover{filter:brightness(1.2)}
 .empty-bin{text-align:center;padding:48px 24px;color:var(--text-3)}
 .empty-bin .icon{font-size:40px;margin-bottom:10px;display:block}
-.counted-banner{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--radius);margin-bottom:8px;background:var(--green-bg);border:1px solid var(--green-border);animation:card-in .18s ease}
+.counted-banner{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--r);margin-bottom:8px;background:var(--green-bg);border:1px solid var(--green-border);animation:card-in .18s ease}
 .counted-banner strong{font-size:11px;color:var(--green);font-weight:800}
 .counted-banner small{font-size:9px;color:var(--text-2)}
 .bottom-bar{position:fixed;bottom:0;left:0;right:0;padding:10px 16px calc(env(safe-area-inset-bottom,14px) + 10px);background:rgba(11,12,16,.93);backdrop-filter:blur(20px);border-top:1px solid var(--border);z-index:50}
 .bottom-row{display:flex;gap:6px;margin-bottom:8px}
 .btn-sec{flex:1;padding:13px 0;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;background:var(--surface-2);color:var(--text-2);border:1.5px solid var(--border);text-align:center;min-height:46px;transition:background .15s,border-color .15s,color .15s}
 .btn-sec:hover{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
-.btn-pri{width:100%;padding:17px 0;border-radius:var(--radius);font-size:14px;font-weight:800;text-transform:uppercase;background:var(--green);color:#fff;min-height:58px;display:flex;align-items:center;justify-content:center;transition:filter .15s}
+.btn-pri{width:100%;padding:17px 0;border-radius:var(--r);font-size:14px;font-weight:800;text-transform:uppercase;background:var(--green);color:#fff;min-height:58px;display:flex;align-items:center;justify-content:center;transition:filter .15s}
 .btn-pri:hover{filter:brightness(1.1)}
 .btn-pri.disabled{background:var(--surface-3);color:var(--text-3);pointer-events:none}
-.btn-pri.fresh-mode{background:var(--fresh)}
 .setup-nav{position:fixed;bottom:0;left:0;right:0;display:flex;gap:6px;padding:10px 16px calc(env(safe-area-inset-bottom,14px) + 10px);background:rgba(11,12,16,.93);backdrop-filter:blur(20px);border-top:1px solid var(--border)}
 .setup-nav .nav-tab{flex:1;padding:13px 0;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;background:var(--surface-2);color:var(--text-2);border:1.5px solid var(--border);text-align:center;min-height:46px;transition:background .15s,color .15s;text-decoration:none;display:flex;align-items:center;justify-content:center}
 .setup-nav .nav-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.extra-form{background:var(--surface);border:1.5px dashed var(--border);border-radius:var(--radius);padding:16px;margin-bottom:8px;animation:card-in .18s ease}
+.extra-form{background:var(--surface);border:1.5px dashed var(--border);border-radius:var(--r);padding:16px;margin-bottom:8px;animation:card-in .18s ease}
 .extra-form h3{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--cyan);margin-bottom:10px}
 .field{width:100%;padding:13px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:12px;font-size:14px;font-weight:600;color:var(--text);outline:none;margin-bottom:6px;transition:border-color .15s}
 .field:focus{border-color:var(--accent)}
@@ -384,16 +556,16 @@ input,textarea,select{font-family:inherit}
 .field-row{display:flex;gap:6px}
 .hidden{display:none!important}
 #modal-move{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(5px);z-index:100;align-items:center;justify-content:center;padding:20px}
-#modal-move .move-box{background:var(--surface);width:100%;max-width:400px;padding:20px;border-radius:var(--radius);border:1px solid var(--purple);animation:card-in .2s ease}
+#modal-move .move-box{background:var(--surface);width:100%;max-width:400px;padding:20px;border-radius:var(--r);border:1px solid var(--purple);animation:card-in .2s ease}
 @keyframes shimmer{to{background-position:-200% 0}}
 </style>
 </head>
 <body>
 <div id="toast" class="toast"><span id="toast-text"></span></div>
 
-<!-- ══════════════════════════════════════════
+<!-- ══════════════════════════════════════════════
      SCREEN 1 — SETUP
-══════════════════════════════════════════ -->
+══════════════════════════════════════════════ -->
 <div id="screen-setup" class="screen active">
 
   <div class="header">
@@ -410,97 +582,104 @@ input,textarea,select{font-family:inherit}
     </div>
   </div>
 
-  <!-- ── Audit mode: Standard / Fresh ── -->
+  <!-- Audit mode toggle -->
   <div class="mode-bar">
     <button class="mode-btn active-std" id="mode-std"   onclick="setAuditMode('standard')">📦 Standard</button>
     <button class="mode-btn"            id="mode-fresh" onclick="setAuditMode('fresh')">🧊 Fresh / Perishable</button>
   </div>
 
-  <!-- ── Fresh panel (visible when fresh mode) ── -->
-  <div class="fresh-panel" id="fresh-panel">
+  <!-- ════ FRESH AUDIT SHELL (progressive disclosure) ════ -->
+  <div class="fresh-shell" id="fresh-shell">
 
-    <!-- Step 1: Select SKU -->
-    <div class="fresh-sku-row">
-      <label class="fresh-sku-label">Step 1 — Select Fresh Product</label>
+    <!-- Step 1: SKU dropdown -->
+    <div class="fresh-step-1">
+      <div class="fresh-step-label">Step 1 — Select Product</div>
       <select class="fresh-sku-select" id="fresh-sku-select">
-        <option value="">— Choose a product —</option>
+        <option value="">Choose a fresh product…</option>
         <!-- Populated by buildSkuDropdown() -->
       </select>
     </div>
 
-    <!-- Step 2: Choose counting method (hidden until SKU selected) -->
-    <div class="fresh-submode-bar" id="fresh-submode-bar">
-      <button class="fresh-sub-btn active" id="submode-hu"     onclick="setFreshSubMode('hu')">
-        🔍 Count by HU
-      </button>
-      <button class="fresh-sub-btn"        id="submode-pallet" onclick="setFreshSubMode('pallet')">
-        📦 Count by Pallet
-      </button>
-    </div>
-
-    <!-- Expiry threshold (HU mode only) -->
-    <div class="fresh-threshold-row" id="fresh-threshold-row">
-      <label>Expiry warning within</label>
-      <input type="number" id="fresh-threshold-days" value="7" min="1" max="90">
-      <span>days of today</span>
-    </div>
-
-  </div><!-- /.fresh-panel -->
-
-  <!-- ── Fresh HU inline view (By HU mode with SKU selected) ── -->
-  <div class="fresh-hu-view" id="fresh-hu-view">
-    <div class="fresh-hu-header">
-      <div>
-        <div class="fresh-hu-title" id="fresh-hu-title">—</div>
-        <div class="fresh-hu-subtitle" id="fresh-hu-subtitle">—</div>
+    <!-- Step 2: Method toggle (hidden until SKU selected) -->
+    <div class="fresh-step-2" id="fresh-step-2">
+      <div class="fresh-step-label">Step 2 — Counting Method</div>
+      <div class="fresh-method-toggle">
+        <button class="fresh-method-btn active" id="submode-hu"     onclick="setFreshSubMode('hu')">
+          🔍 Count by HU
+        </button>
+        <button class="fresh-method-btn"        id="submode-pallet" onclick="setFreshSubMode('pallet')">
+          📦 Count by Pallet
+        </button>
       </div>
-      <button class="fresh-hu-submit" id="fresh-hu-submit" onclick="submitFreshHU()">
-        Submit All
-      </button>
-    </div>
-    <div class="fresh-hu-list" id="fresh-hu-list">
-      <!-- HU cards rendered here by renderFreshHUCards() -->
-    </div>
-  </div>
-
-  <!-- ── Pallet count form (By Pallet mode) ── -->
-  <div class="pallet-form" id="pallet-form">
-    <div class="pallet-section">
-      <label class="pallet-field-label">Location / Bin</label>
-      <input type="text" class="pallet-input mono" id="pallet-bin"
-             placeholder="e.g. WA12A or Cooler Row 3"
-             style="text-transform:uppercase">
-
-      <label class="pallet-field-label">Total Pallets</label>
-      <div class="pallet-qty-row">
-        <button class="pallet-qty-btn" onclick="adjustPallets(-1)">−</button>
-        <input type="number" inputmode="numeric" class="pallet-qty-input"
-               id="pallet-qty" placeholder="0" min="0">
-        <button class="pallet-qty-btn" onclick="adjustPallets(1)">+</button>
+      <!-- Expiry threshold row (HU mode only) -->
+      <div class="fresh-threshold-row" id="fresh-threshold-row">
+        <label>Expiry warning within</label>
+        <input type="number" id="fresh-threshold-days" value="7" min="1" max="90">
+        <span>days</span>
       </div>
-      <div class="pallet-hint">Enter total pallets at this location</div>
-
-      <label class="pallet-field-label">Note (optional)</label>
-      <input type="text" class="pallet-input" id="pallet-note"
-             placeholder="e.g. staging area, receiving dock…">
-
-      <button class="pallet-submit-btn" id="pallet-submit-btn" onclick="submitPalletCount()">
-        🧊 Log Pallet Count
-      </button>
-
-      <div id="pallet-log-title" class="section-title" style="display:none;color:var(--fresh)">
-        Logged This Session
-      </div>
-      <div class="pallet-log" id="pallet-log"></div>
     </div>
-  </div>
 
-  <!-- ── Standard setup content (aisle grid / product search) ── -->
+    <!-- Step 3a: Pallet count view -->
+    <div class="fresh-pallet-view" id="fresh-pallet-view">
+      <div class="pallet-card">
+        <div class="pallet-card-sku"  id="pallet-card-sku">—</div>
+        <div class="pallet-card-desc" id="pallet-card-desc">—</div>
+
+        <label class="pallet-field-label">Location / Bin</label>
+        <input type="text" class="pallet-loc-input mono"
+               id="pallet-bin"
+               placeholder="Scan or type bin…">
+
+        <label class="pallet-field-label">Total Pallets</label>
+        <div class="pallet-counter">
+          <button class="pallet-counter-btn" onclick="adjustPallets(-1)">−</button>
+          <div class="pallet-counter-display">
+            <input type="number" inputmode="numeric"
+                   id="pallet-qty" placeholder="0" min="0">
+          </div>
+          <button class="pallet-counter-btn" onclick="adjustPallets(1)">+</button>
+        </div>
+        <div class="pallet-unit">pallets at this location</div>
+
+        <label class="pallet-field-label">Note (optional)</label>
+        <input type="text" class="pallet-note-input"
+               id="pallet-note"
+               placeholder="e.g. staging area, near dock 3…">
+
+        <button class="pallet-submit" id="pallet-submit-btn" onclick="submitPalletCount()">
+          🧊 Log Pallet Count
+        </button>
+      </div>
+
+      <!-- Session log -->
+      <div class="pallet-log-section" id="pallet-log-section" style="display:none">
+        <div class="pallet-log-title">Logged this session</div>
+        <div id="pallet-log"></div>
+      </div>
+    </div>
+
+    <!-- Step 3b: HU card view -->
+    <div class="fresh-hu-view" id="fresh-hu-view">
+      <div class="fresh-hu-header">
+        <div class="fresh-hu-header-info">
+          <div class="fresh-hu-header-sku"      id="fresh-hu-sku">—</div>
+          <div class="fresh-hu-header-subtitle" id="fresh-hu-subtitle">—</div>
+        </div>
+        <button class="fresh-hu-submit-btn" id="fresh-hu-submit" onclick="submitFreshHU()">
+          Submit All
+        </button>
+      </div>
+      <div class="fresh-hu-list" id="fresh-hu-list"></div>
+    </div>
+
+  </div><!-- /.fresh-shell -->
+
+  <!-- Standard setup content -->
   <div class="setup-content" id="setup-content">
     <div class="stat-row">
       <div class="stat-box"><div class="stat-val" id="stat-loaded">—</div><div class="stat-label">SAP Items</div></div>
-      <div class="stat-box"><div class="stat-val" id="stat-bins">—</div><div class="stat-label">Total Bins</div></div>
-      <div class="stat-box"><div class="stat-val" id="stat-done">0</div><div class="stat-label">Done Today</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat-bins">—</div>  <div class="stat-label">Total Bins</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat-done">0</div>  <div class="stat-label">Done Today</div></div>
     </div>
     <div class="section-title">Count By Product</div>
     <div style="display:flex;gap:8px;margin-bottom:24px">
@@ -522,9 +701,9 @@ input,textarea,select{font-family:inherit}
 </div><!-- /#screen-setup -->
 
 
-<!-- ══════════════════════════════════════════
+<!-- ══════════════════════════════════════════════
      SCREEN 2 — STANDARD COUNTING
-══════════════════════════════════════════ -->
+══════════════════════════════════════════════ -->
 <div id="screen-counting" class="screen">
   <div class="header">
     <button class="hdr-btn" onclick="backToSetup()">← Back</button>
@@ -566,10 +745,10 @@ input,textarea,select{font-family:inherit}
 </div>
 
 
-<!-- ══════════════════════════════════════════
+<!-- ══════════════════════════════════════════════
      MOVE MODAL
-══════════════════════════════════════════ -->
-<div id="modal-move" style="display:none;align-items:center;justify-content:center;padding:20px;">
+══════════════════════════════════════════════ -->
+<div id="modal-move" style="display:none;align-items:center;justify-content:center;padding:20px">
   <div class="move-box">
     <h3 style="color:var(--purple);font-size:16px;font-weight:800;margin-bottom:16px">🔄 Move Item to Another Bin</h3>
     <label style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);display:block;margin-bottom:6px">HU Number</label>
@@ -593,18 +772,16 @@ input,textarea,select{font-family:inherit}
 </div>
 
 
-<!-- ══════════════════════════════════════════
-     SCRIPTS
-══════════════════════════════════════════ -->
 <script src="novus-core.js"></script>
 <script>
 'use strict';
 
-// ─────────────────────────────────────────
-// FRESH SKU DICTIONARY
-// Maps the 14 target SKUs to their SAP Product Short Descriptions.
-// !! REPLACE the description values below with your exact SAP text !!
-// ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
+   FRESH SKU DICTIONARY
+   Key   = SAP product number (used in payloads & as option value)
+   Value = SAP Product Short Description (shown to user in dropdown)
+   !! Replace values with your exact SAP text if they differ !!
+══════════════════════════════════════════════ */
 const FRESH_SKU_DESCRIPTIONS = {
   '3305704': 'Whole Fresh Poblano Peppers w/Stems',
   '3307506': 'Pepper Bell Whole Grn Fresh',
@@ -621,53 +798,22 @@ const FRESH_SKU_DESCRIPTIONS = {
   '3309138': 'Chile Habanero Fresh Destemmed',
   '3309139': 'Chile Green Serrano Fresh Destemmed',
 };
-
 const FRESH_SKUS = Object.keys(FRESH_SKU_DESCRIPTIONS);
 
-// ─────────────────────────────────────────
-// POPULATE DROPDOWN WITH DESCRIPTIONS
-// Option text = description, option value = SKU number
-// ─────────────────────────────────────────
+/* ── Populate SKU dropdown: value = SKU, text = description only ── */
 (function buildSkuDropdown() {
   const sel = document.getElementById('fresh-sku-select');
   FRESH_SKUS.forEach(sku => {
-    const opt = document.createElement('option');
+    const opt       = document.createElement('option');
     opt.value       = sku;
-    opt.textContent = `${FRESH_SKU_DESCRIPTIONS[sku]} (${sku})`;
+    opt.textContent = FRESH_SKU_DESCRIPTIONS[sku]; // description only, no raw number
     sel.appendChild(opt);
   });
 })();
 
-// ─────────────────────────────────────────
-// SKU DROPDOWN — change event
-// This is the master trigger for the entire Fresh workflow.
-// Step 1 → Step 2 reveal, then data load.
-// ─────────────────────────────────────────
-document.getElementById('fresh-sku-select').addEventListener('change', function () {
-  const sku = this.value;
-
-  if (!sku) {
-    // Reset: hide everything downstream
-    document.getElementById('fresh-submode-bar').classList.remove('visible');
-    document.getElementById('fresh-threshold-row').classList.remove('visible');
-    document.getElementById('fresh-hu-view').classList.remove('visible');
-    document.getElementById('pallet-form').classList.remove('visible');
-    return;
-  }
-
-  // Reveal counting method toggle (Step 2)
-  document.getElementById('fresh-submode-bar').classList.add('visible');
-
-  // Store selected SKU globally
-  activeFreshSKU = sku;
-
-  // Apply whichever sub-mode is currently active
-  setFreshSubMode(freshSubMode);
-});
-
-// ─────────────────────────────────────────
-// STATE
-// ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════ */
 let sapMaster    = JSON.parse(localStorage.getItem('novus_sap') || '[]');
 let binIndex     = {}, huIndex = new Map();
 
@@ -683,29 +829,27 @@ if (Array.isArray(_rawDone) || _rawDone.date !== _todayStr) {
 let offlineQueue  = JSON.parse(localStorage.getItem('novus_queue') || '[]');
 let auditorName   = NovusSettings.getUser();
 
-// Audit mode state
-let auditMode     = 'standard';  // 'standard' | 'fresh'
-let freshSubMode  = 'hu';        // 'hu' | 'pallet'
+/* Audit mode */
+let auditMode     = 'standard'; // 'standard' | 'fresh'
+let freshSubMode  = 'hu';       // 'hu' | 'pallet'
 let freshDays     = 7;
-let activeFreshSKU = '';         // currently selected fresh SKU
+let activeFreshSKU = '';
 
-// Standard counting state
+/* Standard counting */
 let currentBin    = '', currentItems = [], phase = 1;
 let aisleBins     = [], binIdx = 0, showingExtra = false;
 let targetProduct = null, activeAisle = null, activeMoveIdx = -1;
 let isOnline      = navigator.onLine;
 
-// Fresh HU mode — flat list of all HU items for selected SKU
-// Each item: { hu, product, desc, batch, sapBin, sapQty, unit, sled,
-//              scannedQty, status, note }
+/* Fresh HU mode */
 let freshHUItems = [];
 
-// Pallet mode session log
+/* Pallet session log */
 let palletSessionLog = [];
 
-// ─────────────────────────────────────────
-// BOOT
-// ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════════ */
 document.getElementById('name-display').textContent = auditorName || 'Set Name';
 document.getElementById('aisle-grid').innerHTML = NovusLoader.skeletonAisleCards(14);
 updateQueueBadge();
@@ -714,146 +858,294 @@ updateSyncDot();
 window.addEventListener('online',  () => { isOnline = true;  updateSyncDot(); flushQueue(); });
 window.addEventListener('offline', () => { isOnline = false; updateSyncDot(); });
 
-if (sapMaster.length > 0) { buildIndexes(); showSetup(); }
-else { pullCloud(); }
+if (sapMaster.length > 0) { buildIndexes(); showSetup(); } else { pullCloud(); }
 
-// ─────────────────────────────────────────
-// AUDIT MODE SWITCHER
-// ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
+   SLED DATE HELPERS
+   (MM/DD/YYYY strict output — regression-protected)
+══════════════════════════════════════════════ */
+
+/**
+ * parseSLED — handles ISO, US MM/DD/YYYY, EU DD.MM.YYYY, Excel serial.
+ * Pulls from the "Shelf Life Expiration Date" column (SAP_COLS.SLED = col 10).
+ */
+function parseSLED(raw) {
+  if (!raw) return null;
+  // Excel serial number
+  if (typeof raw === 'number' || /^\d{4,5}$/.test(String(raw).trim())) {
+    const serial = Number(raw);
+    if (serial > 0) {
+      const d = new Date(Date.UTC(1900, 0, 1) + (serial - 2) * 86400000);
+      if (!isNaN(d)) return d;
+    }
+  }
+  const s = String(raw).trim();
+  if (!s || s === 'undefined' || s === 'null') return null;
+  // ISO / standard
+  const iso = new Date(s);
+  if (!isNaN(iso)) return iso;
+  // US MM/DD/YYYY
+  const us = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (us) return new Date(`${us[3]}-${us[1].padStart(2,'0')}-${us[2].padStart(2,'0')}`);
+  // EU DD.MM.YYYY
+  const eu = s.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (eu) return new Date(`${eu[3]}-${eu[2]}-${eu[1]}`);
+  return null;
+}
+
+/** Returns 'expired' | 'expiring' | 'valid' | 'unknown' */
+function sledStatus(raw) {
+  const d = parseSLED(raw);
+  if (!d) return 'unknown';
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const thr = new Date(now); thr.setDate(thr.getDate() + freshDays);
+  if (d < now)  return 'expired';
+  if (d <= thr) return 'expiring';
+  return 'valid';
+}
+
+/** Strict MM/DD/YYYY output for display on HU cards */
+function formatSLED(raw) {
+  const d = parseSLED(raw);
+  if (!d) return raw || '—';
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const yy = d.getFullYear();
+  return `${mm}/${dd}/${yy}`;
+}
+
+/* ══════════════════════════════════════════════
+   AUDIT MODE SWITCHER
+══════════════════════════════════════════════ */
 function setAuditMode(mode) {
   auditMode = mode;
-
-  document.getElementById('mode-std').className   = 'mode-btn' + (mode === 'standard' ? ' active-std'   : '');
+  document.getElementById('mode-std').className   = 'mode-btn' + (mode === 'standard' ? ' active-std'    : '');
   document.getElementById('mode-fresh').className = 'mode-btn' + (mode === 'fresh'    ? ' active-fresh'  : '');
 
-  const freshPanel = document.getElementById('fresh-panel');
-  freshPanel.classList.toggle('visible', mode === 'fresh');
+  const freshShell = document.getElementById('fresh-shell');
+  const setupContent = document.getElementById('setup-content');
 
   if (mode === 'fresh') {
-    // Hide standard content; fresh views take over
-    document.getElementById('setup-content').style.display = 'none';
-    // Reset sequential flow
-    document.getElementById('fresh-sku-select').value = '';
-    document.getElementById('fresh-submode-bar').classList.remove('visible');
-    document.getElementById('fresh-threshold-row').classList.remove('visible');
-    document.getElementById('fresh-hu-view').classList.remove('visible');
-    document.getElementById('pallet-form').classList.remove('visible');
-    activeFreshSKU = '';
-    toast('🧊 Fresh audit mode — select a product', 'pink');
+    freshShell.classList.add('visible');
+    setupContent.style.display = 'none';
+    // Reset to Step 1
+    _freshReset();
+    toast('🧊 Select a fresh product to begin', 'pink');
   } else {
-    // Restore standard content, hide all fresh views
-    document.getElementById('setup-content').style.display = '';
-    document.getElementById('fresh-hu-view').classList.remove('visible');
-    document.getElementById('pallet-form').classList.remove('visible');
+    freshShell.classList.remove('visible');
+    setupContent.style.display = '';
     toast('📦 Standard audit mode', 'blue');
   }
 }
 
-// ─────────────────────────────────────────
-// FRESH SUB-MODE SWITCHER
-// ─────────────────────────────────────────
+/* Reset fresh UI back to Step 1 only */
+function _freshReset() {
+  document.getElementById('fresh-sku-select').value = '';
+  document.getElementById('fresh-step-2').classList.remove('revealed');
+  document.getElementById('fresh-threshold-row').classList.remove('visible');
+  document.getElementById('fresh-pallet-view').classList.remove('visible');
+  document.getElementById('fresh-hu-view').classList.remove('visible');
+  activeFreshSKU = '';
+  freshHUItems   = [];
+}
+
+/* ══════════════════════════════════════════════
+   SKU DROPDOWN — change event (master trigger)
+══════════════════════════════════════════════ */
+document.getElementById('fresh-sku-select').addEventListener('change', function () {
+  const sku = this.value;
+
+  if (!sku) {
+    // User cleared selection — go back to Step 1
+    document.getElementById('fresh-step-2').classList.remove('revealed');
+    document.getElementById('fresh-threshold-row').classList.remove('visible');
+    document.getElementById('fresh-pallet-view').classList.remove('visible');
+    document.getElementById('fresh-hu-view').classList.remove('visible');
+    activeFreshSKU = '';
+    return;
+  }
+
+  activeFreshSKU = sku;
+
+  // Reveal Step 2 (smooth fade-in via CSS transition)
+  document.getElementById('fresh-step-2').classList.add('revealed');
+
+  // Apply whichever sub-mode is currently set
+  setFreshSubMode(freshSubMode);
+});
+
+/* ══════════════════════════════════════════════
+   FRESH SUB-MODE SWITCHER
+══════════════════════════════════════════════ */
 function setFreshSubMode(mode) {
   freshSubMode = mode;
-
   document.getElementById('submode-hu').classList.toggle('active',     mode === 'hu');
   document.getElementById('submode-pallet').classList.toggle('active', mode === 'pallet');
 
-  // Threshold only relevant in HU mode
+  // Expiry threshold only relevant in HU mode
   document.getElementById('fresh-threshold-row').classList.toggle('visible', mode === 'hu');
 
-  const huView     = document.getElementById('fresh-hu-view');
-  const palletForm = document.getElementById('pallet-form');
+  if (!activeFreshSKU) return; // no SKU chosen yet — nothing to show
 
-  if (mode === 'hu') {
-    palletForm.classList.remove('visible');
-    if (activeFreshSKU) {
-      // Load and render HU cards for the selected SKU
-      loadFreshHUItems(activeFreshSKU);
-      huView.classList.add('visible');
-    }
+  if (mode === 'pallet') {
+    // Show pallet form, hide HU cards
+    document.getElementById('fresh-hu-view').classList.remove('visible');
+    _populatePalletCard(activeFreshSKU);
+    document.getElementById('fresh-pallet-view').classList.add('visible');
   } else {
-    // Pallet mode
-    huView.classList.remove('visible');
-    if (activeFreshSKU) {
-      palletForm.classList.add('visible');
-    }
+    // Show HU cards, hide pallet form
+    document.getElementById('fresh-pallet-view').classList.remove('visible');
+    loadFreshHUItems(activeFreshSKU);
+    document.getElementById('fresh-hu-view').classList.add('visible');
   }
 }
 
-// ─────────────────────────────────────────
-// FRESH HU MODE — load + render
-// ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
+   PALLET COUNT
+══════════════════════════════════════════════ */
+function _populatePalletCard(sku) {
+  document.getElementById('pallet-card-sku').textContent  = sku;
+  document.getElementById('pallet-card-desc').textContent = FRESH_SKU_DESCRIPTIONS[sku] || sku;
+  document.getElementById('pallet-bin').value  = '';
+  document.getElementById('pallet-qty').value  = '';
+  document.getElementById('pallet-note').value = '';
+}
+
+function adjustPallets(delta) {
+  const el = document.getElementById('pallet-qty');
+  el.value = Math.max(0, (parseInt(el.value, 10) || 0) + delta);
+}
+
+async function submitPalletCount() {
+  const sku  = activeFreshSKU;
+  const bin  = document.getElementById('pallet-bin').value.trim().toUpperCase();
+  const qty  = parseInt(document.getElementById('pallet-qty').value, 10) || 0;
+  const note = document.getElementById('pallet-note').value.trim();
+
+  if (!sku)     { _fieldFlash('fresh-sku-select', 'No SKU selected');     return; }
+  if (!bin)     { _fieldFlash('pallet-bin',        'Enter a location');   return; }
+  if (qty <= 0) { _fieldFlash('pallet-qty',        'Enter pallet count'); return; }
+
+  const btn = document.getElementById('pallet-submit-btn');
+  btn.disabled = true; btn.innerHTML = '⏳ Logging…';
+
+  const sessId = 'PLT-' + new Date().toISOString().split('T')[0];
+  const payload = {
+    action:         'logAudit',
+    user:           auditorName || 'Counter',
+    bin,
+    aisle:          bin.charAt(1) || '',
+    auditMode:      'fresh',
+    sessionId:      sessId,
+    idempotencyKey: `${sessId}|${bin}|${sku}|${auditorName}|${qty}|${Date.now()}`,
+    items: [{
+      hu:         '',
+      product:    sku,
+      desc:       FRESH_SKU_DESCRIPTIONS[sku] || 'Fresh Pallet Count',
+      batch:      '',
+      sapBin:     bin,
+      sapQty:     0,
+      unit:       'PALLET',
+      countQty:   qty,
+      type:       'pallet_count',
+      note:       note || `${qty} pallet(s) at ${bin}`,
+      sled:       '',
+      sledStatus: '',
+    }],
+  };
+
+  const ok = await sendPayload(payload, `✓ ${qty} pallet(s) of ${FRESH_SKU_DESCRIPTIONS[sku] || sku} logged`);
+
+  if (ok) {
+    palletSessionLog.unshift({ sku, bin, qty, note });
+    _renderPalletLog();
+    document.getElementById('pallet-bin').value  = '';
+    document.getElementById('pallet-qty').value  = '';
+    document.getElementById('pallet-note').value = '';
+  }
+
+  btn.disabled = false; btn.innerHTML = '🧊 Log Pallet Count';
+}
+
+function _renderPalletLog() {
+  const logEl  = document.getElementById('pallet-log');
+  const sectEl = document.getElementById('pallet-log-section');
+  if (!palletSessionLog.length) { logEl.innerHTML = ''; sectEl.style.display = 'none'; return; }
+  sectEl.style.display = '';
+  logEl.innerHTML = palletSessionLog.map(e => `
+    <div class="pallet-log-item">
+      <span style="font-size:22px;flex-shrink:0">🧊</span>
+      <div>
+        <div class="pallet-log-sku">${FRESH_SKU_DESCRIPTIONS[e.sku] || e.sku}</div>
+        <div class="pallet-log-detail">📍 ${e.bin}${e.note ? ' · ' + e.note : ''}</div>
+      </div>
+      <div class="pallet-log-qty">${e.qty}</div>
+    </div>`).join('');
+}
+
+function _fieldFlash(id, msg) {
+  toast(msg, 'amber');
+  const el = document.getElementById(id); if (!el) return;
+  el.style.borderColor = 'var(--red)';
+  el.focus();
+  setTimeout(() => { el.style.borderColor = ''; }, 2000);
+}
+
+/* ══════════════════════════════════════════════
+   FRESH HU MODE
+══════════════════════════════════════════════ */
 
 /**
- * Pull all SAP records for the given SKU, build freshHUItems[],
- * update the header, and render the cards.
+ * Pull all SAP records for the chosen SKU and build freshHUItems[].
+ * sapBin is the "Expected Location" read from the Shelf Life Expiration Date
+ * column's sibling Storage Bin column in the SAP export.
  */
 function loadFreshHUItems(sku) {
   freshDays = parseInt(document.getElementById('fresh-threshold-days').value, 10) || 7;
 
-  // Filter SAP master to this SKU
   const records = sapMaster.filter(i => i.product.toUpperCase() === sku.toUpperCase());
 
+  const desc = FRESH_SKU_DESCRIPTIONS[sku] || sku;
+  document.getElementById('fresh-hu-sku').textContent      = sku;
+  document.getElementById('fresh-hu-subtitle').textContent =
+    records.length > 0
+      ? `${desc} · ${records.length} HU${records.length !== 1 ? 's' : ''} expected`
+      : `${desc} · No SAP records found`;
+
   if (!records.length) {
-    toast(`No SAP records for ${sku}`, 'amber');
     freshHUItems = [];
-    _updateFreshHUHeader(sku, 0);
     renderFreshHUCards();
+    toast(`No SAP records for ${sku}`, 'amber');
     return;
   }
 
-  // Build item state objects — one per HU line
   freshHUItems = records.map(i => ({
     hu:         String(i.hu      || '').trim(),
     product:    String(i.product || '').trim(),
     desc:       String(i.desc    || '').trim(),
     batch:      String(i.batch   || '').trim(),
-    sapBin:     String(i.sapBin  || '').trim().toUpperCase(),
+    sapBin:     String(i.sapBin  || '').trim().toUpperCase(), // Expected Location
     sapQty:     Number(i.sapQty) || 0,
     unit:       String(i.unit    || 'LB').trim(),
-    sled:       String(i.sled    || '').trim(),
+    sled:       String(i.sled    || '').trim(), // from "Shelf Life Expiration Date" col
     scannedQty: 0,
-    status:     'pending',  // pending | confirmed | adjusted | missing
+    status:     'pending',
     note:       '',
   }));
 
-  _updateFreshHUHeader(sku, freshHUItems.length);
   renderFreshHUCards();
-}
-
-function _updateFreshHUHeader(sku, count) {
-  const desc = FRESH_SKU_DESCRIPTIONS[sku] || sku;
-  document.getElementById('fresh-hu-title').textContent   = desc;
-  document.getElementById('fresh-hu-subtitle').textContent =
-    count > 0
-      ? `SKU ${sku} · ${count} HU${count !== 1 ? 's' : ''} expected`
-      : `SKU ${sku} · No SAP records found`;
-  _updateFreshHUSubmitBtn();
 }
 
 function _updateFreshHUSubmitBtn() {
   const btn     = document.getElementById('fresh-hu-submit');
   const pending = freshHUItems.filter(i => i.status === 'pending').length;
   const total   = freshHUItems.length;
-
-  if (total === 0) {
-    btn.disabled    = true;
-    btn.textContent = 'No Items';
-    return;
-  }
-  if (pending > 0) {
-    btn.disabled    = true;
-    btn.textContent = `${pending} Unchecked`;
-  } else {
-    btn.disabled    = false;
-    btn.textContent = `Submit ${total} Item${total !== 1 ? 's' : ''}`;
-  }
+  if (!total)         { btn.disabled = true;  btn.textContent = 'No Items'; return; }
+  if (pending > 0)    { btn.disabled = true;  btn.textContent = `${pending} Unchecked`; }
+  else                { btn.disabled = false; btn.textContent = `Submit ${total} Item${total !== 1 ? 's' : ''}`; }
 }
 
-/**
- * Render all HU cards into the fresh-hu-list container.
- * Each card leads with a prominent Expected Location banner.
- */
+/** Renders all fresh HU cards — location banner first, clean layout */
 function renderFreshHUCards() {
   const list = document.getElementById('fresh-hu-list');
 
@@ -862,50 +1154,45 @@ function renderFreshHUCards() {
       <div class="fresh-hu-empty">
         <span class="icon">📭</span>
         <p style="font-weight:700">No SAP records for this SKU</p>
-        <p style="font-size:11px;margin-top:4px">Upload a fresh SAP export from the Control Center</p>
+        <p style="font-size:11px;margin-top:4px">Upload a fresh SAP export from Control Center</p>
       </div>`;
+    _updateFreshHUSubmitBtn();
     return;
   }
 
-  list.innerHTML = freshHUItems.map((item, idx) => _buildFreshHUCard(item, idx)).join('');
+  list.innerHTML = freshHUItems.map((item, idx) => _fhuCardHTML(item, idx)).join('');
   _updateFreshHUSubmitBtn();
 }
 
-/**
- * Build HTML for a single fresh HU card.
- * Expected_Bin (sapBin) is displayed first and most prominently.
- */
-function _buildFreshHUCard(item, idx) {
-  const isPending  = item.status === 'pending';
-  const isOk       = item.status === 'confirmed';
-  const isMiss     = item.status === 'missing';
-  const isAdj      = item.status === 'adjusted';
+function _fhuCardHTML(item, idx) {
+  const isOk   = item.status === 'confirmed';
+  const isMiss = item.status === 'missing';
+  const isAdj  = item.status === 'adjusted';
+  const isPend = item.status === 'pending';
 
-  const cardCls    = isOk ? 'confirmed' : isMiss ? 'missing' : isAdj ? 'adjusted' : '';
+  const cardCls = isOk ? 'confirmed' : isMiss ? 'missing' : isAdj ? 'adjusted' : '';
 
-  // Location badge
-  const badgeText  = isOk   ? 'Confirmed'
-                   : isMiss ? 'Missing'
-                   : isAdj  ? 'Adjusted'
-                   : 'Pending';
-  const badgeCls   = isOk ? 'ok' : isMiss ? 'miss' : isAdj ? 'adj' : 'pending';
+  const badgeText = isOk   ? 'Confirmed'
+                  : isMiss ? 'Missing'
+                  : isAdj  ? 'Adjusted'
+                  : 'Pending';
+  const badgeCls  = isOk ? 'confirmed' : isMiss ? 'missing' : isAdj ? 'adjusted' : 'pending';
 
-  // SLED
+  // SLED — uses formatSLED (MM/DD/YYYY) and sledStatus
   const ss         = item.sled ? sledStatus(item.sled) : 'unknown';
-  const sledCls    = ss === 'unknown' ? '' : ss;
-  const sledLabel  = ss === 'expired' ? '⚠ EXPIRED' : ss === 'expiring' ? '⚡ EXPIRING' : ss === 'valid' ? '✓ VALID' : '';
-  const sledRow    = item.sled ? `
+  const sledFormatted = item.sled ? formatSLED(item.sled) : null;
+  const sledBadgeLbl  = ss === 'expired' ? '⚠ EXPIRED' : ss === 'expiring' ? '⚡ EXPIRING' : '✓ VALID';
+  const sledRow    = sledFormatted && ss !== 'unknown' ? `
     <div class="fhu-sled">
-      <span class="fhu-sled-label">Best-By / SLED</span>
-      ${sledLabel ? `<span class="hu-badge sled-${ss}" style="margin-left:8px">${sledLabel}</span>` : ''}
-      <span class="fhu-sled-val ${sledCls}" style="margin-left:auto">${formatSLED(item.sled)}</span>
+      <span class="fhu-sled-label">Best-By</span>
+      <span class="fhu-sled-val ${ss}">${sledFormatted}</span>
+      <span class="fhu-sled-badge ${ss}">${sledBadgeLbl}</span>
     </div>` : '';
 
-  // Controls: active vs resolved
-  const qtyMatch   = item.scannedQty === item.sapQty;
-  let   controls   = '';
-
-  if (isPending || isAdj) {
+  // Controls
+  const qtyMatch = item.scannedQty === item.sapQty;
+  let controls = '';
+  if (isPend || isAdj) {
     controls = `
       <div class="fhu-qty-row">
         <button class="fhu-qty-btn" onclick="fhuAdjQty(${idx},-1)">−</button>
@@ -934,14 +1221,14 @@ function _buildFreshHUCard(item, idx) {
   return `
     <div class="fhu-card ${cardCls}" id="fhu-card-${idx}">
 
-      <!-- ── LOCATION — most prominent element ── -->
+      <!-- ── Expected Location — most prominent ── -->
       <div class="fhu-location">
-        <span class="fhu-location-icon">📍</span>
-        <div>
+        <span class="fhu-location-pin">📍</span>
+        <div class="fhu-location-text">
           <div class="fhu-location-label">Expected Location</div>
-          <div class="fhu-location-bin">${item.sapBin || '— No Bin —'}</div>
+          <div class="fhu-location-bin">${item.sapBin || '— Unknown —'}</div>
         </div>
-        <span class="fhu-location-badge ${badgeCls}">${badgeText}</span>
+        <span class="fhu-status-badge ${badgeCls}">${badgeText}</span>
       </div>
 
       <!-- ── Card body ── -->
@@ -961,34 +1248,24 @@ function _buildFreshHUCard(item, idx) {
         ${sledRow}
         ${controls}
 
-        <!-- Note -->
         <button class="fhu-note${item.note ? ' has' : ''}" onclick="fhuAddNote(${idx})">
-          📝 ${item.note ? item.note.substring(0, 34) + (item.note.length > 34 ? '…' : '') : 'Add Note'}
+          📝 ${item.note ? item.note.substring(0, 36) + (item.note.length > 36 ? '…' : '') : 'Add Note'}
         </button>
       </div>
     </div>`;
 }
 
-// ─────────────────────────────────────────
-// FRESH HU — state actions
-// ─────────────────────────────────────────
-
+/* ── Fresh HU state actions ── */
 function fhuConfirm(idx) {
   haptic();
   if (!freshHUItems[idx].scannedQty) freshHUItems[idx].scannedQty = freshHUItems[idx].sapQty;
-  freshHUItems[idx].status = freshHUItems[idx].scannedQty === freshHUItems[idx].sapQty
-    ? 'confirmed' : 'adjusted';
+  freshHUItems[idx].status = freshHUItems[idx].scannedQty === freshHUItems[idx].sapQty ? 'confirmed' : 'adjusted';
   renderFreshHUCards();
 }
 function fhuMiss(idx) {
   haptic();
-  if (freshHUItems[idx].status === 'missing') {
-    freshHUItems[idx].status     = 'pending';
-    freshHUItems[idx].scannedQty = 0;
-  } else {
-    freshHUItems[idx].status     = 'missing';
-    freshHUItems[idx].scannedQty = 0;
-  }
+  if (freshHUItems[idx].status === 'missing') { freshHUItems[idx].status = 'pending'; freshHUItems[idx].scannedQty = 0; }
+  else { freshHUItems[idx].status = 'missing'; freshHUItems[idx].scannedQty = 0; }
   renderFreshHUCards();
 }
 function fhuAdjQty(idx, delta) {
@@ -1000,15 +1277,13 @@ function fhuAdjQty(idx, delta) {
 function fhuSetQty(idx, val) {
   freshHUItems[idx].scannedQty = parseFloat(val) || 0;
   if (freshHUItems[idx].scannedQty > 0) {
-    freshHUItems[idx].status = freshHUItems[idx].scannedQty === freshHUItems[idx].sapQty
-      ? 'confirmed' : 'adjusted';
+    freshHUItems[idx].status = freshHUItems[idx].scannedQty === freshHUItems[idx].sapQty ? 'confirmed' : 'adjusted';
   }
   _updateFreshHUSubmitBtn();
 }
 function fhuUndo(idx) {
   haptic();
-  freshHUItems[idx].status     = 'pending';
-  freshHUItems[idx].scannedQty = 0;
+  freshHUItems[idx].status = 'pending'; freshHUItems[idx].scannedQty = 0;
   renderFreshHUCards();
 }
 function fhuAddNote(idx) {
@@ -1016,10 +1291,7 @@ function fhuAddNote(idx) {
   if (note !== null) { freshHUItems[idx].note = note.trim(); renderFreshHUCards(); }
 }
 
-// ─────────────────────────────────────────
-// FRESH HU — submit all
-// Groups items by sapBin and sends one payload per bin.
-// ─────────────────────────────────────────
+/* ── Submit all fresh HU — groups by sapBin, one payload per bin ── */
 async function submitFreshHU() {
   const pending = freshHUItems.filter(i => i.status === 'pending').length;
   if (pending > 0) { toast(`${pending} item(s) still unchecked`, 'amber'); return; }
@@ -1027,10 +1299,8 @@ async function submitFreshHU() {
 
   haptic();
   const btn = document.getElementById('fresh-hu-submit');
-  btn.disabled    = true;
-  btn.textContent = '⏳ Submitting…';
+  btn.disabled = true; btn.textContent = '⏳ Submitting…';
 
-  // Group by sapBin so GAS receives one well-formed payload per bin
   const byBin = {};
   freshHUItems.forEach(item => {
     const b = item.sapBin || 'UNKNOWN';
@@ -1044,9 +1314,8 @@ async function submitFreshHU() {
   for (const [bin, items] of Object.entries(byBin)) {
     const payloadItems = items.map(i => {
       let type = 'ok';
-      if      (i.status === 'missing')                              type = 'miss';
+      if (i.status === 'missing') type = 'miss';
       else if (i.scannedQty !== i.sapQty && i.status !== 'missing') type = 'adj';
-
       return {
         hu:         i.hu,
         product:    i.product,
@@ -1074,7 +1343,7 @@ async function submitFreshHU() {
       items:          payloadItems,
     };
 
-    const ok = await sendPayload(payload, null); // suppress individual toasts
+    const ok = await sendPayload(payload, null);
     if (!ok) allOk = false;
   }
 
@@ -1082,110 +1351,18 @@ async function submitFreshHU() {
 
   if (allOk) {
     const total = freshHUItems.length;
-    toast(`🧊 ${total} HU${total !== 1 ? 's' : ''} for ${activeFreshSKU} submitted`, 'green');
-    // Reset for next SKU
-    freshHUItems = [];
-    document.getElementById('fresh-sku-select').value = '';
-    document.getElementById('fresh-submode-bar').classList.remove('visible');
-    document.getElementById('fresh-hu-view').classList.remove('visible');
-    document.getElementById('fresh-threshold-row').classList.remove('visible');
-    activeFreshSKU = '';
-    renderFreshHUCards();
+    toast(`🧊 ${total} HU${total !== 1 ? 's' : ''} submitted`, 'green');
+    // Reset to Step 1 so user can pick next SKU
+    _freshReset();
   } else {
     btn.textContent = 'Retry Submit';
-    toast('Some items failed to sync — will retry', 'amber');
+    toast('Some items failed to sync', 'amber');
   }
 }
 
-// ─────────────────────────────────────────
-// PALLET COUNT — adjust / submit
-// ─────────────────────────────────────────
-function adjustPallets(delta) {
-  const input = document.getElementById('pallet-qty');
-  input.value = Math.max(0, (parseInt(input.value, 10) || 0) + delta);
-}
-
-async function submitPalletCount() {
-  const sku  = activeFreshSKU;
-  const bin  = document.getElementById('pallet-bin').value.trim().toUpperCase();
-  const qty  = parseInt(document.getElementById('pallet-qty').value, 10) || 0;
-  const note = document.getElementById('pallet-note').value.trim();
-
-  if (!sku)  { toast('No SKU selected', 'amber'); return; }
-  if (!bin)  { _palletFieldError('pallet-bin', 'Enter a location'); return; }
-  if (qty <= 0) { _palletFieldError('pallet-qty', 'Enter pallet count'); return; }
-
-  const btn = document.getElementById('pallet-submit-btn');
-  btn.disabled    = true;
-  btn.textContent = '⏳ Logging…';
-
-  const sessId = 'PLT-' + new Date().toISOString().split('T')[0];
-  const payload = {
-    action:         'logAudit',
-    user:           auditorName || 'Counter',
-    bin,
-    aisle:          bin.charAt(1) || '',
-    auditMode:      'fresh',
-    sessionId:      sessId,
-    idempotencyKey: `${sessId}|${bin}|${sku}|${auditorName}|${qty}|${Date.now()}`,
-    items: [{
-      hu:         '',
-      product:    sku,
-      desc:       FRESH_SKU_DESCRIPTIONS[sku] || 'Fresh Pallet Count',
-      batch:      '',
-      sapBin:     bin,
-      sapQty:     0,
-      unit:       'PALLET',
-      countQty:   qty,
-      type:       'pallet_count',
-      note:       note || `${qty} pallet(s) counted at ${bin}`,
-      sled:       '',
-      sledStatus: '',
-    }],
-  };
-
-  const ok = await sendPayload(payload, `✓ ${qty} pallet(s) of ${FRESH_SKU_DESCRIPTIONS[sku] || sku} logged`);
-
-  if (ok) {
-    palletSessionLog.unshift({ sku, bin, qty, note });
-    _renderPalletLog();
-    document.getElementById('pallet-bin').value  = '';
-    document.getElementById('pallet-qty').value  = '';
-    document.getElementById('pallet-note').value = '';
-  }
-
-  btn.disabled    = false;
-  btn.textContent = '🧊 Log Pallet Count';
-}
-
-function _palletFieldError(id, msg) {
-  toast(msg, 'amber');
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.style.borderColor = 'var(--red)';
-  el.focus();
-  setTimeout(() => { el.style.borderColor = ''; }, 2000);
-}
-
-function _renderPalletLog() {
-  const logEl   = document.getElementById('pallet-log');
-  const titleEl = document.getElementById('pallet-log-title');
-  if (!palletSessionLog.length) { logEl.innerHTML = ''; titleEl.style.display = 'none'; return; }
-  titleEl.style.display = '';
-  logEl.innerHTML = palletSessionLog.map(e => `
-    <div class="pallet-log-item">
-      <span class="pallet-log-icon">🧊</span>
-      <div class="pallet-log-info">
-        <div class="pallet-log-sku">${FRESH_SKU_DESCRIPTIONS[e.sku] || e.sku} <span style="font-size:9px;opacity:.6">(${e.sku})</span></div>
-        <div class="pallet-log-detail">📍 ${e.bin}${e.note ? ' · ' + e.note : ''}</div>
-      </div>
-      <div class="pallet-log-qty">${e.qty}</div>
-    </div>`).join('');
-}
-
-// ─────────────────────────────────────────
-// SYNC INDICATORS
-// ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
+   SYNC / NETWORK INDICATORS
+══════════════════════════════════════════════ */
 function updateSyncDot() {
   document.querySelectorAll('.sync-dot').forEach(d =>
     d.className = isOnline ? 'sync-dot' : 'sync-dot offline'
@@ -1197,9 +1374,9 @@ function updateQueueBadge() {
   else b.classList.add('hidden');
 }
 
-// ─────────────────────────────────────────
-// INDEXES
-// ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
+   INDEXES
+══════════════════════════════════════════════ */
 function buildIndexes() {
   binIndex = {}; huIndex = new Map();
   sapMaster.forEach(i => {
@@ -1210,8 +1387,8 @@ function buildIndexes() {
     i.desc    = String(i.desc    || '');
     i.sapQty  = Number(i.sapQty  || i.expectedQty) || 0;
     i.unit    = String(i.unit    || 'LB').trim();
-    i.sled    = String(i.sled    || '').trim();
-    if (i.sapBin) { if (!binIndex[i.sapBin]) binIndex[i.sapBin]=[]; binIndex[i.sapBin].push(i); }
+    i.sled    = String(i.sled    || '').trim(); // "Shelf Life Expiration Date" column
+    if (i.sapBin) { if (!binIndex[i.sapBin]) binIndex[i.sapBin] = []; binIndex[i.sapBin].push(i); }
     if (i.hu) huIndex.set(i.hu, i);
   });
   document.getElementById('stat-loaded').textContent = sapMaster.length.toLocaleString();
@@ -1220,9 +1397,9 @@ function buildIndexes() {
 }
 function showSetup() { switchScreen('setup'); buildAisleGrid(); }
 
-// ─────────────────────────────────────────
-// CLOUD FETCH
-// ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
+   CLOUD FETCH
+══════════════════════════════════════════════ */
 async function pullCloud() {
   NovusLoader.start();
   try {
@@ -1271,9 +1448,9 @@ async function refreshAll() {
   finally { NovusLoader.done(); btn.textContent = '↻'; btn.style.opacity = ''; btn.style.pointerEvents = ''; }
 }
 
-// ─────────────────────────────────────────
-// DONE COUNT + AISLE GRID
-// ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
+   DONE COUNT + AISLE GRID
+══════════════════════════════════════════════ */
 function updateDoneCount() {
   document.getElementById('stat-done').textContent     = completedBins.size;
   document.getElementById('stat-progress').textContent = `${completedBins.size} / ${Object.keys(binIndex).length}`;
@@ -1288,14 +1465,14 @@ function buildAisleGrid() {
     const btn = document.createElement('button');
     btn.className = `aisle-btn${allDone ? ' done' : inProg ? ' in-progress' : ''}`;
     btn.innerHTML = `<span class="a-letter">${letter}</span><span class="a-count">${done}/${total}</span><div class="aisle-prog" style="width:${pct}%"></div>`;
-    btn.onclick   = () => selectAisle(letter);
+    btn.onclick = () => selectAisle(letter);
     grid.appendChild(btn);
   });
 }
 
-// ─────────────────────────────────────────
-// STANDARD NAVIGATION
-// ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
+   STANDARD NAVIGATION
+══════════════════════════════════════════════ */
 function selectAisle(letter) {
   targetProduct = null; activeAisle = letter;
   const limit = 'BC'.includes(letter) ? 25 : 38;
@@ -1349,9 +1526,9 @@ function _updateAisleProgressBanner() {
   banner.classList.add('visible');
 }
 
-// ─────────────────────────────────────────
-// STANDARD COUNTING RENDER
-// ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
+   STANDARD COUNTING RENDER
+══════════════════════════════════════════════ */
 function renderStrip() {
   const strip = document.getElementById('bin-strip'); strip.innerHTML = ''; const seen = {};
   aisleBins.forEach(b => {
@@ -1367,88 +1544,13 @@ function renderStrip() {
   setTimeout(() => { const c = strip.querySelector('.current'); if (c) c.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); }, 50);
 }
 function renderPhase() {
-  ['ph1','ph2','ph3'].forEach((id,i) => { document.getElementById(id).className = 'phase-step' + (phase===i+1?' active':'') + (phase>i+1?' done':''); });
-  ['phl1','phl2','phl3'].forEach((id,i) => { document.getElementById(id).className = (phase===i+1?'active':'') + (phase>i+1?' done':''); });
+  ['ph1','ph2','ph3'].forEach((id,i) => {
+    document.getElementById(id).className = 'phase-step' + (phase===i+1?' active':'') + (phase>i+1?' done':'');
+  });
+  ['phl1','phl2','phl3'].forEach((id,i) => {
+    document.getElementById(id).className = (phase===i+1?'active':'') + (phase>i+1?' done':'');
+  });
 }
-
-// ─────────────────────────────────────────
-// SLED HELPERS
-// ─────────────────────────────────────────
-/**
- * parseSLED
- * Parses a raw SLED string from Google Sheets into a JS Date.
- * Handles the following formats that SAP commonly exports:
- *   ISO 8601      : "2025-03-15"  or  "2025-03-15T00:00:00.000Z"
- *   US slash      : "03/15/2025"
- *   EU dot        : "15.03.2025"
- *   Excel serial  : 45000  (number of days since 1900-01-01)
- * Returns null if the value cannot be parsed.
- */
-function parseSLED(raw) {
-  if (!raw) return null;
-
-  // Excel serial number (Google Sheets sometimes passes these)
-  if (typeof raw === 'number' || /^\d{4,5}$/.test(String(raw).trim())) {
-    const serial = Number(raw);
-    if (serial > 0) {
-      // Excel epoch: 1900-01-01, but Excel wrongly treats 1900 as a leap year,
-      // so we subtract 2 days to correct.
-      const ms = (serial - 2) * 86400000;
-      const d  = new Date(Date.UTC(1900, 0, 1) + ms);
-      if (!isNaN(d)) return d;
-    }
-  }
-
-  const s = String(raw).trim();
-  if (!s || s === 'undefined' || s === 'null') return null;
-
-  // ISO / standard JS parseable (handles "2025-03-15" and full ISO strings)
-  const iso = new Date(s);
-  if (!isNaN(iso)) return iso;
-
-  // US format: MM/DD/YYYY
-  const usMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (usMatch) return new Date(`${usMatch[3]}-${usMatch[1].padStart(2,'0')}-${usMatch[2].padStart(2,'0')}`);
-
-  // EU dot format: DD.MM.YYYY
-  const euMatch = s.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
-  if (euMatch) return new Date(`${euMatch[3]}-${euMatch[2]}-${euMatch[1]}`);
-
-  return null;
-}
-
-/**
- * sledStatus
- * Returns 'expired' | 'expiring' | 'valid' | 'unknown'
- * based on parsed SLED date vs today + threshold.
- */
-function sledStatus(raw) {
-  const d = parseSLED(raw);
-  if (!d) return 'unknown';
-  const now = new Date(); now.setHours(0, 0, 0, 0);
-  const thr = new Date(now); thr.setDate(thr.getDate() + freshDays);
-  if (d < now)  return 'expired';
-  if (d <= thr) return 'expiring';
-  return 'valid';
-}
-
-/**
- * formatSLED
- * Returns a clean MM/DD/YYYY string for display on HU cards.
- * Falls back to the raw value if it cannot be parsed.
- */
-function formatSLED(raw) {
-  const d = parseSLED(raw);
-  if (!d) return raw || '—';
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  const yy = d.getFullYear();
-  return `${mm}/${dd}/${yy}`;
-}
-
-// ─────────────────────────────────────────
-// STANDARD HU LIST RENDER
-// ─────────────────────────────────────────
 function renderHUList() {
   const list = document.getElementById('hu-list'); list.innerHTML = '';
   if (completedBins.has(currentBin)) list.innerHTML += `<div class="counted-banner"><span>✅</span><div><strong>Already Counted Today</strong><small>Counting again replaces results</small></div></div>`;
@@ -1460,8 +1562,8 @@ function renderHUList() {
   updateFinalizeBtn();
 }
 function renderCard(item, idx) {
-  const isPending=item.status==='pending',isOk=item.status==='confirmed',isMiss=item.status==='missing',isAdj=item.status==='adjusted';
-  const cardCls=isMiss?'missing':isOk?'confirmed':isAdj?'adjusted':item.isExtra?'extra':'';
+  const isPending=item.status==='pending', isOk=item.status==='confirmed', isMiss=item.status==='missing', isAdj=item.status==='adjusted';
+  const cardCls = isMiss?'missing':isOk?'confirmed':isAdj?'adjusted':item.isExtra?'extra':'';
   const statusBadge=isOk?'<span class="hu-badge ok">✓ Confirmed</span>':isMiss?'<span class="hu-badge miss">✗ Missing</span>':isAdj?'<span class="hu-badge adj">± Adjusted</span>':item.isExtra?'<span class="hu-badge ext">+ Extra</span>':'';
   const qtyMatch=item.scannedQty===item.sapQty;
   let body='';
@@ -1470,9 +1572,9 @@ function renderCard(item, idx) {
   return `<div class="hu-card ${cardCls}"><div class="hu-top"><span class="hu-id">HU ${item.hu||'—'}</span><div class="hu-badges">${statusBadge}</div></div><div class="hu-meta"><div class="meta-item"><span class="meta-label">Product</span><span class="meta-val">${item.product}</span></div><div class="meta-item"><span class="meta-label">SAP Qty</span><span class="meta-val mono">${item.sapQty}</span></div>${item.batch?`<div class="meta-item"><span class="meta-label">Batch</span><span class="meta-val mono" style="font-size:11px">${item.batch}</span></div>`:''}</div>${item.desc?`<div class="hu-desc">${item.desc}</div>`:''}${body}<div class="card-actions-row"><button class="note-btn${item.note?' has':''}" onclick="addNote(${idx})">📝 ${item.note?item.note.substring(0,28)+(item.note.length>28?'…':''):'Add Note'}</button><button class="move-btn" onclick="openMoveModal(${idx})">🔄 Move</button></div></div>`;
 }
 
-// ─────────────────────────────────────────
-// STANDARD HU ACTIONS
-// ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
+   STANDARD HU STATE ACTIONS
+══════════════════════════════════════════════ */
 function confirmHU(idx){haptic();if(!currentItems[idx].scannedQty)currentItems[idx].scannedQty=currentItems[idx].sapQty;currentItems[idx].status=currentItems[idx].scannedQty===currentItems[idx].sapQty?'confirmed':'adjusted';checkPhaseAdvance();renderHUList();}
 function markMissing(idx){haptic();if(currentItems[idx].status==='missing'){currentItems[idx].status='pending';currentItems[idx].scannedQty=0;}else{currentItems[idx].status='missing';currentItems[idx].scannedQty=0;}checkPhaseAdvance();renderHUList();}
 function adjustQty(idx,delta){haptic();currentItems[idx].scannedQty=Math.max(0,(currentItems[idx].scannedQty||0)+delta);currentItems[idx].status='adjusted';renderHUList();}
@@ -1482,9 +1584,9 @@ function confirmAll(){haptic();currentItems.forEach((item,i)=>{if(!item.isExtra&
 function addNote(idx){const note=prompt('Note:',currentItems[idx].note||'');if(note!==null){currentItems[idx].note=note.trim();renderHUList();}}
 function checkPhaseAdvance(){if(currentItems.filter(i=>!i.isExtra).every(i=>i.status!=='pending')&&phase===1){phase=2;renderPhase();}}
 
-// ─────────────────────────────────────────
-// MOVE MODAL
-// ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
+   MOVE MODAL
+══════════════════════════════════════════════ */
 function openMoveModal(idx){activeMoveIdx=idx;const item=currentItems[idx];document.getElementById('qm-hu').value=item.hu;document.getElementById('qm-qty').value=item.scannedQty||item.sapQty||0;document.getElementById('qm-bin').value='';document.getElementById('qm-info').innerHTML=`<strong style="color:var(--accent)">Moving from ${currentBin}</strong><br>Product: ${item.product} · SAP Qty: ${item.sapQty} ${item.unit}`;document.getElementById('modal-move').style.display='flex';}
 async function submitQuickMove(){
   const hu=document.getElementById('qm-hu').value.trim(),scanBin=document.getElementById('qm-bin').value.trim().toUpperCase(),scanQty=parseFloat(document.getElementById('qm-qty').value);
@@ -1499,16 +1601,16 @@ async function submitQuickMove(){
   await sendPayload(payload,'Movement logged');
 }
 
-// ─────────────────────────────────────────
-// EXTRA ITEMS
-// ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
+   EXTRA ITEMS
+══════════════════════════════════════════════ */
 function toggleExtra(){showingExtra=!showingExtra;renderHUList();}
 function extraLookup(){const hu=document.getElementById('extra-hu').value.trim();if(hu.length<4)return;const m=huIndex.get(hu);if(m){document.getElementById('extra-product').value=m.product;document.getElementById('extra-autofill').innerHTML='<span style="font-size:9px;font-weight:700;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:6px;margin-bottom:6px;display:inline-block">✓ Auto-filled from SAP</span>';}else document.getElementById('extra-autofill').innerHTML='';}
 function addExtra(){const hu=document.getElementById('extra-hu').value.trim()||'0',product=document.getElementById('extra-product').value.trim(),qty=parseFloat(document.getElementById('extra-qty').value)||0;if(!product||!qty){toast('Enter product # and qty','amber');return;}const m=huIndex.get(hu);currentItems.push({hu,product,desc:m?m.desc:'FOUND (Extra)',batch:m?m.batch:'',sapBin:m?m.sapBin:'',sapQty:m?m.sapQty:0,unit:m?m.unit:'LB',sled:m?m.sled:'',scannedQty:qty,status:'confirmed',isExtra:true,note:''});showingExtra=false;renderHUList();toast('Extra item added','blue');}
 
-// ─────────────────────────────────────────
-// FINALIZE STANDARD BIN
-// ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
+   FINALIZE STANDARD BIN
+══════════════════════════════════════════════ */
 function updateFinalizeBtn(){
   const p=currentItems.filter(i=>i.status==='pending').length,btn=document.getElementById('btn-finalize');
   if(p>0){btn.className='btn-pri disabled';btn.textContent=`${p} item${p>1?'s':''} unchecked`;}
@@ -1524,9 +1626,9 @@ async function finalizeBin(){
   if(ok){completedBins.add(currentBin);localStorage.setItem('novus_done',JSON.stringify({date:new Date().toDateString(),bins:[...completedBins]}));updateDoneCount();_updateAisleProgressBanner();stepBin(1);}
 }
 
-// ─────────────────────────────────────────
-// NETWORK
-// ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
+   NETWORK
+══════════════════════════════════════════════ */
 function makeIdempotencyKey(bin,sessId,items){const fp=items?`${items.length}|${items[0]?.hu||'empty'}`:'nofp';return`${sessId}|${bin}|${auditorName}|${fp}`;}
 async function sendPayload(payload,successMsg){
   try{
@@ -1552,9 +1654,9 @@ async function flushQueue(){
 }
 setInterval(flushQueue,15000);
 
-// ─────────────────────────────────────────
-// UTILITIES
-// ─────────────────────────────────────────
+/* ══════════════════════════════════════════════
+   UTILITIES
+══════════════════════════════════════════════ */
 function switchScreen(name){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('screen-'+name).classList.add('active');}
 function backToSetup(){targetProduct=null;activeAisle=null;document.getElementById('product-search').value='';switchScreen('setup');buildAisleGrid();}
 function setName(){const name=prompt('Your name:',auditorName);if(name!==null){auditorName=name.trim();NovusSettings.set('userName',auditorName);document.getElementById('name-display').textContent=auditorName||'Set Name';}}
