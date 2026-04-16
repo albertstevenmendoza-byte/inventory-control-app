@@ -1374,12 +1374,131 @@ async function clearAssignments(){try{await fetch(API_URL,{method:'POST',headers
 /* ════════════════════════════════
    EXPORT
 ════════════════════════════════ */
-function exportAudit(){
-  if(!report.length){toast('No data to export','red');return;}
-  const now=new Date(),wk=Math.ceil(((now-new Date(now.getFullYear(),0,1))/86400000+new Date(now.getFullYear(),0,1).getDay()+1)/7);
-  const rows=report.map((r,i)=>[now.getFullYear(),now.getMonth()+1,wk,i+1,new Date(r.timestamp).toLocaleDateString(),r.aisle||(r.scanBin?r.scanBin.charAt(1):''),r.scanBin,r.hu,r.prod,r.desc,r.scanQty,r.batch||'',r.unit||'LB',r.type,r.sledStatus||'',r.sled||'',r.note||'']);
-  const ws=XLSX.utils.aoa_to_sheet([['Year','Month','Week#','CT#','Date','Aisle','Bin','HU','Product','Description','Count Qty','Batch','Unit','Status','SLED Status','SLED Date','Note'],...rows]);
-  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Audit');XLSX.writeFile(wb,`Cycle_Count_${now.toISOString().split('T')[0]}.xlsx`);toast('Exported!','green');
+function exportAudit() {
+  if (!report.length) { toast('No data to export', 'red'); return; }
+
+  const now     = new Date();
+  const month   = now.getMonth() + 1;
+  const weekNum = Math.ceil(
+    ((now - new Date(now.getFullYear(), 0, 1)) / 86400000
+      + new Date(now.getFullYear(), 0, 1).getDay() + 1) / 7
+  );
+  const dateStr = now.toLocaleDateString('en-US', {
+    month: '2-digit', day: '2-digit', year: 'numeric',
+  });
+
+  // ── Exact column headers in the required SAP reconciliation order ──
+  const HEADERS = [
+    'Month',
+    'Week#',
+    'CT#',
+    'Date',
+    'SKU Type',
+    'Storage Bin',
+    'Handling Unit',
+    'Product',
+    'Product Short Description',
+    'Quantity (Expected)',
+    'Batch',
+    'Unit',
+    'Stock Type',
+    'Count Qty (Scanned)',
+    'Variance (Count Qty - Quantity)',
+    'Variance %',
+    'Type',
+    'Resolution',
+    'Auditor',
+    'Note',
+  ];
+
+  // ── Map each audit row to the column order above ──
+  const dataRows = report.map((r, i) => {
+    const ctNum       = i + 1;
+    const isPallet    = r.type === 'pallet_count';
+    const sapQty      = r.sapQty  ?? 0;
+    const countQty    = r.scanQty ?? 0;
+
+    // Variance: blank for pallet counts (no SAP HU reference)
+    const variance    = isPallet ? '' : countQty - sapQty;
+
+    // Variance %: blank when SAP qty is 0 or pallet count
+    const variancePct = isPallet || sapQty === 0
+      ? ''
+      : ((countQty - sapQty) / sapQty * 100).toFixed(2) + '%';
+
+    // SKU Type: Fresh for fresh audit mode rows, Standard otherwise
+    const skuType     = r.auditMode === 'fresh' ? 'Fresh' : 'Standard';
+
+    // Resolution: human-readable label derived from type
+    const RESOLUTION_MAP = {
+      ok:           'Confirmed Match',
+      adj:          'Quantity Adjusted',
+      move:         'Item Moved — Qty Match',
+      move_adj:     'Item Moved — Qty Mismatch',
+      missing_temp: 'Pending Reconciliation',
+      missing:      'Confirmed Missing',
+      unexpected:   'Not Found in SAP',
+      pallet_count: 'Bulk Pallet Count',
+      found_moved:  'Located After Move',
+    };
+    const resolution = RESOLUTION_MAP[r.type] || r.type || '';
+
+    return [
+      month,                        //  1  Month
+      weekNum,                      //  2  Week#
+      ctNum,                        //  3  CT#
+      dateStr,                      //  4  Date
+      skuType,                      //  5  SKU Type
+      r.scanBin    || '',           //  6  Storage Bin
+      r.hu         || '',           //  7  Handling Unit
+      r.prod       || '',           //  8  Product
+      r.desc       || '',           //  9  Product Short Description
+      isPallet ? '' : sapQty,       // 10  Quantity (Expected)
+      r.batch      || '',           // 11  Batch
+      r.unit       || 'LB',        // 12  Unit
+      r.stockType  || '',           // 13  Stock Type
+      countQty,                     // 14  Count Qty (Scanned)
+      variance,                     // 15  Variance (Count Qty - Quantity)
+      variancePct,                  // 16  Variance %
+      r.type       || '',           // 17  Type
+      resolution,                   // 18  Resolution
+      r.user       || '',           // 19  Auditor
+      r.note       || '',           // 20  Note
+    ];
+  });
+
+  // ── Build CSV string ──
+  // Wraps any cell that contains a comma, quote, or newline in double-quotes.
+  // Escapes any existing double-quotes by doubling them (RFC 4180).
+  function escapeCell(val) {
+    const str = String(val ?? '');
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
+  }
+
+  const csvLines = [
+    HEADERS.map(escapeCell).join(','),
+    ...dataRows.map(row => row.map(escapeCell).join(',')),
+  ];
+  const csvString = csvLines.join('\r\n');  // CRLF per RFC 4180
+
+  // ── Trigger download ──
+  const filename = `Audit_Log_${now.toISOString().split('T')[0]}.csv`;
+  const blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' });
+  // \uFEFF = UTF-8 BOM — ensures Excel opens accented characters correctly
+
+  const url  = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href     = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+
+  toast(`Exported ${report.length.toLocaleString()} rows → ${filename}`, 'green');
 }
 
 /* ════════════════════════════════
