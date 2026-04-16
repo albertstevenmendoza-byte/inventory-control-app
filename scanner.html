@@ -414,6 +414,50 @@ const FRESH_SKUS = [
 })();
 
 // ─────────────────────────────────────────
+// FRESH SKU DROPDOWN — change event listener
+// Fires whenever the user selects a SKU from
+// the Fresh panel dropdown.
+//
+// Count by HU mode:  finds all bins for that SKU,
+//                    navigates to the first one,
+//                    and renders HU cards normally.
+//
+// Count by Pallet mode: does nothing extra — the
+//                       user fills the pallet form manually.
+// ─────────────────────────────────────────
+document.getElementById('pallet-sku').addEventListener('change', function () {
+  const sku = this.value;
+  if (!sku) return;
+
+  if (freshSubMode === 'hu') {
+    // Find every bin in SAP master that holds this SKU
+    const bins = [
+      ...new Set(
+        sapMaster
+          .filter(i => i.product.toUpperCase() === sku.toUpperCase())
+          .map(i => i.sapBin)
+      )
+    ].sort();
+
+    if (!bins.length) {
+      toast(`No SAP records found for ${sku}`, 'amber');
+      return;
+    }
+
+    // Set up navigation state and go to first bin
+    targetProduct = sku.toUpperCase();
+    activeAisle   = null;
+    aisleBins     = bins;
+    binIdx        = 0;
+
+    toast(`🧊 ${sku} — ${bins.length} bin(s) found`, 'pink');
+    navigateToBin(aisleBins[0]);
+  }
+  // In pallet mode the dropdown is just a form field —
+  // no navigation or HU rendering needed.
+});
+
+// ─────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────
 let sapMaster   = JSON.parse(localStorage.getItem('novus_sap') || '[]');
