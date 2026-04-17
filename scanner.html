@@ -1588,7 +1588,21 @@ function renderCard(item, idx) {
   let body='';
   if(isPending||isAdj){body=`<div class="qty-row"><button class="qty-btn" onclick="adjustQty(${idx},-1)">−</button><input type="number" inputmode="numeric" class="qty-input" value="${item.scannedQty||''}" placeholder="${item.sapQty}" onfocus="this.select()" oninput="setQty(${idx},this.value)"><button class="qty-btn plus" onclick="adjustQty(${idx},1)">+</button></div><div class="sap-hint">SAP expects <strong>${item.sapQty} ${item.unit||'LB'}</strong></div><div class="hu-actions"><button class="act-btn confirm" onclick="confirmHU(${idx})">Confirm ${item.sapQty}</button><button class="act-btn miss${isMiss?' active':''}" onclick="markMissing(${idx})">Missing</button></div>`;}
   else{body=`<div class="resolved-row"><span class="resolved-label">Count</span><span class="resolved-val ${qtyMatch?'match':'mismatch'}">${item.scannedQty}</span></div><button class="undo-btn" onclick="resetHU(${idx})">↺ Undo</button>`;}
-  return `<div class="hu-card ${cardCls}"><div class="hu-top"><span class="hu-id">HU ${item.hu||'—'}</span><div class="hu-badges">${statusBadge}</div></div><div class="hu-meta"><div class="meta-item"><span class="meta-label">Product</span><span class="meta-val">${item.product}</span></div><div class="meta-item"><span class="meta-label">SAP Qty</span><span class="meta-val mono">${item.sapQty}</span></div>${item.batch?`<div class="meta-item"><span class="meta-label">Batch</span><span class="meta-val mono" style="font-size:11px">${item.batch}</span></div>`:''}</div>${item.desc?`<div class="hu-desc">${item.desc}</div>`:''}${body}<div class="card-actions-row"><button class="note-btn${item.note?' has':''}" onclick="addNote(${idx})">📝 ${item.note?item.note.substring(0,28)+(item.note.length>28?'…':''):'Add Note'}</button><button class="move-btn" onclick="openMoveModal(${idx})">🔄 Move</button></div></div>`;
+
+  // ── SLED pill (only when item has a parseable date) ──
+  const ss = item.sled ? sledStatus(item.sled) : 'unknown';
+  const sledRow = (item.sled && ss !== 'unknown') ? `
+    <div class="fhu-sled" style="margin-bottom:10px">
+      <span class="fhu-sled-label">Best-By</span>
+      <span class="fhu-sled-val ${ss}">${formatSLED(item.sled)}</span>
+      <span class="fhu-sled-badge ${ss}">${ss==='expired'?'⚠ EXPIRED':ss==='expiring'?'⚡ EXPIRING':'✓ VALID'}</span>
+    </div>` : '';
+
+  // ── SAP Bin meta (only when it disagrees with current bin — i.e. move candidate) ──
+  const binMismatch = item.sapBin && item.sapBin !== currentBin;
+  const binRow = binMismatch ? `<div class="meta-item"><span class="meta-label">SAP Bin</span><span class="meta-val mono" style="color:var(--purple)">${item.sapBin}</span></div>` : '';
+
+  return `<div class="hu-card ${cardCls}"><div class="hu-top"><span class="hu-id">HU ${item.hu||'—'}</span><div class="hu-badges">${statusBadge}</div></div><div class="hu-meta"><div class="meta-item"><span class="meta-label">Product</span><span class="meta-val">${item.product}</span></div><div class="meta-item"><span class="meta-label">SAP Qty</span><span class="meta-val mono">${item.sapQty} ${item.unit||'LB'}</span></div>${item.batch?`<div class="meta-item"><span class="meta-label">Batch</span><span class="meta-val mono" style="font-size:11px">${item.batch}</span></div>`:''}${binRow}</div>${item.desc?`<div class="hu-desc">${item.desc}</div>`:''}${sledRow}${body}<div class="card-actions-row"><button class="note-btn${item.note?' has':''}" onclick="addNote(${idx})">📝 ${item.note?item.note.substring(0,28)+(item.note.length>28?'…':''):'Add Note'}</button><button class="move-btn" onclick="openMoveModal(${idx})">🔄 Move</button></div></div>`;
 }
 
 /* ══════════════════════════════════════════════
