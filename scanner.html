@@ -1859,6 +1859,27 @@ function addNote(idx) {
   }
 }
 
+/**
+ * Advances the phase bar from phase 1 → phase 2 when every non-extra item
+ * in the bin has left the 'pending' state. Called after any status change
+ * that could resolve the last pending card.
+ *
+ * Phase bar:
+ *   1 = Check HUs  — some items still pending
+ *   2 = Extras     — all expected HUs resolved, optionally add extras
+ *   3 = Finalize   — ready to commit
+ */
+function checkPhaseAdvance() {
+  const allResolved = currentItems
+    .filter(i => !i.isExtra)
+    .every(i => i.status !== 'pending');
+
+  if (allResolved && phase === 1) {
+    phase = 2;
+    renderPhase();
+  }
+}
+
 /* ══════════════════════════════════════════════
    MOVE MODAL
 ══════════════════════════════════════════════ */
