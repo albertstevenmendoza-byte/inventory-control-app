@@ -1179,7 +1179,28 @@ function renderFreshHUCards() {
     return;
   }
 
+  // Single string build → single innerHTML assignment → single reflow.
   list.innerHTML = freshHUItems.map((item, idx) => _fhuCardHTML(item, idx)).join('');
+  _updateFreshHUSubmitBtn();
+}
+
+/**
+ * Replaces a single fresh-HU card in-place.
+ * Reflow bounded to this card's rect — NOT the whole list.
+ *
+ * Mirrors patchCard() for standard counting. Falls back to a full
+ * render if the card node can't be found (defensive; should never
+ * happen during normal flow).
+ */
+function patchFreshCard(idx) {
+  if (idx < 0 || idx >= freshHUItems.length) return;
+  const oldCard = document.querySelector(`#fresh-hu-list [data-fhu-card-idx="${idx}"]`);
+  if (!oldCard) { renderFreshHUCards(); return; }
+
+  const tmp = document.createElement('template');
+  tmp.innerHTML = _fhuCardHTML(freshHUItems[idx], idx).trim();
+  oldCard.replaceWith(tmp.content.firstElementChild);
+
   _updateFreshHUSubmitBtn();
 }
 
@@ -1197,36 +1218,38 @@ function _fhuCardHTML(item, idx) {
                   : 'Pending';
   const badgeCls  = isOk ? 'confirmed' : isMiss ? 'missing' : isAdj ? 'adjusted' : 'pending';
 
-  // SLED — uses formatSLED (MM/DD/YYYY) and sledStatus
-  const ss         = item.sled ? sledStatus(item.sled) : 'unknown';
+  // ── SLED row ──
+  const ss            = item.sled ? sledStatus(item.sled) : 'unknown';
   const sledFormatted = item.sled ? formatSLED(item.sled) : null;
-  const sledBadgeLbl  = ss === 'expired' ? '⚠ EXPIRED' : ss === 'expiring' ? '⚡ EXPIRING' : '✓ VALID';
-  const sledRow    = sledFormatted && ss !== 'unknown' ? `
+  const sledBadgeLbl  = ss === 'expired' ? '⚠ EXPIRED'
+                      : ss === 'expiring' ? '⚡ EXPIRING'
+                      : '✓ VALID';
+  const sledRow = sledFormatted && ss !== 'unknown' ? `
     <div class="fhu-sled">
       <span class="fhu-sled-label">Best-By</span>
       <span class="fhu-sled-val ${ss}">${sledFormatted}</span>
       <span class="fhu-sled-badge ${ss}">${sledBadgeLbl}</span>
     </div>` : '';
 
-  // Controls
+  // ── Controls: qty row + actions when pending/adjusted, resolved summary otherwise ──
   const qtyMatch = item.scannedQty === item.sapQty;
-  let controls = '';
+  let controls;
   if (isPend || isAdj) {
     controls = `
       <div class="fhu-qty-row">
-        <button class="fhu-qty-btn" onclick="fhuAdjQty(${idx},-1)">−</button>
-        <input type="number" inputmode="numeric" class="fhu-qty-input"
-               id="fhu-qty-${idx}"
-               value="${item.scannedQty || ''}"
-               placeholder="${item.sapQty}"
-               onfocus="this.select()"
-               oninput="fhuSetQty(${idx},this.value)">
-        <button class="fhu-qty-btn" onclick="fhuAdjQty(${idx},1)">+</button>
+        <button class="fhu-qty-btn" data-fhu-action="adj-dec" data-idx="${idx}">−</button>
+        <input  class="fhu-qty-input" type="number" inputmode="numeric"
+                id="fhu-qty-${idx}"
+                data-idx="${idx}"
+                value="${item.scannedQty || ''}"
+                placeholder="${item.sapQty}"
+                onfocus="this.select()">
+        <button class="fhu-qty-btn" data-fhu-action="adj-inc" data-idx="${idx}">+</button>
       </div>
       <div class="fhu-sap-hint">SAP expects <strong>${item.sapQty} ${item.unit}</strong></div>
       <div class="fhu-actions">
-        <button class="fhu-act confirm" onclick="fhuConfirm(${idx})">Confirm ${item.sapQty}</button>
-        <button class="fhu-act miss${isMiss ? ' active' : ''}" onclick="fhuMiss(${idx})">Missing</button>
+        <button class="fhu-act confirm"                   data-fhu-action="confirm" data-idx="${idx}">Confirm ${item.sapQty}</button>
+        <button class="fhu-act miss${isMiss?' active':''}" data-fhu-action="miss"    data-idx="${idx}">Missing</button>
       </div>`;
   } else {
     controls = `
@@ -1234,13 +1257,13 @@ function _fhuCardHTML(item, idx) {
         <span class="fhu-resolved-label">Count</span>
         <span class="fhu-resolved-val ${qtyMatch ? 'match' : 'mismatch'}">${item.scannedQty}</span>
       </div>
-      <button class="fhu-undo" onclick="fhuUndo(${idx})">↺ Undo</button>`;
+      <button class="fhu-undo" data-fhu-action="undo" data-idx="${idx}">↺ Undo</button>`;
   }
 
   return `
-    <div class="fhu-card ${cardCls}" id="fhu-card-${idx}">
+    <div class="fhu-card ${cardCls}" id="fhu-card-${idx}" data-fhu-card-idx="${idx}">
 
-      <!-- ── Expected Location — most prominent ── -->
+      <!-- ── Expected Location banner ── -->
       <div class="fhu-location">
         <span class="fhu-location-pin">📍</span>
         <div class="fhu-location-text">
@@ -1267,47 +1290,70 @@ function _fhuCardHTML(item, idx) {
         ${sledRow}
         ${controls}
 
-        <button class="fhu-note${item.note ? ' has' : ''}" onclick="fhuAddNote(${idx})">
+        <button class="fhu-note${item.note ? ' has' : ''}" data-fhu-action="note" data-idx="${idx}">
           📝 ${item.note ? item.note.substring(0, 36) + (item.note.length > 36 ? '…' : '') : 'Add Note'}
         </button>
       </div>
     </div>`;
 }
 
-/* ── Fresh HU state actions ── */
+/* ══════════════════════════════════════════════
+   FRESH HU STATE ACTIONS
+   Use targeted patchFreshCard(idx) instead of full renderFreshHUCards().
+   ══════════════════════════════════════════════ */
+
 function fhuConfirm(idx) {
   haptic();
-  if (!freshHUItems[idx].scannedQty) freshHUItems[idx].scannedQty = freshHUItems[idx].sapQty;
-  freshHUItems[idx].status = freshHUItems[idx].scannedQty === freshHUItems[idx].sapQty ? 'confirmed' : 'adjusted';
-  renderFreshHUCards();
+  const item = freshHUItems[idx];
+  if (!item.scannedQty) item.scannedQty = item.sapQty;
+  item.status = item.scannedQty === item.sapQty ? 'confirmed' : 'adjusted';
+  patchFreshCard(idx);
 }
+
 function fhuMiss(idx) {
   haptic();
-  if (freshHUItems[idx].status === 'missing') { freshHUItems[idx].status = 'pending'; freshHUItems[idx].scannedQty = 0; }
-  else { freshHUItems[idx].status = 'missing'; freshHUItems[idx].scannedQty = 0; }
-  renderFreshHUCards();
+  const item = freshHUItems[idx];
+  if (item.status === 'missing') { item.status = 'pending'; item.scannedQty = 0; }
+  else                            { item.status = 'missing'; item.scannedQty = 0; }
+  patchFreshCard(idx);
 }
+
 function fhuAdjQty(idx, delta) {
   haptic();
-  freshHUItems[idx].scannedQty = Math.max(0, (freshHUItems[idx].scannedQty || 0) + delta);
-  freshHUItems[idx].status = 'adjusted';
-  renderFreshHUCards();
+  const item = freshHUItems[idx];
+  item.scannedQty = Math.max(0, (item.scannedQty || 0) + delta);
+  item.status = 'adjusted';
+  patchFreshCard(idx);
 }
+
+/**
+ * Per-keystroke state update. Intentionally no DOM repaint —
+ * repainting mid-type wipes the cursor. Visual catch-up happens on
+ * `change` (blur/Enter) via the delegated listener in Section 5.
+ */
 function fhuSetQty(idx, val) {
-  freshHUItems[idx].scannedQty = parseFloat(val) || 0;
-  if (freshHUItems[idx].scannedQty > 0) {
-    freshHUItems[idx].status = freshHUItems[idx].scannedQty === freshHUItems[idx].sapQty ? 'confirmed' : 'adjusted';
+  const item = freshHUItems[idx];
+  item.scannedQty = parseFloat(val) || 0;
+  if (item.scannedQty > 0) {
+    item.status = item.scannedQty === item.sapQty ? 'confirmed' : 'adjusted';
   }
   _updateFreshHUSubmitBtn();
 }
+
 function fhuUndo(idx) {
   haptic();
-  freshHUItems[idx].status = 'pending'; freshHUItems[idx].scannedQty = 0;
-  renderFreshHUCards();
+  const item = freshHUItems[idx];
+  item.status     = 'pending';
+  item.scannedQty = 0;
+  patchFreshCard(idx);
 }
+
 function fhuAddNote(idx) {
   const note = prompt('Note for this item:', freshHUItems[idx].note || '');
-  if (note !== null) { freshHUItems[idx].note = note.trim(); renderFreshHUCards(); }
+  if (note !== null) {
+    freshHUItems[idx].note = note.trim();
+    patchFreshCard(idx);
+  }
 }
 
 /* ── Submit all fresh HU — groups by sapBin, one payload per bin ── */
@@ -1592,27 +1638,6 @@ function renderHUList() {
         </p>
       </div>`);
   }
-
-      /**
-    * Replaces a single HU card in-place.
-    * Reflow is bounded to this card's bounding rect — NOT the whole list.
-    *
-    * Use this anywhere you'd previously call `renderHUList()` after mutating
-    * a single item's state. Falls back to a full render if the card isn't
-    * in the DOM (e.g. structural change pending).
-    */
-   function patchCard(idx) {
-     if (idx < 0 || idx >= currentItems.length) return;
-     const oldCard = document.querySelector(`#hu-list [data-card-idx="${idx}"]`);
-     if (!oldCard) { renderHUList(); return; }
-   
-     // Build new card off-DOM — zero reflow until we swap
-     const tmp = document.createElement('template');
-     tmp.innerHTML = renderCard(currentItems[idx], idx).trim();
-     oldCard.replaceWith(tmp.content.firstElementChild);
-   
-     updateFinalizeBtn();
-   }
    
   // Non-extras first — pass REAL currentItems index to renderCard
   currentItems.forEach((item, idx) => {
@@ -1649,6 +1674,27 @@ function renderHUList() {
   list.innerHTML = parts.join('');   // single reflow
   updateFinalizeBtn();
 }
+
+/**
+    * Replaces a single HU card in-place.
+    * Reflow is bounded to this card's bounding rect — NOT the whole list.
+    *
+    * Use this anywhere you'd previously call `renderHUList()` after mutating
+    * a single item's state. Falls back to a full render if the card isn't
+    * in the DOM (e.g. structural change pending).
+    */
+   function patchCard(idx) {
+     if (idx < 0 || idx >= currentItems.length) return;
+     const oldCard = document.querySelector(`#hu-list [data-card-idx="${idx}"]`);
+     if (!oldCard) { renderHUList(); return; }
+   
+     // Build new card off-DOM — zero reflow until we swap
+     const tmp = document.createElement('template');
+     tmp.innerHTML = renderCard(currentItems[idx], idx).trim();
+     oldCard.replaceWith(tmp.content.firstElementChild);
+   
+     updateFinalizeBtn();
+   }
 function renderCard(item, idx) {
   const isPending = item.status === 'pending';
   const isOk      = item.status === 'confirmed';
@@ -1999,6 +2045,49 @@ document.getElementById('bin-input').addEventListener('keydown',e=>{if(e.key==='
   });
 })();
 
+/* ══════════════════════════════════════════════
+   EVENT DELEGATION — FRESH HU LIST
+   One listener on #fresh-hu-list handles all fresh card actions.
+   Uses `data-fhu-action` namespace to avoid collisions with the
+   standard #hu-list delegation.
+   ══════════════════════════════════════════════ */
+(function _bindFreshHUListDelegation() {
+  const list = document.getElementById('fresh-hu-list');
+  if (!list) return;
+
+  // ── Click routing ──
+  list.addEventListener('click', e => {
+    const btn = e.target.closest('[data-fhu-action]');
+    if (!btn || !list.contains(btn)) return;
+    const idx = parseInt(btn.dataset.idx, 10);
+    if (Number.isNaN(idx)) return;
+    switch (btn.dataset.fhuAction) {
+      case 'confirm': fhuConfirm(idx);      break;
+      case 'miss':    fhuMiss(idx);         break;
+      case 'adj-inc': fhuAdjQty(idx,  1);   break;
+      case 'adj-dec': fhuAdjQty(idx, -1);   break;
+      case 'undo':    fhuUndo(idx);         break;
+      case 'note':    fhuAddNote(idx);      break;
+    }
+  });
+
+  // ── Qty input — per-keystroke (state only, no repaint) ──
+  list.addEventListener('input', e => {
+    if (!e.target.classList.contains('fhu-qty-input')) return;
+    const idx = parseInt(e.target.dataset.idx, 10);
+    if (Number.isNaN(idx)) return;
+    fhuSetQty(idx, e.target.value);
+  });
+
+  // ── Qty input — on commit (blur / Enter), patch so border + badge catch up ──
+  list.addEventListener('change', e => {
+    if (!e.target.classList.contains('fhu-qty-input')) return;
+    const idx = parseInt(e.target.dataset.idx, 10);
+    if (Number.isNaN(idx)) return;
+    patchFreshCard(idx);
+  });
+})();
+   
 </script>
 </body>
 </html>
