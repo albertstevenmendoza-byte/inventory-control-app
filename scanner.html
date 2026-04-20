@@ -1647,7 +1647,7 @@ function addExtra(){const hu=document.getElementById('extra-hu').value.trim()||'
 function updateFinalizeBtn(){
   const p=currentItems.filter(i=>i.status==='pending').length,btn=document.getElementById('btn-finalize');
   if(p>0){btn.className='btn-pri disabled';btn.textContent=`${p} item${p>1?'s':''} unchecked`;}
-  else{btn.className='btn-pri';btn.textContent=currentItems.length===0?'Skip Empty Bin →':'Finalize & Next →';}
+  else{btn.className='btn-pri';btn.textContent = currentItems.length===0 ? '✓ Confirm Empty →' : 'Finalize & Next →';}
   document.getElementById('btn-confirm-all').style.display=currentItems.filter(i=>!i.isExtra&&i.status==='pending').length<=1?'none':'';
 }
 async function finalizeBin() {
