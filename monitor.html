@@ -933,7 +933,7 @@ tbody tr:hover { background: var(--surface); }
           <div class="kpi-bar" id="bin-acc-bar" style="--bar-color:var(--green)"></div>
           <div class="kpi-label">Bin Accuracy</div>
           <div class="kpi-value green" id="kpi-bin-acc">—</div>
-          <div class="kpi-sub">Perfect bins / total bins</div>
+          <div class="kpi-sub">Items in correct bin / total counted</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-bar" id="inv-acc-bar" style="--bar-color:var(--green)"></div>
@@ -1211,7 +1211,8 @@ function updateMetrics(){
   const totalBins=Object.keys(binsMap).length;
   const perfectBins=Object.values(binsMap).filter(items=>items.every(i=>i.type==='ok')).length;
 
-  const binAccNum=totalBins>0?(perfectBins/totalBins*100):null;
+  const wrongBin=huRows.filter(r=>r.type==='move'||r.type==='move_adj').length;
+  const binAccNum=total>0?((1-wrongBin/total)*100):null;
   const invAccNum=total>0?(ok/total*100):null;
   const binAcc=binAccNum!==null?binAccNum.toFixed(1)+'%':'—';
   const invAcc=invAccNum!==null?invAccNum.toFixed(1)+'%':'—';
