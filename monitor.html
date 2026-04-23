@@ -4,1639 +4,1594 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Control Center — Novus Ops</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;0,9..40,900;1,9..40,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<!-- XLSX for SAP upload parsing -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js" onerror="window._mermaidFailed=true"></script>
-
 <style>
-/* ══════════════════════════════════════════════════════════
-   DESIGN TOKENS — Deep Corporate / Mission Control
-   Base:    Midnight Indigo  #101420
-   Surface: Rich Slate       #1A1F2E
-   Accent:  Electric Cyan    #00E5FF
-   Active:  Sophisticated Teal #0D9488
-   Good:    Emerald Green    #10B981
-   Warn:    Amber Gold        #F59E0B
-   Bad:     Coral Red         #EF4444
-══════════════════════════════════════════════════════════ */
-:root {
-  /* ── Backgrounds ── */
-  --bg:           #101420;
-  --bg-2:         #131826;
-  --surface:      #1a1f2e;
-  --surface-2:    #1f2538;
-  --surface-3:    #252c3e;
-  --surface-4:    #2a3142;
+/* ── Design tokens ─────────────────────── */
+:root{
+  --bg:#0f1117;--surface:#181a23;--surface-2:#1f2230;--surface-3:#2a2d3a;
+  --border:#313546;--text:#eceef4;--text-2:#9ba1b5;--text-3:#6c7189;
+  --accent:#5b9aff;--accent-dim:rgba(91,154,255,.1);
+  --green:#34d399;--green-bg:rgba(52,211,153,.1);--green-border:rgba(52,211,153,.25);
+  --red:#f87171;--red-bg:rgba(248,113,113,.1);--red-border:rgba(248,113,113,.25);
+  --amber:#fbbf24;--amber-bg:rgba(251,191,36,.1);--amber-border:rgba(251,191,36,.25);
+  --purple:#a78bfa;--purple-bg:rgba(167,139,250,.1);
+  --cyan:#22d3ee;--cyan-bg:rgba(34,211,238,.1);
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh}
+.mono{font-family:'JetBrains Mono',monospace}
+button{font-family:inherit;border:none;cursor:pointer}
+button:active{transform:scale(.97)}
+a{color:inherit}
 
-  /* ── Borders (razor-thin, muted) ── */
-  --border:       rgba(255,255,255,.055);
-  --border-2:     rgba(255,255,255,.09);
+/* ── Skeleton ─────────────────────────── */
+.skeleton{background:var(--surface-2);border-radius:8px;animation:sk-pulse 1.5s ease-in-out infinite}
+@keyframes sk-pulse{50%{opacity:.4}}
 
-  /* ── Typography ── */
-  --text:         #e1e5f0;
-  --text-2:       #94a3b8;
-  --text-3:       #4a5568;
+/* ── Layout shell ─────────────────────── */
+.dashboard{display:flex;flex-direction:column;height:100vh}
 
-  /* ── Primary accent — Electric Cyan ── */
-  --accent:       #00e5ff;
-  --accent-glow:  rgba(0,229,255,.18);
-  --accent-dim:   rgba(0,229,255,.07);
-
-  /* ── Teal — tabs, buttons, interactions ── */
-  --teal:         #0d9488;
-  --teal-dim:     rgba(13,148,136,.1);
-  --teal-border:  rgba(13,148,136,.3);
-
-  /* ── Semantic — Emerald Green ── */
-  --green:        #10b981;
-  --green-bg:     rgba(16,185,129,.08);
-  --green-glow:   rgba(16,185,129,.22);
-  --green-border: rgba(16,185,129,.22);
-
-  /* ── Semantic — Amber Gold ── */
-  --amber:        #f59e0b;
-  --amber-bg:     rgba(245,158,11,.08);
-  --amber-border: rgba(245,158,11,.22);
-
-  /* ── Semantic — Coral Red ── */
-  --red:          #ef4444;
-  --red-bg:       rgba(239,68,68,.08);
-  --red-border:   rgba(239,68,68,.22);
-
-  /* ── Purple / Cyan / Fresh (secondary palette) ── */
-  --purple:       #a78bfa;
-  --purple-bg:    rgba(167,139,250,.08);
-  --cyan:         #00e5ff;
-  --cyan-bg:      rgba(0,229,255,.07);
-  --fresh:        #f472b6;
-  --fresh-bg:     rgba(244,114,182,.08);
-  --fresh-border: rgba(244,114,182,.22);
-
-  /* ── Geometry ── */
-  --r-sm:   8px;
-  --r-md:   14px;
-  --r-lg:   20px;
-  --r-xl:   28px;
-
-  /* ── Elevation shadows ── */
-  --shadow-card: 0 4px 28px rgba(0,0,0,.55), 0 1px 0 rgba(255,255,255,.035) inset;
-  --shadow-kpi:  0 8px 48px rgba(0,0,0,.65), 0 1px 0 rgba(255,255,255,.05) inset;
-  --shadow-glow-cyan: 0 0 40px rgba(0,229,255,.1);
+/* ── Top bar ──────────────────────────── */
+.topbar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 20px;background:var(--surface);
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.logo{font-size:20px}
+.topbar h1{font-size:15px;font-weight:800}
+.topbar-sub{font-size:9px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.5px}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.live-pill{
+  display:flex;align-items:center;gap:6px;padding:5px 12px;
+  background:var(--surface-2);border-radius:8px;font-size:10px;font-weight:700;color:var(--text-2);
+}
+/* Realtime pulse — opacity only (GPU) */
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse-op 1.5s infinite}
+@keyframes pulse-op{50%{opacity:.25}}
+.live-dot.disconnected{background:var(--amber);animation:none}
+.home-link{
+  background:var(--surface-2);color:var(--text-2);
+  padding:6px 14px;border-radius:8px;font-size:10px;font-weight:700;text-decoration:none;
+}
+.gear-btn{
+  background:var(--surface-2);color:var(--text-2);
+  padding:6px 10px;border-radius:8px;font-size:14px;
 }
 
-/* ── Reset ── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { height: 100%; }
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  height: 100vh;
-  overflow: hidden;
-  -webkit-font-smoothing: antialiased;
+/* ── Tab bar ─────────────────────────── */
+.tabbar{
+  display:flex;gap:0;background:var(--surface);
+  border-bottom:1px solid var(--border);flex-shrink:0;padding:0 20px;
 }
-.mono { font-family: 'JetBrains Mono', monospace; }
-
-/* ── Toast ── */
-.toast {
-  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-  padding: 11px 22px; border-radius: 40px;
-  font-size: 13px; font-weight: 700;
-  z-index: 9998; pointer-events: none; opacity: 0;
-  transition: opacity .3s; white-space: nowrap;
-  backdrop-filter: blur(14px);
+.tab-btn{
+  padding:12px 20px;font-size:11px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.8px;background:none;color:var(--text-3);
+  border-bottom:2px solid transparent;transition:color .15s,border-color .15s;
 }
-.toast.show  { opacity: 1; }
-.toast.green { background: rgba(16,185,129,.14); color: var(--green); border: 1px solid var(--green-border); }
-.toast.blue  { background: var(--accent-dim);    color: var(--accent); border: 1px solid rgba(0,229,255,.2); }
-.toast.red   { background: var(--red-bg);        color: var(--red);    border: 1px solid var(--red-border); }
-.toast.amber { background: var(--amber-bg);      color: var(--amber);  border: 1px solid var(--amber-border); }
-.toast.pink  { background: var(--fresh-bg);      color: var(--fresh);  border: 1px solid var(--fresh-border); }
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
 
-/* ══════════════════════════════════════════════════════════
-   PAGE SHELL
-══════════════════════════════════════════════════════════ */
-.app-shell {
-  display: grid;
-  grid-template-rows: 56px 1fr;
-  grid-template-columns: 260px 1fr;
-  grid-template-areas:
-    "topbar  topbar"
-    "rail    main";
-  height: 100vh;
-  overflow: hidden;
+/* ── Views (CSS tab switching — no JS show/hide loops) ── */
+.views{flex:1;overflow:hidden;position:relative}
+.view{
+  position:absolute;inset:0;overflow-y:auto;
+  opacity:0;pointer-events:none;
+  transition:opacity .18s ease;
+}
+.view.active{opacity:1;pointer-events:auto}
+.view::-webkit-scrollbar{width:6px}
+.view::-webkit-scrollbar-track{background:transparent}
+.view::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:3px}
+
+/* ── Inventory view ──────────────────── */
+.inv-layout{display:flex;gap:0;height:100%;overflow:hidden}
+
+.inv-sidebar{
+  width:280px;flex-shrink:0;background:var(--surface);
+  border-right:1px solid var(--border);display:flex;
+  flex-direction:column;overflow:hidden;
+}
+.sidebar-section{padding:16px;border-bottom:1px solid var(--border)}
+.sidebar-title{
+  font-size:9px;font-weight:800;text-transform:uppercase;
+  letter-spacing:1.5px;color:var(--text-3);margin-bottom:12px;
 }
 
-/* ══════════════════════════════════════════════════════════
-   TOP BAR
-══════════════════════════════════════════════════════════ */
-.topbar {
-  grid-area: topbar;
-  display: flex;
-  align-items: center;
-  padding: 0 24px;
-  gap: 16px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  position: relative;
-  z-index: 20;
+/* KPI cards */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.kpi-card{
+  background:var(--surface-2);border-radius:12px;padding:12px;
+  border:1px solid var(--border);
 }
-/* Signature cyan-to-teal accent stripe */
-.topbar::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--accent), var(--teal), transparent 65%);
-  opacity: .75;
-}
+.kpi-val{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--accent)}
+.kpi-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-3);margin-top:3px}
+.kpi-card.green .kpi-val{color:var(--green)}
+.kpi-card.amber .kpi-val{color:var(--amber)}
 
-.topbar-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-.topbar-logo {
-  width: 30px; height: 30px;
-  background: var(--accent-dim);
-  border: 1px solid rgba(0,229,255,.2);
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px;
-  box-shadow: 0 0 14px var(--accent-glow);
+/* Filter pills */
+.filter-pills{display:flex;flex-wrap:wrap;gap:4px}
+.pill{
+  padding:5px 12px;border-radius:20px;font-size:9px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.5px;cursor:pointer;
+  background:var(--surface-3);color:var(--text-3);
+  border:1px solid transparent;
+  transition:background .15s,color .15s,border-color .15s;
 }
-.topbar-name { font-size: 15px; font-weight: 800; letter-spacing: -.3px; color: var(--text); }
-.topbar-sub  { font-size: 9px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 1.5px; }
-
-.topbar-divider { width: 1px; height: 24px; background: var(--border-2); flex-shrink: 0; }
-
-/* Freshness badge */
-.freshness {
-  padding: 5px 14px; border-radius: 20px;
-  font-size: 11px; font-weight: 700;
-  transition: background .4s, color .4s, border-color .4s;
-  border: 1px solid transparent;
-}
-.freshness.fresh { background: var(--green-bg); color: var(--green); border-color: var(--green-border); }
-.freshness.stale { background: var(--amber-bg); color: var(--amber); border-color: var(--amber-border); }
-.freshness.old   { background: var(--red-bg);   color: var(--red);   border-color: var(--red-border); }
-.freshness.none  { background: var(--surface-2); color: var(--text-3); }
-
-/* Live pill */
-.live-pill {
-  display: flex; align-items: center; gap: 7px;
-  padding: 5px 14px;
-  background: rgba(16,185,129,.06);
-  border: 1px solid var(--green-border);
-  border-radius: 20px;
-  font-size: 11px; font-weight: 700; color: var(--green);
-}
-.live-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 8px var(--green);
-  animation: pulse 2s infinite;
-}
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
-
-.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-.tb-btn {
-  padding: 7px 16px; border-radius: var(--r-sm);
-  font-size: 11px; font-weight: 700;
-  background: var(--surface-2); color: var(--text-2);
-  border: 1px solid var(--border-2);
-  cursor: pointer; font-family: inherit;
-  transition: background .2s, color .2s, border-color .2s;
-  text-decoration: none; display: inline-flex; align-items: center;
-}
-.tb-btn:hover { background: var(--teal-dim); color: var(--teal); border-color: var(--teal-border); }
-
-/* ══════════════════════════════════════════════════════════
-   LEFT RAIL
-══════════════════════════════════════════════════════════ */
-.rail {
-  grid-area: rail;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  overflow-y: auto;
-  display: flex; flex-direction: column;
-}
-.rail::-webkit-scrollbar { width: 4px; }
-.rail::-webkit-scrollbar-thumb { background: var(--surface-4); border-radius: 2px; }
-
-.rail-section { padding: 16px 18px; border-bottom: 1px solid var(--border); }
-.rail-title {
-  font-size: 8px; font-weight: 800;
-  text-transform: uppercase; letter-spacing: 2px;
-  color: var(--text-3); margin-bottom: 12px;
-}
+.pill:hover{background:var(--accent-dim);color:var(--accent)}
+.pill.active{background:var(--accent-dim);color:var(--accent);border-color:var(--accent)}
+.pill.green.active{background:var(--green-bg);color:var(--green);border-color:var(--green-border)}
+.pill.amber.active{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-border)}
+.pill.red.active{background:var(--red-bg);color:var(--red);border-color:var(--red-border)}
+.pill.cyan.active{background:var(--cyan-bg);color:var(--cyan);border-color:rgba(34,211,238,.3)}
 
 /* Upload zone */
-.upload-zone {
-  display: flex; flex-direction: column; align-items: center; gap: 5px;
-  padding: 16px; border: 1.5px dashed rgba(0,229,255,.18);
-  border-radius: var(--r-md); cursor: pointer;
-  transition: border-color .2s, background .2s; text-align: center;
-  background: var(--accent-dim);
+.upload-zone{
+  border:2px dashed var(--border);border-radius:12px;padding:20px;
+  text-align:center;cursor:pointer;transition:border-color .15s,background .15s;
 }
-.upload-zone:hover    { border-color: var(--accent); background: rgba(0,229,255,.1); }
-.upload-zone.uploading{ border-color: var(--amber); background: var(--amber-bg); pointer-events: none; }
-.upload-zone.success  { border-color: var(--green); background: var(--green-bg); }
-.upload-zone.error    { border-color: var(--red);   background: var(--red-bg); }
-.uz-icon  { font-size: 20px; }
-.uz-label { font-size: 10px; font-weight: 700; color: var(--text-2); }
-.upload-meta { font-size: 9px; color: var(--text-3); margin-top: 8px; line-height: 1.7; }
-.upload-meta strong { color: var(--text-2); }
-
-/* Aisle picker */
-.aisle-grid-picker { display: flex; gap: 3px; flex-wrap: wrap; margin-bottom: 8px; }
-.aisle-pick {
-  padding: 5px 8px; border-radius: 6px;
-  background: var(--surface-2); border: 1px solid var(--border-2);
-  font-size: 11px; font-weight: 800; color: var(--text-3);
-  cursor: pointer; transition: all .15s;
-}
-.aisle-pick:hover { border-color: var(--teal); color: var(--teal); }
-.aisle-pick.on    { background: var(--teal-dim); border-color: var(--teal); color: var(--teal); }
-
-.rail-input {
-  width: 100%; padding: 9px 12px;
-  background: var(--surface-2); border: 1px solid var(--border-2);
-  border-radius: var(--r-sm); font-size: 11px; color: var(--text);
-  outline: none; font-family: inherit; margin-top: 6px;
-  transition: border-color .15s;
-}
-.rail-input:focus { border-color: var(--teal); }
-
-.rail-actions { display: flex; gap: 5px; margin-top: 8px; }
-.rail-btn {
-  padding: 7px 12px; border-radius: var(--r-sm);
-  font-size: 10px; font-weight: 800; text-transform: uppercase;
-  cursor: pointer; border: none; font-family: inherit;
-  transition: filter .15s; letter-spacing: .3px;
-}
-.rail-btn:hover { filter: brightness(1.12); }
-.rail-btn.primary { background: var(--teal); color: #fff; flex: 1; }
-.rail-btn.ghost   { background: var(--surface-3); color: var(--text-3); }
-.rail-btn.danger  { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); width: 100%; padding: 9px; }
-
-.rail-hint { font-size: 9px; color: var(--text-3); margin-top: 7px; line-height: 1.6; }
-.rail-hint strong { color: var(--amber); }
-.rail-stat-summary { font-size: 9px; color: var(--text-3); margin-top: 5px; }
-.rail-stat-summary strong { color: var(--red); }
-
-/* ══════════════════════════════════════════════════════════
-   MAIN PANE
-══════════════════════════════════════════════════════════ */
-.main-pane {
-  grid-area: main;
-  display: flex; flex-direction: column;
-  overflow: hidden;
-  background: var(--bg-2);
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:var(--accent-dim)}
+.upload-zone p{font-size:11px;color:var(--text-3);margin-top:6px}
+.upload-btn{
+  display:inline-block;margin-top:10px;padding:8px 18px;
+  background:var(--accent);color:#fff;border-radius:8px;
+  font-size:10px;font-weight:800;
 }
 
-/* ── View Tab Bar ── */
-.view-tabs {
-  display: flex; gap: 2px;
-  padding: 10px 20px 0;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+/* Sidebar aisle assignments */
+.aisle-list{overflow-y:auto;flex:1;padding:16px}
+.aisle-list::-webkit-scrollbar{display:none}
+.aisle-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 12px;border-radius:8px;margin-bottom:4px;
+  background:var(--surface-2);font-size:11px;
 }
-.view-tab {
-  padding: 9px 20px;
-  border-radius: var(--r-sm) var(--r-sm) 0 0;
-  font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px;
-  background: transparent; color: var(--text-3); border: none;
-  cursor: pointer;
-  transition: color .2s, background .2s;
+.aisle-row .a-letter{font-weight:800;color:var(--accent)}
+.aisle-row .a-count{font-size:9px;color:var(--text-3)}
+.aisle-row .a-done{font-size:9px;font-weight:700;color:var(--green)}
+
+/* ── Main table area ──────────────────── */
+.inv-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.table-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 20px;border-bottom:1px solid var(--border);flex-shrink:0;
 }
-.view-tab:hover { color: var(--text-2); background: var(--surface-2); }
-.view-tab.active {
-  color: var(--teal); background: var(--bg-2);
-  border: 1px solid var(--border); border-bottom: 1px solid var(--bg-2);
-  margin-bottom: -1px;
+.table-title{font-size:13px;font-weight:800}
+.table-actions{display:flex;gap:8px}
+.action-btn{
+  padding:7px 14px;border-radius:8px;font-size:10px;font-weight:800;
+  background:var(--surface-2);color:var(--text-2);
+  transition:background .15s,color .15s;
+}
+.action-btn:hover{background:var(--accent-dim);color:var(--accent)}
+.action-btn.green{background:var(--green-bg);color:var(--green)}
+
+/* Table */
+.table-wrap{flex:1;overflow-y:auto;overflow-x:auto}
+.table-wrap::-webkit-scrollbar{width:6px;height:6px}
+.table-wrap::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:3px}
+
+table{width:100%;border-collapse:collapse;min-width:700px}
+thead{position:sticky;top:0;z-index:2}
+th{
+  background:var(--surface-2);color:var(--text-3);
+  font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;
+  padding:10px 14px;text-align:left;white-space:nowrap;
+  border-bottom:1px solid var(--border);
+}
+td{
+  padding:10px 14px;font-size:11px;border-bottom:1px solid var(--border);
+  white-space:nowrap;vertical-align:middle;
+}
+tr:hover td{background:var(--surface-2)}
+
+.type-badge{
+  display:inline-block;padding:2px 8px;border-radius:5px;
+  font-size:8px;font-weight:800;text-transform:uppercase;
+}
+.type-badge.ok{background:var(--green-bg);color:var(--green)}
+.type-badge.adj{background:var(--amber-bg);color:var(--amber)}
+.type-badge.move,.type-badge.move_adj{background:var(--purple-bg);color:var(--purple)}
+.type-badge.missing_temp{background:var(--red-bg);color:var(--red)}
+.type-badge.missing{background:var(--red-bg);color:var(--red)}
+.type-badge.unexpected{background:var(--cyan-bg);color:var(--cyan)}
+
+/* Pagination */
+.pagination{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 20px;border-top:1px solid var(--border);flex-shrink:0;
+  font-size:10px;color:var(--text-3);font-weight:700;
+}
+.page-btns{display:flex;gap:6px}
+.page-btn{
+  padding:6px 14px;border-radius:8px;font-size:10px;font-weight:800;
+  background:var(--surface-2);color:var(--text-2);
+}
+.page-btn:disabled{opacity:.35;cursor:default}
+.page-btn.active{background:var(--accent);color:#fff}
+
+/* ── Safety view ─────────────────────── */
+.safety-wrap{padding:20px;max-width:1000px;margin:0 auto}
+.safety-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.s-stat{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:16px;text-align:center;
+}
+.s-stat-val{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;color:var(--accent)}
+.s-stat-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);margin-top:4px}
+
+.incident-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:16px;margin-bottom:10px;cursor:pointer;
+  transition:border-color .15s,background .15s;
+}
+.incident-card:hover{border-color:var(--accent);background:var(--accent-dim)}
+.ic-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.ic-reporter{font-weight:800;font-size:13px}
+.ic-status{font-size:8px;font-weight:800;text-transform:uppercase;padding:3px 10px;border-radius:6px}
+.ic-status.open{background:var(--amber-bg);color:var(--amber)}
+.ic-status.resolved{background:var(--green-bg);color:var(--green)}
+.ic-status.critical{background:var(--red-bg);color:var(--red)}
+.ic-meta{font-size:10px;color:var(--text-2);display:flex;gap:16px;flex-wrap:wrap}
+.ic-nature{font-size:11px;color:var(--text-2);margin-top:6px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.skeleton-card{height:100px;border-radius:14px;margin-bottom:10px}
+
+/* Safety detail modal */
+.modal-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.8);backdrop-filter:blur(6px);
+  z-index:1000;align-items:flex-start;justify-content:center;
+  padding:40px 20px;overflow-y:auto;
+}
+.modal-overlay.open{display:flex}
+.modal-box{
+  background:var(--surface);width:100%;max-width:560px;
+  border-radius:16px;border:1px solid var(--border);
+  transform:translateY(16px) scale(.97);opacity:0;
+  transition:transform .22s cubic-bezier(.34,1.3,.64,1),opacity .18s ease;
+}
+.modal-overlay.open .modal-box{transform:none;opacity:1}
+.modal-head{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:16px 20px;border-bottom:1px solid var(--border);
+}
+.modal-head h2{font-size:15px;font-weight:800}
+.modal-close{
+  background:var(--surface-2);color:var(--text-3);
+  width:30px;height:30px;border-radius:50%;font-size:14px;
+  display:flex;align-items:center;justify-content:center;
+}
+.modal-body{padding:20px}
+.modal-field{margin-bottom:14px}
+.modal-field label{
+  display:block;font-size:8px;font-weight:800;text-transform:uppercase;
+  letter-spacing:1.2px;color:var(--text-3);margin-bottom:4px;
+}
+.modal-field p{font-size:13px;color:var(--text)}
+.modal-img{
+  width:100%;border-radius:10px;margin-bottom:14px;
+  border:1px solid var(--border);object-fit:cover;max-height:240px;
+}
+.modal-actions{display:flex;gap:8px;padding:16px 20px;border-top:1px solid var(--border)}
+.modal-btn{
+  padding:10px 20px;border-radius:8px;font-size:11px;font-weight:800;
+}
+.modal-btn.resolve{background:var(--green);color:#fff;flex:1}
+.modal-btn.critical{background:var(--red);color:#fff;flex:1}
+.modal-btn.cancel{background:var(--surface-2);color:var(--text-2);flex:1}
+
+/* ── Admin view ──────────────────────── */
+.admin-wrap{padding:24px;max-width:600px}
+.admin-section{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:20px;margin-bottom:16px;
+}
+.admin-section h2{font-size:13px;font-weight:800;margin-bottom:6px}
+.admin-section p{font-size:11px;color:var(--text-2);line-height:1.6;margin-bottom:14px}
+.admin-btn{
+  padding:12px 20px;border-radius:10px;font-size:11px;font-weight:800;
+}
+.admin-btn.danger{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.admin-btn.warning{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.admin-btn.primary{background:var(--accent);color:#fff}
+.admin-session{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  background:var(--surface-2);padding:10px 14px;border-radius:8px;
+  margin-bottom:12px;color:var(--accent);
 }
 
-/* ── Views ── */
-.view {
-  display: none; flex-direction: column; flex: 1; overflow: hidden;
-  animation: fade-in .22s ease;
+/* ── TV Metric Display ───────────────── */
+.tv-overlay{
+  display:none;position:fixed;inset:0;z-index:5000;
+  background:#080a10;flex-direction:column;
+  font-family:'DM Sans',sans-serif;
 }
-.view.active { display: flex; }
-@keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.tv-overlay.open{display:flex}
 
-/* ══════════════════════════════════════════════════════════
-   KPI ROW — TV-scale, 20-foot legible
-══════════════════════════════════════════════════════════ */
-.kpi-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  padding: 18px 20px 0;
-  flex-shrink: 0;
+.tv-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:28px 48px 0;flex-shrink:0;
 }
+.tv-logo{
+  display:flex;align-items:center;gap:14px;
+}
+.tv-logo-text{font-size:13px;font-weight:800;color:rgba(255,255,255,.35);
+  text-transform:uppercase;letter-spacing:2px}
+.tv-session{
+  font-family:'JetBrains Mono',monospace;font-size:12px;
+  color:rgba(255,255,255,.2);font-weight:600;letter-spacing:1px;
+}
+.tv-clock{
+  font-family:'JetBrains Mono',monospace;font-size:18px;
+  font-weight:700;color:rgba(255,255,255,.25);
+}
+.tv-exit-btn{
+  position:fixed;top:20px;right:24px;z-index:5001;
+  background:rgba(255,255,255,.07);color:rgba(255,255,255,.3);
+  border:1px solid rgba(255,255,255,.1);border-radius:8px;
+  padding:8px 16px;font-size:10px;font-weight:800;cursor:pointer;
+  font-family:'DM Sans',sans-serif;letter-spacing:.5px;
+  transition:background .2s,color .2s;
+}
+.tv-exit-btn:hover{background:rgba(255,255,255,.14);color:rgba(255,255,255,.7)}
 
-.kpi-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: 22px 24px 20px;
-  box-shadow: var(--shadow-kpi);
-  position: relative; overflow: hidden;
-  transition: border-color .35s, box-shadow .35s;
+/* KPI strip */
+.tv-kpis{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:16px;padding:28px 48px 20px;flex-shrink:0;
 }
-/* Inner highlight stripe */
-.kpi-card::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.07), transparent);
+.tv-kpi{
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+  border-radius:20px;padding:28px 24px;text-align:center;
+  position:relative;overflow:hidden;
 }
-.kpi-card:hover {
-  border-color: var(--border-2);
-  box-shadow: var(--shadow-kpi), 0 0 0 1px var(--border-2);
+/* Subtle accent glow at top */
+.tv-kpi::before{
+  content:'';position:absolute;top:0;left:20%;right:20%;height:1px;
+  background:var(--tv-accent,rgba(91,154,255,.6));
+  box-shadow:0 0 16px 2px var(--tv-accent,rgba(91,154,255,.25));
 }
-
-/* Left accent bar — colour set via CSS var per card */
-.kpi-card .kpi-bar {
-  position: absolute; left: 0; top: 18%; bottom: 18%;
-  width: 3px; border-radius: 0 3px 3px 0;
-  background: var(--bar-color, var(--accent));
-  box-shadow: 0 0 14px var(--bar-color, var(--accent));
-  transition: background .4s, box-shadow .4s;
+.tv-kpi.green{--tv-accent:rgba(52,211,153,.7)}
+.tv-kpi.green .tv-kpi-val{color:#34d399}
+.tv-kpi-val{
+  font-family:'JetBrains Mono',monospace;font-size:56px;font-weight:700;
+  color:#5b9aff;line-height:1;letter-spacing:-2px;
+  /* Animate value changes with opacity only */
+  transition:opacity .25s ease;
 }
-
-.kpi-label {
-  font-size: 9px; font-weight: 800;
-  text-transform: uppercase; letter-spacing: 2px;
-  color: var(--text-3); margin-bottom: 10px;
-}
-.kpi-value {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 3.4rem; font-weight: 700; line-height: 1;
-  color: var(--text); letter-spacing: -2px;
-  transition: color .5s;
-  text-shadow: 0 2px 24px rgba(0,0,0,.5);
-}
-/* KPI colour classes */
-.kpi-value.accent { color: var(--accent); text-shadow: 0 0 32px var(--accent-glow); }
-.kpi-value.teal   { color: var(--teal);   text-shadow: 0 0 28px rgba(13,148,136,.3); }
-.kpi-value.green  { color: var(--green);  text-shadow: 0 0 32px var(--green-glow); }
-.kpi-value.amber  { color: var(--amber);  text-shadow: 0 0 24px rgba(245,158,11,.2); }
-.kpi-value.red    { color: var(--red);    text-shadow: 0 0 24px rgba(239,68,68,.2); }
-.kpi-value.purple { color: var(--purple); }
-
-.kpi-sub {
-  font-size: 10px; font-weight: 600; color: var(--text-3);
-  margin-top: 8px; display: flex; align-items: center; gap: 6px;
-}
-.kpi-sub .trend {
-  font-size: 9px; font-weight: 800; padding: 2px 8px; border-radius: 10px;
-}
-.kpi-sub .trend.up   { background: var(--green-bg); color: var(--green); }
-.kpi-sub .trend.down { background: var(--red-bg);   color: var(--red); }
-
-/* ── Secondary metrics strip ── */
-.metrics-strip {
-  display: flex; gap: 10px;
-  padding: 12px 20px; flex-shrink: 0;
-}
-.metric-chip {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 14px;
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 40px; font-size: 11px; font-weight: 700;
-  transition: border-color .2s;
-}
-.metric-chip:hover { border-color: var(--border-2); }
-.metric-chip .chip-label { color: var(--text-3); }
-.metric-chip .chip-val   { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
-.chip-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-
-/* ══════════════════════════════════════════════════════════
-   FILTER PILLS
-══════════════════════════════════════════════════════════ */
-.filter-bar {
-  display: flex; align-items: center; gap: 6px;
-  padding: 10px 20px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-2);
-  flex-shrink: 0; flex-wrap: wrap;
-}
-.pill {
-  display: flex; align-items: center; gap: 6px;
-  padding: 5px 13px; border-radius: 20px;
-  background: var(--surface); cursor: pointer;
-  border: 1px solid var(--border);
-  transition: all .15s;
-}
-.pill:hover  { border-color: var(--border-2); transform: translateY(-1px); }
-.pill.active { border-color: var(--teal); background: var(--teal-dim); }
-.pill-count  { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px; }
-.pill-label  { font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--text-3); letter-spacing: .5px; }
-
-/* Aisle filter bar */
-.aisle-filter-bar {
-  display: none; align-items: center; gap: 10px;
-  padding: 7px 20px;
-  background: var(--teal-dim); border-bottom: 1px solid var(--teal-border);
-  font-size: 11px; font-weight: 700; color: var(--teal);
-  flex-shrink: 0;
-}
-.aisle-filter-bar.visible { display: flex; }
-.aisle-filter-clear {
-  margin-left: auto; background: none; border: none;
-  color: var(--teal); font-size: 11px; font-weight: 800;
-  cursor: pointer; text-decoration: underline;
+.tv-kpi-val.flash{opacity:.3}
+.tv-kpi-label{
+  font-size:10px;font-weight:800;text-transform:uppercase;
+  letter-spacing:2px;color:rgba(255,255,255,.3);margin-top:10px;
 }
 
-/* ══════════════════════════════════════════════════════════
-   AUDIT TABLE
-══════════════════════════════════════════════════════════ */
-.table-wrap { flex: 1; overflow: auto; }
-.table-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
-.table-wrap::-webkit-scrollbar-track { background: var(--bg-2); }
-.table-wrap::-webkit-scrollbar-thumb { background: var(--surface-4); border-radius: 3px; }
-
-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-thead { position: sticky; top: 0; z-index: 5; }
-thead::after {
-  content: '';
-  position: absolute; bottom: 0; left: 0; right: 0;
-  height: 1px; background: var(--border-2);
+/* Aisle grid */
+.tv-aisles-wrap{
+  flex:1;overflow:hidden;padding:0 48px 32px;display:flex;flex-direction:column;
 }
-th {
-  padding: 12px 16px;
-  font-size: 8px; font-weight: 800; text-transform: uppercase;
-  letter-spacing: 1.5px; color: var(--text-3); text-align: left;
-  background: var(--surface);
+.tv-aisles-title{
+  font-size:9px;font-weight:800;text-transform:uppercase;
+  letter-spacing:2.5px;color:rgba(255,255,255,.2);margin-bottom:14px;
 }
-td { padding: 10px 16px; border-bottom: 1px solid var(--border); font-weight: 500; }
-tbody tr { transition: background .1s; }
-tbody tr:hover { background: var(--surface); }
-
-/* Status tags */
-.status-tag {
-  font-size: 8px; font-weight: 800; text-transform: uppercase;
-  padding: 3px 9px; border-radius: 20px; letter-spacing: .5px;
+.tv-aisle-grid{
+  display:grid;
+  /* Auto-fill columns that are at least 140px — fills the row on any TV width */
+  grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+  gap:10px;align-content:start;
 }
-.status-tag.ok           { background: var(--green-bg);  color: var(--green);  border: 1px solid var(--green-border); }
-.status-tag.miss,
-.status-tag.missing,
-.status-tag.missing_temp { background: var(--red-bg);    color: var(--red);    border: 1px solid var(--red-border); }
-.status-tag.adj          { background: var(--amber-bg);  color: var(--amber);  border: 1px solid var(--amber-border); }
-.status-tag.unexpected   { background: var(--cyan-bg);   color: var(--cyan);   border: 1px solid rgba(0,229,255,.2); }
-.status-tag.move         { background: var(--purple-bg); color: var(--purple); border: 1px solid rgba(167,139,250,.2); }
-.status-tag.move_adj     { background: var(--surface-3); color: var(--purple); border: 1px dashed rgba(167,139,250,.3); }
-.status-tag.pallet_count { background: var(--fresh-bg);  color: var(--fresh);  border: 1px solid var(--fresh-border); }
-
-.fresh-tag {
-  font-size: 8px; font-weight: 800; text-transform: uppercase;
-  padding: 2px 7px; border-radius: 20px;
+.tv-aisle-card{
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+  border-radius:14px;padding:14px 16px;
 }
-.fresh-tag.expired  { background: var(--red-bg);   color: var(--red);   border: 1px solid var(--red-border); }
-.fresh-tag.expiring { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
-.fresh-tag.valid    { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+.tv-aisle-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.tv-aisle-letter{
+  font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;
+  color:rgba(255,255,255,.7);line-height:1;
+}
+.tv-aisle-pct{
+  font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;
+  color:rgba(255,255,255,.3);
+}
+.tv-aisle-pct.complete{color:#34d399}
+/* Progress bar — width transition is on transform (translateX trick) so no layout thrash */
+.tv-aisle-bar-track{
+  height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;
+}
+.tv-aisle-bar-fill{
+  height:100%;border-radius:2px;background:#5b9aff;
+  transform-origin:left;
+  transition:transform .5s cubic-bezier(.4,0,.2,1);
+}
+.tv-aisle-bar-fill.complete{background:#34d399}
+.tv-aisle-count{font-size:9px;font-weight:700;color:rgba(255,255,255,.2);margin-top:6px}
 
-/* Skeleton shimmer */
-@keyframes shimmer { to { background-position: -200% 0; } }
-.skeleton-cell {
-  background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.7s infinite;
-  border-radius: 4px; height: 11px; display: block;
+/* Live pulse in corner */
+.tv-live{
+  position:fixed;bottom:24px;right:32px;
+  display:flex;align-items:center;gap:8px;
+  font-size:10px;font-weight:800;letter-spacing:2px;
+  text-transform:uppercase;color:rgba(52,211,153,.5);
+}
+.tv-live-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:#34d399;animation:pulse-op 1.5s infinite;
 }
 
-/* Empty state */
-.empty-state {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  color: var(--text-3); padding: 60px 20px;
+/* Confirm modal */
+.confirm-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.85);backdrop-filter:blur(8px);
+  z-index:2000;align-items:center;justify-content:center;padding:20px;
 }
-.empty-state .icon { font-size: 52px; opacity: .25; margin-bottom: 18px; }
-.empty-state h2 { font-size: 18px; font-weight: 800; color: var(--text-2); }
-.empty-state p  { font-size: 13px; margin-top: 6px; }
-
-/* ── Pagination ── */
-.pager {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 10px 20px;
-  background: var(--surface); border-top: 1px solid var(--border);
-  flex-shrink: 0;
+.confirm-overlay.open{display:flex}
+.confirm-box{
+  background:var(--surface);width:100%;max-width:420px;
+  border-radius:16px;border:2px solid var(--red-border);padding:24px;
+  transform:scale(.95);opacity:0;
+  transition:transform .2s cubic-bezier(.34,1.3,.64,1),opacity .18s ease;
 }
-.pager-info { font-size: 11px; font-weight: 700; color: var(--text-3); font-family: 'JetBrains Mono', monospace; }
-.pager-btns { display: flex; gap: 4px; }
-.pager-btn {
-  padding: 6px 14px; border-radius: var(--r-sm);
-  background: var(--surface-2); border: 1px solid var(--border-2);
-  color: var(--text-2); font-size: 11px; font-weight: 800;
-  cursor: pointer; font-family: inherit; transition: all .15s;
+.confirm-overlay.open .confirm-box{transform:none;opacity:1}
+.confirm-box h2{font-size:16px;font-weight:900;color:var(--red);margin-bottom:8px}
+.confirm-box p{font-size:12px;color:var(--text-2);line-height:1.6;margin-bottom:16px}
+.confirm-input{
+  width:100%;padding:12px;background:var(--surface-2);
+  border:1.5px solid var(--border);border-radius:10px;
+  font-size:14px;font-weight:700;color:var(--text);
+  outline:none;margin-bottom:16px;font-family:inherit;
+  transition:border-color .15s;
 }
-.pager-btn:hover    { background: var(--teal-dim); border-color: var(--teal-border); color: var(--teal); }
-.pager-btn:disabled { opacity: .25; cursor: default; }
-.pager-btn:disabled:hover { background: var(--surface-2); border-color: var(--border-2); color: var(--text-2); }
-
-/* ══════════════════════════════════════════════════════════
-   AISLE VIEW GRID
-══════════════════════════════════════════════════════════ */
-.aisle-view-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 14px; padding: 20px;
-  overflow-y: auto; flex: 1;
-}
-.aisle-view-grid::-webkit-scrollbar { width: 5px; }
-.aisle-view-grid::-webkit-scrollbar-thumb { background: var(--surface-4); border-radius: 3px; }
-
-.aisle-card {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--r-lg); padding: 18px;
-  cursor: pointer; position: relative; overflow: hidden;
-  box-shadow: var(--shadow-card);
-  transition: border-color .2s, transform .2s, box-shadow .2s;
-  animation: fade-in .2s ease both;
-}
-.aisle-card:hover {
-  border-color: var(--teal);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-card), 0 0 30px rgba(13,148,136,.15);
-}
-.aisle-card.complete    { border-color: var(--green-border); }
-.aisle-card.in-progress { border-color: var(--amber-border); }
-
-.aisle-card-letter {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 2.4rem; font-weight: 700; line-height: 1;
-  margin-bottom: 10px; color: var(--accent);
-}
-.aisle-card.complete .aisle-card-letter    { color: var(--green); text-shadow: 0 0 20px var(--green-glow); }
-.aisle-card.in-progress .aisle-card-letter { color: var(--amber); }
-
-.aisle-card-stats { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
-.aisle-card-stat  { display: flex; justify-content: space-between; align-items: center; }
-.aisle-card-stat-label { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-3); }
-.aisle-card-stat-val   { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; }
-
-.aisle-prog-bar  { height: 4px; background: var(--surface-3); border-radius: 4px; overflow: hidden; }
-.aisle-prog-fill { height: 100%; border-radius: 4px; transition: width .5s ease; }
-.aisle-card-pct  { font-size: 9px; font-weight: 700; color: var(--text-3); text-align: right; margin-top: 5px; }
-
-.aisle-disc-badge {
-  position: absolute; top: 12px; right: 12px;
-  font-size: 8px; font-weight: 800; padding: 3px 9px; border-radius: 20px;
-}
-
-.aisle-view-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 14px 20px; border-bottom: 1px solid var(--border);
-  background: var(--bg-2); flex-shrink: 0;
-}
-.aisle-view-header h2 { font-size: 14px; font-weight: 800; color: var(--text); }
-.aisle-view-header span { font-size: 11px; color: var(--text-3); font-weight: 700; }
-
-/* ══════════════════════════════════════════════════════════
-   SAFETY VIEW
-══════════════════════════════════════════════════════════ */
-.view-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 14px 20px; border-bottom: 1px solid var(--border);
-  background: var(--bg-2); flex-shrink: 0;
-}
-.view-header h2 { font-size: 14px; font-weight: 800; color: var(--text); }
-
-.safety-stat-row { display: flex; gap: 12px; padding: 16px 20px; flex-shrink: 0; }
-.safety-stat {
-  flex: 1; background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--r-md); padding: 14px; text-align: center;
-  box-shadow: var(--shadow-card);
-  transition: border-color .2s;
-}
-.safety-stat:hover { border-color: var(--border-2); }
-.safety-stat .s-val   { font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 700; }
-.safety-stat .s-label { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-3); margin-top: 5px; }
-
-.safety-list { flex: 1; overflow-y: auto; padding: 0 20px 20px; display: flex; flex-direction: column; gap: 8px; }
-.safety-list::-webkit-scrollbar { width: 5px; }
-.safety-list::-webkit-scrollbar-thumb { background: var(--surface-4); border-radius: 3px; }
-
-.inc-card {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--r-md); padding: 14px;
-  cursor: pointer; box-shadow: var(--shadow-card);
-  transition: border-color .2s, transform .1s;
-  animation: fade-in .18s ease both;
-}
-.inc-card:hover  { border-color: var(--teal); transform: translateY(-1px); }
-.inc-card:active { transform: scale(.99); }
-
-.inc-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }
-.inc-badges { display: flex; gap: 5px; align-items: center; }
-.inc-badge {
-  font-size: 8px; font-weight: 800; text-transform: uppercase;
-  padding: 3px 10px; border-radius: 20px;
-}
-.inc-badge.sev-low      { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
-.inc-badge.sev-medium   { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
-.inc-badge.sev-high     { background: var(--red-bg);   color: var(--red);   border: 1px solid var(--red-border); }
-.inc-badge.sev-critical { background: var(--red-bg);   color: #ff9090;      border: 1px solid var(--red-border); font-weight: 900; }
-.inc-badge.status-open     { background: var(--red-bg);   color: var(--red);   border: 1px solid var(--red-border); }
-.inc-badge.status-resolved { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
-.inc-view-btn { font-size: 9px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: .5px; }
-
-.inc-loc  { font-size: 12px; font-weight: 700; margin-bottom: 4px; color: var(--text); }
-.inc-desc { font-size: 11px; color: var(--text-2); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.inc-footer { display: flex; justify-content: space-between; margin-top: 8px; font-size: 9px; color: var(--text-3); font-weight: 600; }
-
-/* ══════════════════════════════════════════════════════════
-   TRAINING VIEW
-══════════════════════════════════════════════════════════ */
-.training-list { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-.training-list::-webkit-scrollbar { width: 5px; }
-.training-list::-webkit-scrollbar-thumb { background: var(--surface-4); border-radius: 3px; }
-
-.sop-card {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--r-lg); padding: 18px;
-  display: flex; flex-direction: column; gap: 12px;
-  box-shadow: var(--shadow-card); transition: border-color .2s;
-  animation: fade-in .2s ease both;
-}
-.sop-card:hover { border-color: var(--border-2); }
-.sop-card-header { display: flex; justify-content: space-between; align-items: flex-start; }
-.sop-title { font-size: 15px; font-weight: 800; color: var(--accent); margin: 6px 0 3px; }
-.sop-date  { font-size: 10px; color: var(--text-3); }
-.sop-body  {
-  background: var(--bg-2); padding: 14px; border-radius: var(--r-md);
-  font-size: 12px; color: var(--text-2); white-space: pre-wrap;
-  border: 1px solid var(--border); line-height: 1.6;
-}
-.mermaid-container {
-  background: var(--bg-2); padding: 16px; border-radius: var(--r-md);
-  border: 1px solid var(--border); overflow-x: auto;
-}
-
-/* Slide deck */
-.slide-deck { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; }
-.slide-viewport { position: relative; aspect-ratio: 16/9; background: var(--bg); overflow: hidden; }
-.slide { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; opacity: 0; transition: opacity .35s, transform .35s; transform: translateX(30px); }
-.slide.active { opacity: 1; transform: translateX(0); }
-.slide.exit   { opacity: 0; transform: translateX(-30px); }
-.slide h2 { font-size: 26px; font-weight: 900; margin-bottom: 12px; background: linear-gradient(135deg, var(--text) 30%, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.slide p { font-size: 14px; color: var(--text-2); line-height: 1.6; max-width: 80%; }
-.slide-number { position: absolute; top: 12px; right: 16px; font-size: 10px; font-weight: 700; color: var(--text-3); font-family: 'JetBrains Mono', monospace; }
-.slide-controls { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-top: 1px solid var(--border); background: var(--surface-2); }
-.slide-nav-btn { padding: 7px 18px; border-radius: var(--r-sm); background: var(--surface-3); color: var(--text-2); font-size: 11px; font-weight: 800; border: none; cursor: pointer; transition: background .15s, color .15s; }
-.slide-nav-btn:hover { background: var(--teal); color: #fff; }
-.slide-nav-btn:disabled { opacity: .3; cursor: default; }
-.slide-nav-btn:disabled:hover { background: var(--surface-3); color: var(--text-2); }
-.slide-progress { display: flex; gap: 4px; }
-.slide-pip { width: 7px; height: 7px; border-radius: 50%; background: var(--surface-4); transition: background .2s; }
-.slide-pip.active { background: var(--teal); }
-
-/* ══════════════════════════════════════════════════════════
-   MODALS
-══════════════════════════════════════════════════════════ */
-.modal-overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(8,11,16,.85); backdrop-filter: blur(8px);
-  z-index: 200; align-items: center; justify-content: center; padding: 20px;
-}
-.modal-overlay.open { display: flex; animation: fade-in .2s ease; }
-
-.modal-box {
-  background: var(--surface); width: 100%; max-width: 680px;
-  border-radius: var(--r-xl); border: 1px solid var(--border-2);
-  box-shadow: 0 32px 80px rgba(0,0,0,.75);
-  display: flex; flex-direction: column; max-height: 90vh;
-  animation: modal-rise .25s cubic-bezier(.34,1.56,.64,1);
-}
-@keyframes modal-rise { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
-
-.modal-header {
-  padding: 18px 22px; border-bottom: 1px solid var(--border);
-  display: flex; justify-content: space-between; align-items: center;
-}
-.modal-header h3 { font-size: 15px; font-weight: 800; color: var(--text); }
-.modal-close {
-  background: none; color: var(--text-3); font-size: 18px;
-  font-weight: 900; border: none; cursor: pointer; transition: color .15s;
-}
-.modal-close:hover { color: var(--red); }
-.modal-body   { padding: 18px 22px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; flex: 1; }
-.modal-footer { padding: 16px 22px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
-.modal-footer button {
-  flex: 1; padding: 12px; border-radius: var(--r-md);
-  font-size: 11px; font-weight: 800; text-transform: uppercase;
-  cursor: pointer; border: none; font-family: inherit; transition: filter .15s;
-}
-.modal-footer button:hover { filter: brightness(1.1); }
-
-/* Training editor */
-.ed-label {
-  font-size: 8px; font-weight: 800; text-transform: uppercase;
-  letter-spacing: 1.5px; color: var(--text-3); display: block; margin-bottom: 5px;
-}
-.ed-input {
-  width: 100%; padding: 10px 13px;
-  background: var(--surface-2); border: 1px solid var(--border-2);
-  border-radius: var(--r-md); font-size: 13px; font-weight: 600;
-  color: var(--text); outline: none; font-family: inherit;
-  transition: border-color .15s;
-}
-.ed-input:focus { border-color: var(--teal); }
-.ed-input::placeholder { color: var(--text-3); }
-
-/* Slide editor */
-.slide-editor-list { display: flex; flex-direction: column; gap: 8px; }
-.slide-editor-item { background: var(--surface-2); border: 1px solid var(--border-2); border-radius: var(--r-md); padding: 10px; display: flex; gap: 8px; align-items: flex-start; }
-.slide-editor-item .slide-num { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 800; color: var(--accent); min-width: 28px; text-align: center; padding-top: 4px; }
-.slide-editor-item .slide-fields { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.slide-editor-item input,
-.slide-editor-item textarea { width: 100%; padding: 6px 8px; background: var(--surface); border: 1px solid var(--border-2); border-radius: 6px; color: var(--text); font-size: 11px; font-family: inherit; outline: none; transition: border-color .15s; }
-.slide-editor-item input:focus, .slide-editor-item textarea:focus { border-color: var(--teal); }
-.slide-editor-item textarea { resize: vertical; min-height: 40px; }
-.slide-remove-btn { background: none; color: var(--red); font-size: 14px; font-weight: 900; border: none; cursor: pointer; padding: 4px; }
-
-/* Safety detail */
-.sd-header { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
-.sd-timestamp { font-size: 11px; color: var(--text-3); font-weight: 600; margin-left: auto; font-family: 'JetBrains Mono', monospace; }
-.sd-section { margin-top: 16px; }
-.sd-section-title { font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-3); margin-bottom: 8px; }
-.sd-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.sd-meta-item { background: var(--surface-2); padding: 12px; border-radius: var(--r-md); border: 1px solid var(--border); }
-.sd-meta-label { font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-3); margin-bottom: 4px; }
-.sd-meta-val   { font-size: 14px; font-weight: 700; color: var(--text); }
-.sd-text-block { background: var(--surface-2); padding: 14px; border-radius: var(--r-md); border: 1px solid var(--border); font-size: 13px; color: var(--text); line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
-.sd-text-block.empty { color: var(--text-3); font-style: italic; font-size: 12px; }
-.sd-resolution-block { background: var(--green-bg); border: 1px solid var(--green-border); padding: 14px; border-radius: var(--r-md); font-size: 13px; color: var(--green); line-height: 1.6; white-space: pre-wrap; }
-.sd-photo-frame { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; text-align: center; padding: 8px; }
-.sd-photo-frame img { max-width: 100%; max-height: 360px; border-radius: 8px; object-fit: contain; }
-.sd-photo-empty { padding: 28px; color: var(--text-3); font-size: 11px; font-weight: 600; }
-.sd-id { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-3); background: var(--surface-2); padding: 3px 8px; border-radius: 4px; }
+.confirm-input:focus{border-color:var(--red)}
+.confirm-actions{display:flex;gap:8px}
+.confirm-actions button{flex:1;padding:14px;border-radius:8px;font-size:12px;font-weight:800}
+.btn-cancel-confirm{background:var(--surface-2);color:var(--text-2)}
+.btn-destroy{background:var(--red);color:#fff}
+.btn-destroy:disabled{opacity:.35;cursor:not-allowed}
 </style>
 </head>
 <body>
 
-<div id="toast" class="toast"><span id="toast-text"></span></div>
+<div class="dashboard">
 
-<!-- ══ TRAINING EDITOR MODAL ══ -->
-<div class="modal-overlay" id="training-modal">
-  <div class="modal-box" style="max-width:720px">
-    <div class="modal-header">
-      <h3 id="modal-title">Edit Training Module</h3>
-      <button class="modal-close" onclick="closeTrainingEditor()">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="sop-id">
-      <div><label class="ed-label">Title</label><input type="text" id="sop-title" class="ed-input" placeholder="e.g. Near Miss Reporting Procedure"></div>
-      <div style="display:flex;gap:12px">
-        <div style="flex:1"><label class="ed-label">Category</label><select id="sop-category" class="ed-input"><option>Safety</option><option>Cycle Count</option><option>SAP Navigation</option><option>Warehouse</option><option>Quality</option></select></div>
-        <div style="flex:1"><label class="ed-label">Content Type</label><select id="sop-type" class="ed-input" onchange="toggleEditorSections()"><option value="Text">Standard Text</option><option value="Link">External Link / Video</option><option value="Flowchart">Flowchart (Mermaid)</option><option value="Slides">Slide Deck</option></select></div>
-      </div>
-      <div id="editor-text-section"><label class="ed-label">Content / URL</label><textarea id="sop-body" class="ed-input" rows="7" style="resize:vertical" placeholder="Enter guidelines or paste a link…"></textarea></div>
-      <div id="editor-mermaid-section" style="display:none">
-        <label class="ed-label">Flowchart (Mermaid)</label>
-        <textarea id="sop-mermaid" class="ed-input mono" rows="9" style="resize:vertical;font-size:11px;line-height:1.4" placeholder="flowchart TD&#10;  A[Start] --> B{Decision}"></textarea>
-        <button style="margin-top:8px;padding:8px 16px;background:var(--cyan-bg);color:var(--accent);border:1px solid rgba(0,229,255,.25);border-radius:var(--r-sm);font-size:10px;font-weight:800;cursor:pointer;font-family:inherit" onclick="previewMermaid()">▶ Preview</button>
-        <div id="mermaid-preview" style="margin-top:12px"></div>
-      </div>
-      <div id="editor-slides-section" style="display:none">
-        <label class="ed-label">Slides</label>
-        <div class="slide-editor-list" id="slide-editor-list"></div>
-        <button style="width:100%;margin-top:8px;padding:10px;background:var(--surface-3);color:var(--text-2);border:1px solid var(--border-2);border-radius:var(--r-md);font-size:10px;font-weight:800;cursor:pointer;font-family:inherit" onclick="addSlideEditor()">+ Add Slide</button>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button style="background:var(--surface-3);color:var(--text-3)" onclick="closeTrainingEditor()">Cancel</button>
-      <button id="btn-delete-sop" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)" onclick="deleteTrainingModule()">Delete</button>
-      <button style="background:var(--teal);color:#fff;flex:2" onclick="saveTrainingModule()">Save &amp; Publish</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ SLIDE VIEWER MODAL ══ -->
-<div class="modal-overlay" id="slide-viewer-modal">
-  <div style="width:100%;max-width:900px">
-    <div class="slide-deck">
-      <div class="slide-viewport" id="slide-viewport"></div>
-      <div class="slide-controls">
-        <button class="slide-nav-btn" id="slide-prev" onclick="slideNav(-1)">← Previous</button>
-        <div class="slide-progress" id="slide-progress"></div>
-        <button class="slide-nav-btn" id="slide-next" onclick="slideNav(1)">Next →</button>
-      </div>
-    </div>
-    <div style="text-align:center;margin-top:14px">
-      <button class="slide-nav-btn" onclick="closeSlideViewer()" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)">✕ Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ SAFETY DETAIL MODAL ══ -->
-<div class="modal-overlay" id="safety-detail-modal">
-  <div class="modal-box" style="max-width:600px">
-    <div class="modal-header">
-      <h3 style="display:flex;align-items:center;gap:8px">🦺 Incident Report <span class="sd-id" id="sd-id"></span></h3>
-      <button class="modal-close" onclick="closeSafetyDetail()">✕</button>
-    </div>
-    <div class="modal-body" id="sd-body" style="gap:0"></div>
-    <div class="modal-footer">
-      <button style="background:var(--surface-3);color:var(--text)" onclick="closeSafetyDetail()">Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════════
-     APP SHELL
-══════════════════════════════════════════════════════════ -->
-<div class="app-shell">
-
-  <!-- ── TOP BAR ── -->
-  <header class="topbar">
-    <div class="topbar-brand">
-      <div class="topbar-logo">📊</div>
+  <!-- ── Top bar ──────────────────────── -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="logo">🏭</span>
       <div>
-        <div class="topbar-name">Control Center</div>
-        <div class="topbar-sub">Plant 1730 · Buena Park</div>
+        <h1>Control Center</h1>
+        <div class="topbar-sub" id="session-label">Loading session…</div>
       </div>
     </div>
-    <div class="topbar-divider"></div>
-    <div class="freshness none" id="freshness-badge">📋 Connecting…</div>
-    <div class="live-pill"><div class="live-dot"></div> Live</div>
     <div class="topbar-right">
-      <button class="tb-btn" onclick="NovusSettings.openModal()">⚙ Settings</button>
-      <a href="index.html" class="tb-btn">← Home</a>
-    </div>
-  </header>
-
-  <!-- ── LEFT RAIL ── -->
-  <aside class="rail">
-    <div class="rail-section">
-      <div class="rail-title">SAP Data Feed</div>
-      <label class="upload-zone" id="upload-zone">
-        <input type="file" accept=".xlsx,.xls,.csv" id="file-input" hidden>
-        <span class="uz-icon" id="uz-icon">📂</span>
-        <span class="uz-label" id="uz-label">Drop SAP Export (.xlsx)</span>
-      </label>
-      <div class="upload-meta" id="upload-meta"></div>
-    </div>
-    <div class="rail-section">
-      <div class="rail-title">Aisle Assignments</div>
-      <div class="aisle-grid-picker" id="aisle-picker"></div>
-      <input type="text" class="rail-input" id="prod-assign" placeholder="Product # (product count)">
-      <div class="rail-actions">
-        <button class="rail-btn primary" onclick="pushAssignments()">Push to Team</button>
-        <button class="rail-btn ghost"   onclick="clearAssignments()">Clear</button>
+      <!-- Realtime connection indicator -->
+      <div class="live-pill">
+        <div class="live-dot" id="live-dot"></div>
+        <span id="live-label">Connecting…</span>
       </div>
+      <button class="home-link" onclick="enterTVMode()" style="cursor:pointer;border:none">
+        📺 TV Mode
+      </button>
+      <a href="index.html" class="home-link">← Home</a>
+      <button class="gear-btn" onclick="NovusSettings.openModal()">⚙</button>
     </div>
-    <div class="rail-section">
-      <div class="rail-title">Reconciliation</div>
-      <button class="rail-btn danger" onclick="finalizeReconciliation()">🔒 Finalize Missing Items</button>
-      <div class="rail-hint">Promotes <strong>missing_temp</strong> → confirmed missing. Run after full cycle count.</div>
-    </div>
-    <div class="rail-section">
-      <div class="rail-title">Export</div>
-      <button class="rail-btn primary" onclick="exportAudit()" style="width:100%;padding:9px">📥 Export Audit (.xlsx)</button>
-    </div>
-    <div class="rail-section" style="border-bottom:none">
-      <div class="rail-title">Safety Summary</div>
-      <div class="rail-stat-summary" id="safety-summary">Loading…</div>
-    </div>
-  </aside>
+  </div>
 
-  <!-- ── MAIN PANE ── -->
-  <main class="main-pane">
+  <!-- ── Tab bar ───────────────────────── -->
+  <div class="tabbar">
+    <button class="tab-btn active" data-tab="inventory"  onclick="switchTab('inventory')">
+      📦 Inventory
+    </button>
+    <button class="tab-btn" data-tab="safety"     onclick="switchTab('safety')">
+      🛡 Safety
+    </button>
+    <button class="tab-btn" data-tab="admin"      onclick="switchTab('admin')">
+      ⚙ Data Admin
+    </button>
+  </div>
 
-    <div class="view-tabs">
-      <button class="view-tab active" id="tab-audit"    onclick="showView('audit')">📋 Audit</button>
-      <button class="view-tab"        id="tab-aisles"   onclick="showView('aisles')">🗺 Aisles</button>
-      <button class="view-tab"        id="tab-safety"   onclick="showView('safety')">🦺 Safety</button>
-      <button class="view-tab"        id="tab-training" onclick="showView('training')">📚 SOPs</button>
-    </div>
+  <div class="views">
 
-    <!-- ══ VIEW: AUDIT ══ -->
-    <div class="view active" id="view-audit">
+    <!-- ════════════════════════════════
+         TAB 1 — INVENTORY
+    ═════════════════════════════════ -->
+    <div class="view active" id="view-inventory">
+      <div class="inv-layout">
 
-      <!-- KPI cards -->
-      <div class="kpi-row">
-        <div class="kpi-card">
-          <div class="kpi-bar" style="--bar-color:var(--accent)"></div>
-          <div class="kpi-label">Bins Counted</div>
-          <div class="kpi-value accent" id="kpi-bins">—</div>
-          <div class="kpi-sub">of <span id="kpi-bins-total" style="color:var(--text-2);margin:0 4px">—</span> total bins</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-bar" style="--bar-color:var(--purple)"></div>
-          <div class="kpi-label">HUs Audited</div>
-          <div class="kpi-value purple" id="kpi-total">—</div>
-          <div class="kpi-sub">
-            <span id="kpi-ok"   style="color:var(--green);font-weight:800">—</span>&nbsp;OK&nbsp;·&nbsp;
-            <span id="kpi-disc" style="color:var(--red);font-weight:800">—</span>&nbsp;discrepancies
+        <!-- ── Left sidebar ─────────── -->
+        <div class="inv-sidebar">
+
+          <!-- KPIs -->
+          <div class="sidebar-section">
+            <div class="sidebar-title">Live KPIs</div>
+            <div class="kpi-grid">
+              <div class="kpi-card">
+                <div class="kpi-val" id="kpi-bins">—</div>
+                <div class="kpi-label">Bins Counted</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-val" id="kpi-items">—</div>
+                <div class="kpi-label">HUs Counted</div>
+              </div>
+              <div class="kpi-card green">
+                <div class="kpi-val" id="kpi-bin-acc">—</div>
+                <div class="kpi-label">Bin Accuracy</div>
+              </div>
+              <div class="kpi-card green">
+                <div class="kpi-val" id="kpi-inv-acc">—</div>
+                <div class="kpi-label">Inv Accuracy</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filter pills -->
+          <div class="sidebar-section">
+            <div class="sidebar-title">Filter By State</div>
+            <div class="filter-pills" id="filter-pills">
+              <span class="pill active" data-filter="all">All</span>
+              <span class="pill green"  data-filter="ok">OK</span>
+              <span class="pill amber"  data-filter="adj">Adj</span>
+              <span class="pill"        data-filter="move">Move</span>
+              <span class="pill"        data-filter="move_adj">Move+Adj</span>
+              <span class="pill red"    data-filter="missing_temp">Missing?</span>
+              <span class="pill red"    data-filter="missing">Missing</span>
+              <span class="pill cyan"   data-filter="unexpected">Unexpected</span>
+            </div>
+          </div>
+
+          <!-- SAP Upload -->
+          <div class="sidebar-section">
+            <div class="sidebar-title">SAP Data Upload</div>
+            <div class="upload-zone" id="upload-zone"
+                 onclick="document.getElementById('sap-file').click()"
+                 ondragover="event.preventDefault();this.classList.add('drag')"
+                 ondragleave="this.classList.remove('drag')"
+                 ondrop="_onDrop(event)">
+              <div style="font-size:24px">📄</div>
+              <p>Drop XLSX here or tap to browse</p>
+              <span class="upload-btn">Choose File</span>
+            </div>
+            <input type="file" id="sap-file" accept=".xlsx,.xls" style="display:none"
+                   onchange="_onFileSelect(this)">
+            <div id="upload-status" style="font-size:9px;color:var(--text-3);margin-top:6px;text-align:center"></div>
+          </div>
+
+          <!-- Aisle breakdown -->
+          <div class="sidebar-title" style="padding:16px 16px 4px">Aisle Breakdown</div>
+          <div class="aisle-list" id="aisle-list">
+            <div class="skeleton" style="height:32px;margin-bottom:4px"></div>
+            <div class="skeleton" style="height:32px;margin-bottom:4px"></div>
+            <div class="skeleton" style="height:32px;margin-bottom:4px"></div>
           </div>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-bar" id="bin-acc-bar" style="--bar-color:var(--green)"></div>
-          <div class="kpi-label">Bin Accuracy</div>
-          <div class="kpi-value green" id="kpi-bin-acc">—</div>
-          <div class="kpi-sub">Perfect bins / total bins</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-bar" id="inv-acc-bar" style="--bar-color:var(--green)"></div>
-          <div class="kpi-label">Inventory Accuracy</div>
-          <div class="kpi-value green" id="kpi-inv-acc">—</div>
-          <div class="kpi-sub">OK HUs / total audited HUs</div>
-        </div>
-      </div>
 
-      <!-- Secondary metrics strip -->
-      <div class="metrics-strip">
-        <div class="metric-chip">
-          <div class="chip-dot" style="background:var(--amber)"></div>
-          <span class="chip-label">Pending</span>
-          <span class="chip-val amber mono" id="chip-pending">—</span>
-        </div>
-        <div class="metric-chip">
-          <div class="chip-dot" style="background:var(--red)"></div>
-          <span class="chip-label">Missing</span>
-          <span class="chip-val red mono" id="chip-missing">—</span>
-        </div>
-        <div class="metric-chip">
-          <div class="chip-dot" style="background:var(--purple)"></div>
-          <span class="chip-label">Movements</span>
-          <span class="chip-val mono" style="color:var(--purple)" id="chip-move">—</span>
-        </div>
-        <div class="metric-chip">
-          <div class="chip-dot" style="background:var(--fresh)"></div>
-          <span class="chip-label">Pallet Counts</span>
-          <span class="chip-val mono" style="color:var(--fresh)" id="chip-pallet">—</span>
-        </div>
-        <div class="metric-chip">
-          <div class="chip-dot" style="background:var(--red)"></div>
-          <span class="chip-label">Fresh Expired</span>
-          <span class="chip-val red mono" id="chip-expired">—</span>
-        </div>
-        <div class="metric-chip" style="margin-left:auto">
-          <span class="chip-label" id="m-items" style="font-family:'JetBrains Mono',monospace;color:var(--text-2)">— SAP items</span>
-        </div>
-      </div>
+        <!-- ── Main table panel ──────── -->
+        <div class="inv-main">
+          <div class="table-header">
+            <div class="table-title" id="table-title">Cycle Count — Loading…</div>
+            <div class="table-actions">
+              <button class="action-btn" onclick="exportXLSX()">⬇ Export XLSX</button>
+              <button class="action-btn green" onclick="finalizeSession()"
+                      title="Transitions missing_temp → missing for all unresolved HUs">
+                ✔ Finalize Session
+              </button>
+            </div>
+          </div>
 
-      <div class="filter-bar" id="status-pills"></div>
-      <div class="aisle-filter-bar" id="aisle-filter-bar">
-        <span id="aisle-filter-text">Filtered: Aisle —</span>
-        <button class="aisle-filter-clear" onclick="clearAisleFilter()">✕ Clear</button>
-      </div>
+          <!--
+            TABLE — built with DocumentFragment in JS.
+            tbody is the only element re-rendered per page.
+            One DocumentFragment → one innerHTML assignment = one repaint.
+          -->
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>HU</th>
+                  <th>Material</th>
+                  <th>Expected Bin</th>
+                  <th>Scanned Bin</th>
+                  <th>Exp Qty</th>
+                  <th>Scn Qty</th>
+                  <th>Type</th>
+                  <th>Notes</th>
+                  <th>Scanned By</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody id="inv-tbody">
+                <tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-3)">
+                  Loading…
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
 
-      <div class="table-wrap" id="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Time</th><th>User</th><th>Aisle</th><th>Bin</th><th>HU</th>
-              <th>Product</th><th>SAP Qty</th><th>Count</th><th>Variance</th>
-              <th>Status</th><th>SLED</th><th>Note</th>
-            </tr>
-          </thead>
-          <tbody id="skeleton-tbody"></tbody>
-        </table>
+          <div class="pagination">
+            <span id="page-info">—</span>
+            <div class="page-btns">
+              <button class="page-btn" id="btn-prev-page" onclick="changePage(-1)" disabled>← Prev</button>
+              <button class="page-btn" id="btn-next-page" onclick="changePage(1)"  disabled>Next →</button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
-    <!-- ══ VIEW: AISLES ══ -->
-    <div class="view" id="view-aisles">
-      <div class="aisle-view-header">
-        <h2>🗺 Aisle-by-Aisle Audit Status</h2>
-        <span id="aisle-view-summary"></span>
-      </div>
-      <div class="aisle-view-grid" id="aisle-view-grid"></div>
-    </div>
 
-    <!-- ══ VIEW: SAFETY ══ -->
+    <!-- ════════════════════════════════
+         TAB 2 — SAFETY
+    ═════════════════════════════════ -->
     <div class="view" id="view-safety">
-      <div class="view-header">
-        <h2>🦺 Safety &amp; Incident Reports</h2>
-        <div style="display:flex;gap:6px" id="safety-filter-pills"></div>
+      <div class="safety-wrap">
+        <div class="safety-stats">
+          <div class="s-stat">
+            <div class="s-stat-val" id="si-open">—</div>
+            <div class="s-stat-label">Open</div>
+          </div>
+          <div class="s-stat">
+            <div class="s-stat-val" id="si-critical" style="color:var(--red)">—</div>
+            <div class="s-stat-label">Critical</div>
+          </div>
+          <div class="s-stat">
+            <div class="s-stat-val" id="si-resolved" style="color:var(--green)">—</div>
+            <div class="s-stat-label">Resolved</div>
+          </div>
+          <div class="s-stat">
+            <div class="s-stat-val" id="si-total">—</div>
+            <div class="s-stat-label">Total</div>
+          </div>
+        </div>
+        <div id="incident-list">
+          <div class="skeleton skeleton-card"></div>
+          <div class="skeleton skeleton-card"></div>
+          <div class="skeleton skeleton-card"></div>
+        </div>
       </div>
-      <div class="safety-stat-row">
-        <div class="safety-stat"><div class="s-val red"   id="ss-open">—</div><div class="s-label">Open</div></div>
-        <div class="safety-stat"><div class="s-val amber" id="ss-crit">—</div><div class="s-label">High / Critical</div></div>
-        <div class="safety-stat"><div class="s-val green" id="ss-res">—</div><div class="s-label">Resolved</div></div>
-        <div class="safety-stat"><div class="s-val" style="color:var(--accent)" id="ss-total">—</div><div class="s-label">Total</div></div>
-      </div>
-      <div class="safety-list" id="safety-list-container"></div>
     </div>
 
-    <!-- ══ VIEW: TRAINING ══ -->
-    <div class="view" id="view-training">
-      <div class="view-header">
-        <h2>📚 Training &amp; SOP Library</h2>
-        <button onclick="openTrainingEditor()" style="padding:8px 18px;border-radius:var(--r-md);background:var(--teal);color:#fff;font-size:11px;font-weight:800;border:none;cursor:pointer;text-transform:uppercase;letter-spacing:.5px">+ New SOP</button>
+
+    <!-- ════════════════════════════════
+         TAB 3 — DATA ADMIN
+    ═════════════════════════════════ -->
+    <div class="view" id="view-admin">
+      <div class="admin-wrap">
+        <div class="admin-section">
+          <h2>Current Session</h2>
+          <p>All scanner data and SAP uploads are scoped to the session below.
+             A new session automatically starts each calendar day.</p>
+          <div class="admin-session" id="admin-session-id">Loading…</div>
+        </div>
+
+        <div class="admin-section">
+          <h2>Finalize Session</h2>
+          <p>Transitions all <strong>missing_temp</strong> records to a final
+             <strong>missing</strong> state. Run this at the end of each counting day
+             before archiving.</p>
+          <button class="admin-btn warning" onclick="finalizeSession()">
+            ✔ Finalize Missing HUs
+          </button>
+        </div>
+
+        <div class="admin-section">
+          <h2>Archive SAP Data</h2>
+          <p>Deletes all SAP upload rows for the current session from Supabase.
+             Scanner devices will need a fresh upload tomorrow.</p>
+          <button class="admin-btn warning" onclick="_confirmAction('archive-sap')">
+            🗃 Archive SAP Data
+          </button>
+        </div>
+
+        <div class="admin-section">
+          <h2>Clear Cycle Count Data</h2>
+          <p>Permanently deletes all cycle count records for the current session.
+             Use only to discard a test run. This action <strong>cannot be undone.</strong></p>
+          <button class="admin-btn danger" onclick="_confirmAction('clear-counts')">
+            ⚠ Clear Count Data
+          </button>
+        </div>
+
+        <div class="admin-section">
+          <h2>Export Session Data</h2>
+          <p>Downloads a CSV of all cycle count records for the current session.</p>
+          <button class="admin-btn primary" onclick="exportXLSX()">⬇ Download XLSX</button>
+        </div>
       </div>
-      <div class="training-list" id="training-list-container"></div>
     </div>
 
-  </main>
+  </div><!-- /views -->
+</div><!-- /dashboard -->
+
+
+<!-- ── Safety Incident Detail Modal ──── -->
+<div class="modal-overlay" id="modal-incident">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>Incident Detail</h2>
+      <button class="modal-close" onclick="closeIncidentModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-incident-body">
+      <!-- Populated by JS -->
+    </div>
+    <div class="modal-actions" id="modal-incident-actions">
+      <button class="modal-btn cancel" onclick="closeIncidentModal()">Close</button>
+      <button class="modal-btn critical" id="btn-mark-critical" onclick="_markIncident('critical')">
+        Mark Critical
+      </button>
+      <button class="modal-btn resolve" id="btn-resolve" onclick="_markIncident('resolved')">
+        Mark Resolved
+      </button>
+    </div>
+  </div>
 </div>
 
 
+<!-- ── TV Metric Display Overlay ─────── -->
+<div class="tv-overlay" id="tv-overlay">
+
+  <button class="tv-exit-btn" onclick="exitTVMode()">✕ Exit TV Mode</button>
+
+  <div class="tv-header">
+    <div class="tv-logo">
+      <span style="font-size:22px">🏭</span>
+      <div>
+        <div class="tv-logo-text">Novus Foods · Plant 1730</div>
+        <div class="tv-session" id="tv-session-id">—</div>
+      </div>
+    </div>
+    <div class="tv-clock" id="tv-clock">—</div>
+  </div>
+
+  <!-- 4 KPI cards -->
+  <div class="tv-kpis">
+    <div class="tv-kpi">
+      <div class="tv-kpi-val" id="tv-bins">—</div>
+      <div class="tv-kpi-label">Bins Counted</div>
+    </div>
+    <div class="tv-kpi">
+      <div class="tv-kpi-val" id="tv-items">—</div>
+      <div class="tv-kpi-label">HUs Scanned</div>
+    </div>
+    <div class="tv-kpi green">
+      <div class="tv-kpi-val" id="tv-bin-acc">—</div>
+      <div class="tv-kpi-label">Bin Accuracy</div>
+    </div>
+    <div class="tv-kpi green">
+      <div class="tv-kpi-val" id="tv-inv-acc">—</div>
+      <div class="tv-kpi-label">Inv. Accuracy</div>
+    </div>
+  </div>
+
+  <!-- Per-aisle completion grid -->
+  <div class="tv-aisles-wrap">
+    <div class="tv-aisles-title">Aisle Completion</div>
+    <div class="tv-aisle-grid" id="tv-aisle-grid">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <div class="tv-live">
+    <div class="tv-live-dot"></div>
+    Live
+  </div>
+
+</div>
+
+
+<!-- ── Double-Confirm Destructive Modal ── -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h2 id="confirm-title">⚠ Confirm Action</h2>
+    <p id="confirm-body">Are you sure?</p>
+    <p style="font-size:11px;color:var(--text-3);margin-bottom:12px">
+      Type <strong id="confirm-phrase" style="color:var(--red);font-family:monospace"></strong> to confirm:
+    </p>
+    <input type="text" class="confirm-input" id="confirm-input"
+           placeholder="Type the phrase above…"
+           oninput="_onConfirmInput()">
+    <div class="confirm-actions">
+      <button class="btn-cancel-confirm" onclick="closeConfirm()">Cancel</button>
+      <button class="btn-destroy" id="btn-destroy" disabled onclick="_executeConfirm()">
+        Confirm
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+  SCRIPTS
+════════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="novus-core.js"></script>
 <script>
+/*
+  monitor.html — Page Script (Supabase Edition)
+
+  Architecture:
+  ─ Supabase Realtime subscription replaces the old 10s polling interval.
+    Any INSERT on cycle_counts triggers an immediate re-render of the
+    current page — no unnecessary full-table scans.
+  ─ All table data is paginated (PAGE_SIZE rows per query).
+    The DB never returns unbounded result sets to the frontend.
+  ─ The DocumentFragment pattern is used for the table body:
+    build all <tr> strings in JS, assign as one innerHTML block = one repaint.
+  ─ KPI metrics are computed from a lightweight aggregate query (no full fetch).
+*/
+
 'use strict';
 
-/* ── Mermaid ── */
-if (typeof mermaid !== 'undefined') {
-  try {
-    mermaid.initialize({
-      startOnLoad: false, theme: 'dark',
-      themeVariables: {
-        darkMode: true, primaryColor: '#00e5ff', primaryTextColor: '#e1e5f0',
-        primaryBorderColor: '#2a3142', lineColor: '#4a5568',
-        secondaryColor: '#1f2538', tertiaryColor: '#252c3e',
-        fontFamily: 'DM Sans, sans-serif', fontSize: '13px',
-      },
-      flowchart: { curve: 'basis', padding: 16 },
-    });
-  } catch (e) { console.warn('Mermaid:', e); }
-}
+/* ─────────────────────────────────────────
+   CONSTANTS
+───────────────────────────────────────── */
 
-/* ════════════════════════════════
+const PAGE_SIZE = 50; // Rows per page — never queries more than this at once
+
+/* ─────────────────────────────────────────
    STATE
-════════════════════════════════ */
-let sapMeta=null, report=[], assignments=[], safetyData=[], trainingData=[], slideEditorData=[];
-let assignAisles=new Set(), currentStatusFilter='all', currentAisleFilter=null, safetyFilter='all';
-let currentPage=0;
-const PAGE_SIZE=50;
+───────────────────────────────────────── */
 
-/* ── Skeleton rows ── */
-(function(){
-  const tbody=document.getElementById('skeleton-tbody'); if(!tbody)return;
-  const w=['30%','45%','20%','40%','35%','55%','25%','25%','20%','40%','30%','50%'];
-  tbody.innerHTML=Array.from({length:7},()=>'<tr>'+w.map(x=>`<td><span class="skeleton-cell" style="width:${x}"></span></td>`).join('')+'</tr>').join('');
-})();
+let currentTab        = 'inventory';
+let currentFilter     = 'all';
+let currentPage       = 0;
+let totalCount        = 0;
+let activeIncidentId  = null;
+let pendingAction     = null; // For double-confirm modal
+let allCountData      = [];   // Current page data cache (for CSV)
+let realtimeChannel   = null; // Supabase realtime channel handle
 
-NovusLoader.start();
-fetchFullDashboard();
-initAislePicker();
-setInterval(pollLightweight, 10000);
+/* ─────────────────────────────────────────
+   INIT
+───────────────────────────────────────── */
 
-/* ════════════════════════════════
-   VIEW SWITCHER
-════════════════════════════════ */
-function showView(name) {
-  ['audit','aisles','safety','training'].forEach(v=>{
-    const el=document.getElementById('view-'+v), tab=document.getElementById('tab-'+v);
-    if(el) el.classList.remove('active');
-    if(tab)tab.classList.remove('active');
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('session-label').textContent = SESSION_ID;
+  document.getElementById('admin-session-id').textContent = SESSION_ID;
+
+  // Filter pill delegation
+  document.getElementById('filter-pills').addEventListener('click', e => {
+    const pill = e.target.closest('.pill');
+    if (!pill) return;
+    document.querySelectorAll('#filter-pills .pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    currentFilter = pill.dataset.filter;
+    currentPage   = 0;
+    fetchAndRender();
   });
-  const vEl=document.getElementById('view-'+name), tEl=document.getElementById('tab-'+name);
-  if(vEl)vEl.classList.add('active');
-  if(tEl)tEl.classList.add('active');
-  if(name==='training')loadTrainingData();
-  if(name==='safety')  renderSafetyView();
-  if(name==='aisles')  renderAisleView();
-}
 
-/* ════════════════════════════════
-   FETCH
-════════════════════════════════ */
-async function fetchFullDashboard(){
-  const badge=document.getElementById('freshness-badge');
-  badge.className='freshness none'; badge.textContent='📋 Connecting…';
-  try{
-    const res=await fetch(API_URL,{redirect:'follow'});
-    const text=await res.text(); let data;
-    try{data=JSON.parse(text);}
-    catch{badge.textContent='❌ API returned non-JSON';toast('API error — check Apps Script deployment','red');NovusLoader.done();return;}
-    sapMeta=data.sapMeta; report=data.report||[]; assignments=data.assignments||[];
-    updateFreshness();updateMetrics();renderPills();renderTable();_fetchSafetySummary();
-  }catch{badge.textContent='❌ Cannot reach API';toast('Cannot reach API','red');}
-  finally{NovusLoader.done();}
-}
+  // Initial data load
+  fetchAndRender();
+  fetchSafetyData();
+  fetchKPIs();
+  fetchAisleBreakdown();
 
-let _pfc=0;
-async function pollLightweight(){
-  try{
-    const res=await fetch(API_URL+'?type=poll',{redirect:'follow'});
-    const text=await res.text(); let data;
-    try{data=JSON.parse(text);}catch{_pfc++;return;}
-    _pfc=0; if(data.error)return;
-    sapMeta=data.sapMeta; report=data.report||[]; assignments=data.assignments||[];
-    updateFreshness();updateMetrics();renderPills();renderTable();
-    if(document.getElementById('view-safety').classList.contains('active')){await _fetchSafetySummary();renderSafetyView();}
-    if(document.getElementById('view-aisles').classList.contains('active')) renderAisleView();
-  }catch{_pfc++;}
-}
-
-async function _fetchSafetySummary(){
-  try{const res=await fetch(API_URL+'?type=safety',{redirect:'follow'});const data=JSON.parse(await res.text());safetyData=data.incidents||[];_updateSafetySummarySidebar();}
-  catch{}
-}
-
-/* ════════════════════════════════
-   SAP UPLOAD
-════════════════════════════════ */
-document.getElementById('file-input').addEventListener('change',async(e)=>{
-  const file=e.target.files?.[0];if(!file)return;
-  const zone=document.getElementById('upload-zone');
-  zone.classList.add('uploading');
-  document.getElementById('uz-icon').textContent='⏳';
-  document.getElementById('uz-label').textContent='Parsing…';
-  NovusLoader.start();
-  try{
-    const ab=await file.arrayBuffer();
-    const wb=XLSX.read(new Uint8Array(ab),{type:'array'});
-    const json=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-    if(!json.length)throw new Error('Sheet is empty');
-    const rows=json.map(r=>{
-      const bin=_col(r,['Storage Bin','Bin','Stge Bin','StorageBin','SBin']);
-      const hu =_col(r,['Handling Unit','HU','HandlingUnit','Hndlg Unit']);
-      const prod=_col(r,['Product','Material','SKU','Matl','Material Number']);
-      const bat=_col(r,['Batch','Btch']);
-      const desc=_col(r,['Product Short Description','Description','Material Description','Matl Desc','Short Text']);
-      const qty=_col(r,['Quantity','Qty','Available stock','Avail. Stock','Unrestricted','Total Stock']);
-      const unit=_col(r,['Unit','UOM','Base Unit','BUn']);
-      const sty=_col(r,['Stock Type','StkType']);
-      const grd=_col(r,['Goods Receipt Date','GR Date']);
-      const sled=_col(r,['Shelf Life Expiration Date','SLED','SLED/BBD','Expiration']);
-      return[String(bin??'').trim().toUpperCase(),String(hu??'').trim(),String(prod??'').trim(),String(bat??'').trim(),String(desc??'').trim(),parseFloat(qty)||0,String(unit??'LB').trim(),String(sty??'F2').trim(),String(grd??''),String(sled??'')];
-    }).filter(r=>r[0]&&r[1]);
-    if(!rows.length)throw new Error('0 valid rows — needs Bin + HU columns');
-    document.getElementById('uz-label').textContent=`Uploading ${rows.length.toLocaleString()} rows…`;
-    const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},redirect:'follow',body:JSON.stringify({action:'uploadSAPData',rows,uploader:NovusSettings.getUser()||'Control Center',filename:file.name})});
-    const result=JSON.parse(await res.text());
-    if(result.success){
-      zone.classList.remove('uploading');zone.classList.add('success');
-      document.getElementById('uz-icon').textContent='✅';
-      document.getElementById('uz-label').textContent=`${result.rowCount.toLocaleString()} items loaded`;
-      toast(`SAP import: ${result.rowCount.toLocaleString()} rows`,'green');
-      setTimeout(_resetUploadZone,4000);fetchFullDashboard();
-    }else throw new Error(result.error||'Upload failed');
-  }catch(err){
-    toast('Upload failed: '+err.message,'red');
-    zone.classList.remove('uploading');zone.classList.add('error');
-    document.getElementById('uz-icon').textContent='❌';
-    document.getElementById('uz-label').textContent=err.message.substring(0,42);
-    setTimeout(_resetUploadZone,4000);
-  }finally{NovusLoader.done();e.target.value='';}
+  // Supabase Realtime subscription
+  _subscribeRealtime();
 });
 
-function _resetUploadZone(){const z=document.getElementById('upload-zone');z.classList.remove('success','uploading','error');document.getElementById('uz-icon').textContent='📂';document.getElementById('uz-label').textContent='Drop SAP Export (.xlsx)';}
-function _col(row,aliases){for(const a of aliases){if(row[a]!==undefined)return row[a];}const norm=s=>s.toLowerCase().replace(/[\s_.\-\/]/g,'');const na=aliases.map(norm);for(const k of Object.keys(row)){if(na.includes(norm(k)))return row[k];}for(const k of Object.keys(row)){const nk=norm(k);for(const a of na){if(a.length>=3&&nk.includes(a))return row[k];}}return null;}
+/* ─────────────────────────────────────────
+   REALTIME — Supabase Realtime replaces polling
+───────────────────────────────────────── */
 
-/* ════════════════════════════════
-   METRICS
-════════════════════════════════ */
-function updateFreshness(){
-  const badge=document.getElementById('freshness-badge'),meta=document.getElementById('upload-meta');
-  if(!sapMeta?.timestamp){badge.className='freshness none';badge.textContent='📋 No SAP Data';meta.innerHTML='';return;}
-  const ts=new Date(sapMeta.timestamp),mins=Math.round((Date.now()-ts)/60000),hrs=Math.round(mins/60),cnt=Number(sapMeta.rowCount||0).toLocaleString();
-  document.getElementById('m-items').textContent=`${cnt} SAP items`;
-  if(mins<120){badge.className='freshness fresh';badge.textContent=`📋 Fresh (${mins}m) · ${cnt}`;}
-  else if(hrs<8){badge.className='freshness stale';badge.textContent=`📋 ${hrs}h ago · ${cnt}`;}
-  else{badge.className='freshness old';badge.textContent=`⚠ ${hrs}h old · ${cnt}`;}
-  meta.innerHTML=`<strong>Last upload:</strong> ${ts.toLocaleString()}<br><strong>By:</strong> ${sapMeta.uploader||'—'}<br><strong>File:</strong> ${sapMeta.filename||'—'}`;
+/**
+ * _subscribeRealtime — opens a Postgres changes subscription.
+ * Any INSERT or UPDATE on cycle_counts or safety_incidents
+ * triggers a lightweight re-fetch without querying the full table.
+ */
+function _subscribeRealtime() {
+  realtimeChannel = sb
+    .channel('novus_monitor')
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'cycle_counts' },
+      () => {
+        // New scan arrived — refresh table + KPIs
+        fetchAndRender();
+        fetchKPIs();
+        fetchAisleBreakdown();
+      }
+    )
+    .on(
+      'postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'cycle_counts' },
+      () => {
+        fetchAndRender();
+        fetchKPIs();
+      }
+    )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'safety_incidents' },
+      () => {
+        fetchSafetyData();
+      }
+    )
+    .subscribe(status => {
+      const dot   = document.getElementById('live-dot');
+      const label = document.getElementById('live-label');
+      if (status === 'SUBSCRIBED') {
+        dot.classList.remove('disconnected');
+        label.textContent = 'Live';
+      } else {
+        dot.classList.add('disconnected');
+        label.textContent = status === 'CHANNEL_ERROR' ? 'Disconnected' : 'Connecting…';
+      }
+    });
+}
+
+/* ─────────────────────────────────────────
+   TAB SWITCHING
+───────────────────────────────────────── */
+
+function switchTab(tab) {
+  currentTab = tab;
+
+  document.querySelectorAll('.tab-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === tab)
+  );
+  document.querySelectorAll('.view').forEach(v =>
+    v.classList.toggle('active', v.id === `view-${tab}`)
+  );
+
+  // Lazy-load safety data when tab is first opened
+  if (tab === 'safety') fetchSafetyData();
+}
+
+/* ─────────────────────────────────────────
+   INVENTORY — Paginated table fetch
+───────────────────────────────────────── */
+
+/**
+ * fetchAndRender — fetches one page of cycle_counts from Supabase,
+ * then renders the table via a single innerHTML assignment (one repaint).
+ *
+ * Uses .range(from, to) for strict pagination — never fetches unbounded data.
+ */
+async function fetchAndRender() {
+  const from = currentPage * PAGE_SIZE;
+  const to   = from + PAGE_SIZE - 1;
+
+  let query = sb
+    .from('cycle_counts')
+    .select('*', { count: 'exact' })
+    .eq('session_id', SESSION_ID)
+    .order('scanned_at', { ascending: false })
+    .range(from, to);
+
+  // Apply type filter if not 'all'
+  if (currentFilter !== 'all') {
+    query = query.eq('type', currentFilter);
+  }
+
+  const { data, count, error } = await query;
+
+  if (error) {
+    console.error('[monitor] fetchAndRender error:', error);
+    document.getElementById('inv-tbody').innerHTML =
+      `<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--red)">
+        Error loading data: ${escHtml(error.message)}
+      </td></tr>`;
+    return;
+  }
+
+  allCountData = data || [];
+  totalCount   = count || 0;
+
+  renderTable(allCountData);
+  renderPagination();
+  updateTableTitle();
 }
 
 /**
- * Dynamic accuracy colour-coding:
- *   ≥ 98%  → Emerald Green  (#10B981)
- *   95–97% → Amber Gold     (#F59E0B)
- *   < 95%  → Coral Red      (#EF4444)
+ * renderTable — builds the tbody HTML string in memory,
+ * then assigns it with a single innerHTML call.
+ * This triggers exactly one style recalculation + one paint.
  */
-function updateMetrics(){
-  const huRows=report.filter(r=>r.type!=='pallet_count');
-  const total=huRows.length,ok=huRows.filter(r=>r.type==='ok').length;
-  const pending=huRows.filter(r=>r.type==='missing_temp').length;
-  const missing=huRows.filter(r=>r.type==='missing').length;
-  const moves=huRows.filter(r=>r.type==='move'||r.type==='move_adj').length;
-  const pallets=report.filter(r=>r.type==='pallet_count').length;
-  const expired=report.filter(r=>r.sledStatus==='expired').length;
-  const disc=total-ok;
-
-  const binsMap={};
-  huRows.forEach(r=>{if(!r.scanBin)return;if(!binsMap[r.scanBin])binsMap[r.scanBin]=[];binsMap[r.scanBin].push(r);});
-  const totalBins=Object.keys(binsMap).length;
-  const perfectBins=Object.values(binsMap).filter(items=>items.every(i=>i.type==='ok')).length;
-
-  const binAccNum=totalBins>0?(perfectBins/totalBins*100):null;
-  const invAccNum=total>0?(ok/total*100):null;
-  const binAcc=binAccNum!==null?binAccNum.toFixed(1)+'%':'—';
-  const invAcc=invAccNum!==null?invAccNum.toFixed(1)+'%':'—';
-
-  function accClass(v){
-    if(v===null)return'accent';
-    if(v>=98)return'green';
-    if(v>=95)return'amber';
-    return'red';
-  }
-  function barColor(cls){
-    return cls==='green'?'var(--green)':cls==='amber'?'var(--amber)':cls==='red'?'var(--red)':'var(--accent)';
+function renderTable(rows) {
+  if (!rows.length) {
+    document.getElementById('inv-tbody').innerHTML =
+      `<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-3)">
+        No records for this filter
+      </td></tr>`;
+    return;
   }
 
-  _setKPI('kpi-bins',   totalBins,'accent');
-  _setKPI('kpi-total',  total,    'purple');
-  _setKPI('kpi-bin-acc',binAcc,   accClass(binAccNum));
-  _setKPI('kpi-inv-acc',invAcc,   accClass(invAccNum));
-
-  document.getElementById('kpi-bins-total').textContent=totalBins||'—';
-  document.getElementById('kpi-ok').textContent=ok;
-  document.getElementById('kpi-disc').textContent=disc;
-
-  /* Update accent bar colours to match KPI state */
-  document.getElementById('bin-acc-bar').style.setProperty('--bar-color',barColor(accClass(binAccNum)));
-  document.getElementById('inv-acc-bar').style.setProperty('--bar-color',barColor(accClass(invAccNum)));
-
-  document.getElementById('chip-pending').textContent=pending||'—';
-  document.getElementById('chip-missing').textContent=missing||'—';
-  document.getElementById('chip-move').textContent=moves||'—';
-  document.getElementById('chip-pallet').textContent=pallets||'—';
-  document.getElementById('chip-expired').textContent=expired||'—';
-}
-
-function _setKPI(id,val,colorClass){
-  const el=document.getElementById(id);if(!el)return;
-  el.textContent=typeof val==='number'?val.toLocaleString():val;
-  el.className='kpi-value '+colorClass;
-}
-
-/* ════════════════════════════════
-   FILTER PILLS
-════════════════════════════════ */
-const PILL_DEFS=[
-  {key:'all',           label:'All',           color:''},
-  {key:'ok',            label:'OK',            color:'green'},
-  {key:'adj',           label:'Adjustments',   color:'amber'},
-  {key:'move',          label:'Movements',     color:'purple'},
-  {key:'move_adj',      label:'Move+Adj',      color:'purple'},
-  {key:'missing_temp',  label:'Pending',       color:'amber'},
-  {key:'missing',       label:'Missing',       color:'red'},
-  {key:'unexpected',    label:'Not in SAP',    color:'cyan'},
-  {key:'pallet_count',  label:'Pallet Counts', color:'fresh'},
-  {key:'fresh_expired', label:'Expired',       color:'fresh'},
-];
-
-function renderPills(){
-  const counts={all:report.length};
-  report.forEach(r=>{counts[r.type]=(counts[r.type]||0)+1;if(r.sledStatus==='expired')counts['fresh_expired']=(counts['fresh_expired']||0)+1;});
-  const colorMap={green:'var(--green)',amber:'var(--amber)',red:'var(--red)',purple:'var(--purple)',cyan:'var(--cyan)',fresh:'var(--fresh)'};
-  document.getElementById('status-pills').innerHTML=PILL_DEFS.map(cat=>{
-    const cnt=counts[cat.key]||0;
-    if(!cnt&&cat.key!=='all')return'';
-    const clr=cat.color?colorMap[cat.color]:'var(--text-2)';
-    return`<div class="pill${currentStatusFilter===cat.key?' active':''}" onclick="filterTable('${cat.key}')"><span class="pill-count" style="color:${clr}">${cnt}</span><span class="pill-label">${cat.label}</span></div>`;
-  }).join('');
-}
-
-function filterTable(s){currentStatusFilter=s;currentPage=0;renderPills();renderTable();}
-function setAisleFilter(l){currentAisleFilter=l;currentPage=0;document.getElementById('aisle-filter-text').textContent=`Filtered: Aisle ${l}`;document.getElementById('aisle-filter-bar').classList.add('visible');showView('audit');renderTable();}
-function clearAisleFilter(){currentAisleFilter=null;document.getElementById('aisle-filter-bar').classList.remove('visible');currentPage=0;renderTable();}
-
-/* ════════════════════════════════
-   AUDIT TABLE
-════════════════════════════════ */
-const TAG_LABELS={ok:'OK',adj:'Adjusted',move:'Moved',move_adj:'Move+Adj',missing_temp:'Pending',missing:'Missing',found_moved:'Found',unexpected:'Not in SAP',pallet_count:'Pallet Count'};
-
-function renderTable(){
-  let filtered=currentStatusFilter==='all'?report:currentStatusFilter==='fresh_expired'?report.filter(r=>r.sledStatus==='expired'):report.filter(r=>r.type===currentStatusFilter);
-  if(currentAisleFilter)filtered=filtered.filter(r=>r.aisle===currentAisleFilter||(r.scanBin&&r.scanBin.charAt(1)===currentAisleFilter));
-  const wrap=document.getElementById('table-wrap'),totalPages=Math.ceil(filtered.length/PAGE_SIZE);
-  if(!filtered.length){wrap.innerHTML=report.length===0?'<div class="empty-state"><div class="icon">📡</div><h2>Upload SAP data &amp; start counting</h2><p>Use the Control Center to upload your SAP export</p></div>':`<div class="empty-state"><div class="icon">🔍</div><h2>No ${currentStatusFilter.toUpperCase()} items${currentAisleFilter?' in Aisle '+currentAisleFilter:''}</h2></div>`;return;}
-  currentPage=Math.max(0,Math.min(currentPage,totalPages-1));
-  const start=currentPage*PAGE_SIZE,pageItems=filtered.slice(start,start+PAGE_SIZE);
-  const rowsHTML=pageItems.map(r=>{
-    const isPallet=r.type==='pallet_count';
-    const variance=isPallet?null:(r.scanQty||0)-(r.sapQty||0);
-    const vCls=variance==null?'':variance<0?'red':variance>0?'amber':'';
-    let timeStr='—';try{timeStr=new Date(r.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}catch{}
-    const sledCls=r.sledStatus==='expired'?'expired':r.sledStatus==='expiring'?'expiring':r.sledStatus==='valid'?'valid':'';
-    const sledCell=sledCls?`<span class="fresh-tag ${sledCls}">${r.sledStatus}</span>`:'—';
-    const aisle=r.aisle||(r.scanBin?r.scanBin.charAt(1):'—');
-    const cntCell=isPallet?`${r.scanQty} <span style="font-size:8px;color:var(--fresh);font-weight:800">pal</span>`:(r.scanQty??'—');
-    const varCell=isPallet?'<span style="color:var(--text-3)">—</span>':`${variance>0?'+':''}${variance}`;
-    return`<tr>
-      <td style="font-size:10px;color:var(--text-3)">${timeStr}</td>
-      <td style="font-size:11px;color:var(--text-2)">${escHtml(r.user||'—')}</td>
-      <td class="mono" style="font-size:14px;font-weight:800;color:var(--accent)">${aisle}</td>
-      <td class="mono" style="font-size:11px;font-weight:700;color:var(--text-2)">${r.scanBin||'—'}</td>
-      <td class="mono" style="font-size:10px;color:var(--text-3)">${isPallet?'—':String(r.hu||'').slice(-6)}</td>
-      <td style="font-size:11px;color:var(--text)">${escHtml(r.prod||'—')}</td>
-      <td class="mono" style="color:var(--text-2)">${isPallet?'—':(r.sapQty??'—')}</td>
-      <td class="mono">${cntCell}</td>
-      <td class="mono ${vCls}">${varCell}</td>
-      <td><span class="status-tag ${r.type}">${TAG_LABELS[r.type]||r.type}</span></td>
-      <td>${sledCell}</td>
-      <td style="font-size:10px;color:var(--text-3);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(r.note||'')}">${escHtml(r.note||'')}</td>
-    </tr>`;
-  }).join('');
-  const pagerHTML=filtered.length>PAGE_SIZE?`<div class="pager"><span class="pager-info">${start+1}–${Math.min(start+PAGE_SIZE,filtered.length)} of ${filtered.length.toLocaleString()}</span><div class="pager-btns"><button class="pager-btn" onclick="goPage(0)" ${currentPage===0?'disabled':''}>⟨⟨</button><button class="pager-btn" onclick="goPage(${currentPage-1})" ${currentPage===0?'disabled':''}>← Prev</button><button class="pager-btn" onclick="goPage(${currentPage+1})" ${currentPage>=totalPages-1?'disabled':''}>Next →</button><button class="pager-btn" onclick="goPage(${totalPages-1})" ${currentPage>=totalPages-1?'disabled':''}>⟩⟩</button></div></div>`:'';
-  wrap.innerHTML=`<table><thead><tr><th>Time</th><th>User</th><th>Aisle</th><th>Bin</th><th>HU</th><th>Product</th><th>SAP Qty</th><th>Count</th><th>Variance</th><th>Status</th><th>SLED</th><th>Note</th></tr></thead><tbody>${rowsHTML}</tbody></table>${pagerHTML}`;
-}
-
-function goPage(p){currentPage=p;renderTable();const w=document.getElementById('table-wrap');if(w)w.scrollTop=0;}
-
-/* ════════════════════════════════
-   AISLE VIEW
-════════════════════════════════ */
-function renderAisleView(){
-  const grid=document.getElementById('aisle-view-grid');grid.innerHTML='';
-  const aisleStats={};AISLE_ROWS.forEach(l=>{aisleStats[l]={bins:new Set(),ok:0,disc:0,expired:0};});
-  report.forEach(r=>{const l=r.aisle||(r.scanBin?r.scanBin.charAt(1):null);if(!l||!aisleStats[l])return;if(r.scanBin)aisleStats[l].bins.add(r.scanBin);if(r.type==='ok')aisleStats[l].ok++;else aisleStats[l].disc++;if(r.sledStatus==='expired')aisleStats[l].expired++;});
-  const sapLocal=JSON.parse(localStorage.getItem('novus_sap')||'[]');const sapByAisle={};AISLE_ROWS.forEach(l=>{sapByAisle[l]=new Set();});sapLocal.forEach(i=>{const b=String(i.sapBin||'').trim().toUpperCase(),l=b.charAt(1);if(sapByAisle[l])sapByAisle[l].add(b);});
-  let complete=0;
-  AISLE_ROWS.forEach(letter=>{
-    const st=aisleStats[letter],counted=st.bins.size,sapBins=sapByAisle[letter]?.size||0,total=sapBins||counted,pct=total>0?Math.round(counted/total*100):0,allDone=pct>=100&&total>0,inProg=pct>0&&!allDone;
-    if(allDone)complete++;
-    const fillClr=allDone?'var(--green)':inProg?'var(--amber)':'var(--accent)';
-    const cardCls=allDone?'aisle-card complete':inProg?'aisle-card in-progress':'aisle-card';
-    const discBadge=st.disc>0?`<span class="aisle-disc-badge" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)">${st.disc} disc.</span>`:allDone?`<span class="aisle-disc-badge" style="background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)">✓ Clean</span>`:'';
-    const card=document.createElement('div');
-    card.className=cardCls;
-    card.style.animationDelay=(AISLE_ROWS.indexOf(letter)*0.03)+'s';
-    card.innerHTML=`${discBadge}<div class="aisle-card-letter">W${letter}</div><div class="aisle-card-stats"><div class="aisle-card-stat"><span class="aisle-card-stat-label">Bins Counted</span><span class="aisle-card-stat-val" style="color:var(--accent)">${counted}${total?' / '+total:''}</span></div><div class="aisle-card-stat"><span class="aisle-card-stat-label">OK Items</span><span class="aisle-card-stat-val" style="color:var(--green)">${st.ok}</span></div>${st.expired?`<div class="aisle-card-stat"><span class="aisle-card-stat-label">Expired</span><span class="aisle-card-stat-val" style="color:var(--fresh)">${st.expired}</span></div>`:''}</div><div class="aisle-prog-bar"><div class="aisle-prog-fill" style="width:${pct}%;background:${fillClr}"></div></div><div class="aisle-card-pct">${pct}% complete</div>`;
-    card.onclick=()=>setAisleFilter(letter);
-    grid.appendChild(card);
-  });
-  document.getElementById('aisle-view-summary').textContent=`${complete} / ${AISLE_ROWS.length} aisles complete`;
-}
-
-/* ════════════════════════════════
-   RECONCILIATION
-════════════════════════════════ */
-async function finalizeReconciliation(){
-  const cnt=report.filter(r=>r.type==='missing_temp').length;
-  if(!cnt){toast('No pending items','blue');return;}
-  if(!confirm(`Permanently mark ${cnt} item(s) as MISSING?`))return;
-  toast('Finalizing…','blue');NovusLoader.start();
-  try{const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},redirect:'follow',body:JSON.stringify({action:'finalizeReconciliation',user:NovusSettings.getUser()||'Control Center'})});const r=JSON.parse(await res.text());if(r.success){toast(`${r.finalized} items finalized`,'green');pollLightweight();}else toast('Error: '+(r.error||'unknown'),'red');}
-  catch(err){toast('Failed: '+err.message,'red');}finally{NovusLoader.done();}
-}
-
-/* ════════════════════════════════
-   AISLE ASSIGNMENT
-════════════════════════════════ */
-function initAislePicker(){const c=document.getElementById('aisle-picker');AISLE_ROWS.forEach(r=>{const btn=document.createElement('button');btn.className='aisle-pick';btn.textContent=r;btn.onclick=()=>{assignAisles.has(r)?assignAisles.delete(r):assignAisles.add(r);btn.classList.toggle('on');};c.appendChild(btn);});}
-async function pushAssignments(){const list=[];assignAisles.forEach(r=>list.push({type:'aisle',value:`W${r}`,description:`Aisle W${r}`}));const prod=document.getElementById('prod-assign').value.trim();if(prod)list.push({type:'product',value:prod,description:`Product: ${prod}`});if(!list.length)return;try{await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},redirect:'follow',body:JSON.stringify({action:'setAssignments',assignments:list,assignedBy:NovusSettings.getUser()||'Control Center'})});toast('Assignments pushed','green');assignAisles.clear();document.querySelectorAll('.aisle-pick').forEach(b=>b.classList.remove('on'));document.getElementById('prod-assign').value='';}catch{toast('Push failed','red');}}
-async function clearAssignments(){try{await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},redirect:'follow',body:JSON.stringify({action:'setAssignments',assignments:[],assignedBy:NovusSettings.getUser()||'Control Center'})});toast('Assignments cleared','blue');}catch{}}
-
-/* ════════════════════════════════
-   EXPORT
-════════════════════════════════ */
-function exportAudit() {
-  if (!report.length) { toast('No data to export', 'red'); return; }
-
-  const now     = new Date();
-  const month   = now.getMonth() + 1;
-  const weekNum = Math.ceil(
-    ((now - new Date(now.getFullYear(), 0, 1)) / 86400000
-      + new Date(now.getFullYear(), 0, 1).getDay() + 1) / 7
-  );
-  const dateStr = now.toLocaleDateString('en-US', {
-    month: '2-digit', day: '2-digit', year: 'numeric',
-  });
-
-  // ── Exact column headers in the required SAP reconciliation order ──
-  const HEADERS = [
-    'Month',
-    'Week#',
-    'CT#',
-    'Date',
-    'SKU Type',
-    'Storage Bin',
-    'Handling Unit',
-    'Product',
-    'Product Short Description',
-    'Quantity (Expected)',
-    'Batch',
-    'Unit',
-    'Stock Type',
-    'Count Qty (Scanned)',
-    'Variance (Count Qty - Quantity)',
-    'Variance %',
-    'Type',
-    'Resolution',
-    'Auditor',
-    'Note',
-  ];
-
-  // ── Map each audit row to the column order above ──
-  const dataRows = report.map((r, i) => {
-    const ctNum       = i + 1;
-    const isPallet    = r.type === 'pallet_count';
-    const sapQty      = r.sapQty  ?? 0;
-    const countQty    = r.scanQty ?? 0;
-
-    // Variance: blank for pallet counts (no SAP HU reference)
-    const variance    = isPallet ? '' : countQty - sapQty;
-
-    // Variance %: blank when SAP qty is 0 or pallet count
-    const variancePct = isPallet || sapQty === 0
-      ? ''
-      : ((countQty - sapQty) / sapQty * 100).toFixed(2) + '%';
-
-    // SKU Type: Fresh for fresh audit mode rows, Standard otherwise
-    const skuType     = r.auditMode === 'fresh' ? 'Fresh' : 'Standard';
-
-    // Resolution: human-readable label derived from type
-    const RESOLUTION_MAP = {
-      ok:           'Confirmed Match',
-      adj:          'Quantity Adjusted',
-      move:         'Item Moved — Qty Match',
-      move_adj:     'Item Moved — Qty Mismatch',
-      missing_temp: 'Pending Reconciliation',
-      missing:      'Confirmed Missing',
-      unexpected:   'Not Found in SAP',
-      pallet_count: 'Bulk Pallet Count',
-      found_moved:  'Located After Move',
-    };
-    const resolution = RESOLUTION_MAP[r.type] || r.type || '';
-
-    return [
-      month,                        //  1  Month
-      weekNum,                      //  2  Week#
-      ctNum,                        //  3  CT#
-      dateStr,                      //  4  Date
-      skuType,                      //  5  SKU Type
-      r.scanBin    || '',           //  6  Storage Bin
-      r.hu         || '',           //  7  Handling Unit
-      r.prod       || '',           //  8  Product
-      r.desc       || '',           //  9  Product Short Description
-      isPallet ? '' : sapQty,       // 10  Quantity (Expected)
-      r.batch      || '',           // 11  Batch
-      r.unit       || 'LB',        // 12  Unit
-      r.stockType  || '',           // 13  Stock Type
-      countQty,                     // 14  Count Qty (Scanned)
-      variance,                     // 15  Variance (Count Qty - Quantity)
-      variancePct,                  // 16  Variance %
-      r.type       || '',           // 17  Type
-      resolution,                   // 18  Resolution
-      r.user       || '',           // 19  Auditor
-      r.note       || '',           // 20  Note
-    ];
-  });
-
-  // ── Build CSV string ──
-  // Wraps any cell that contains a comma, quote, or newline in double-quotes.
-  // Escapes any existing double-quotes by doubling them (RFC 4180).
-  function escapeCell(val) {
-    const str = String(val ?? '');
-    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-      return '"' + str.replace(/"/g, '""') + '"';
-    }
-    return str;
+  let html = '';
+  for (const r of rows) {
+    const binMatch = r.expected_bin === r.scanned_bin;
+    const qtyMatch = r.expected_qty === r.scanned_qty;
+    html += `
+      <tr>
+        <td class="mono" style="font-size:10px">${escHtml(r.hu)}</td>
+        <td>${escHtml(r.material || '—')}</td>
+        <td class="mono">${escHtml(r.expected_bin || '—')}</td>
+        <td class="mono" style="color:${binMatch ? 'var(--green)' : 'var(--amber)'}">
+          ${escHtml(r.scanned_bin)}
+        </td>
+        <td class="mono" style="text-align:center">${r.expected_qty ?? '—'}</td>
+        <td class="mono" style="text-align:center;color:${qtyMatch ? 'var(--green)' : 'var(--amber)'}">
+          ${r.scanned_qty ?? '—'}
+        </td>
+        <td><span class="type-badge ${escHtml(r.type)}">${escHtml(r.type)}</span></td>
+        <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;color:var(--text-2)">
+          ${escHtml(r.notes || '—')}
+        </td>
+        <td style="color:var(--text-3)">${escHtml(r.scanned_by || '—')}</td>
+        <td style="color:var(--text-3);font-size:9px">${fmtDate(r.scanned_at)}</td>
+      </tr>`;
   }
 
-  const csvLines = [
-    HEADERS.map(escapeCell).join(','),
-    ...dataRows.map(row => row.map(escapeCell).join(',')),
-  ];
-  const csvString = csvLines.join('\r\n');  // CRLF per RFC 4180
-
-  // ── Trigger download ──
-  const filename = `Audit_Log_${now.toISOString().split('T')[0]}.csv`;
-  const blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' });
-  // \uFEFF = UTF-8 BOM — ensures Excel opens accented characters correctly
-
-  const url  = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href     = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-
-  toast(`Exported ${report.length.toLocaleString()} rows → ${filename}`, 'green');
+  document.getElementById('inv-tbody').innerHTML = html;
 }
 
-/* ════════════════════════════════
-   SAFETY
-════════════════════════════════ */
-function _updateSafetySummarySidebar(){
-  const el=document.getElementById('safety-summary');if(!el)return;
-  const open=safetyData.filter(i=>i.status==='open').length,tot=safetyData.length;
-  if(!tot){el.textContent='No reports filed';return;}
-  el.innerHTML=`<strong style="color:${open>0?'var(--red)':'var(--green)'}">${open} open</strong> · ${tot} total`;
+function renderPagination() {
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const info       = totalCount === 0
+    ? 'No records'
+    : `${currentPage * PAGE_SIZE + 1}–${Math.min((currentPage + 1) * PAGE_SIZE, totalCount)} of ${totalCount}`;
+
+  document.getElementById('page-info').textContent    = info;
+  document.getElementById('btn-prev-page').disabled   = currentPage === 0;
+  document.getElementById('btn-next-page').disabled   = (currentPage + 1) >= totalPages;
 }
 
-function renderSafetyView(){
-  const open=safetyData.filter(i=>i.status==='open').length;
-  const crit=safetyData.filter(i=>i.severity==='critical'||i.severity==='high').length;
-  const res =safetyData.filter(i=>i.status==='resolved').length;
-  document.getElementById('ss-open').textContent =open;
-  document.getElementById('ss-crit').textContent =crit;
-  document.getElementById('ss-res').textContent  =res;
-  document.getElementById('ss-total').textContent=safetyData.length;
+function updateTableTitle() {
+  const filterLabel = currentFilter === 'all' ? 'All Records' : `Filter: ${currentFilter.toUpperCase()}`;
+  document.getElementById('table-title').textContent =
+    `Cycle Count — ${SESSION_ID} · ${filterLabel}`;
+}
 
-  const counts={all:safetyData.length};safetyData.forEach(i=>{counts[i.status]=(counts[i.status]||0)+1;});
-  document.getElementById('safety-filter-pills').innerHTML=
-    [{key:'all',label:'All',clr:''},{key:'open',label:'Open',clr:'red'},{key:'resolved',label:'Resolved',clr:'green'}].map(f=>
-      `<div class="pill${safetyFilter===f.key?' active':''}" onclick="filterSafety('${f.key}')"><span class="pill-count" style="color:${f.clr?'var(--'+f.clr+')':'var(--text-2)'}">${counts[f.key]||0}</span><span class="pill-label">${f.label}</span></div>`
-    ).join('');
+function changePage(dir) {
+  currentPage += dir;
+  if (currentPage < 0) currentPage = 0;
+  fetchAndRender();
+  window.scrollTo({ top: 0 });
+}
 
-  const filtered=safetyFilter==='all'?safetyData:safetyData.filter(i=>i.status===safetyFilter);
-  const container=document.getElementById('safety-list-container');
-  if(!filtered.length){container.innerHTML=`<div class="empty-state"><div class="icon">🦺</div><h2>No incidents to display</h2></div>`;return;}
+/* ─────────────────────────────────────────
+   KPIs — Aggregate queries (no full-table scan)
+───────────────────────────────────────── */
 
-  container.innerHTML=filtered.map(inc=>{
-    const ri=safetyData.indexOf(inc),ts=inc.timestamp?new Date(inc.timestamp).toLocaleDateString():'—';
-    const hp=inc.photoUrl&&inc.photoUrl.length>10,hr=inc.resolution?.trim().length>0;
-    return`<div class="inc-card" onclick="openSafetyDetail(${ri})">
-      <div class="inc-top">
-        <div class="inc-badges">
-          <span class="inc-badge sev-${inc.severity||'low'}">${inc.severity||'low'}</span>
-          <span class="inc-badge status-${inc.status||'open'}">${inc.status||'open'}</span>
-          ${inc.incidentType?`<span class="inc-badge" style="background:var(--surface-3);color:var(--text-2);border:1px solid var(--border-2)">${escHtml(inc.incidentType)}</span>`:''}
-          ${hp?'<span style="font-size:11px">📷</span>':''}${hr?'<span style="font-size:11px;color:var(--green)">✓</span>':''}
-        </div>
-        <span class="inc-view-btn">View →</span>
-      </div>
-      <div class="inc-loc">📍 ${escHtml(inc.location||'No location')}</div>
-      <div class="inc-desc">${escHtml(inc.description||'')}</div>
-      <div class="inc-footer"><span>👤 ${escHtml(inc.reportedBy||'Anonymous')}</span><span>${ts}</span></div>
+/**
+ * fetchKPIs — computes Bin Accuracy and Inventory Accuracy.
+ *
+ * Bin Accuracy    = (bins where ALL HUs are 'ok') / total bins  × 100
+ * Inventory Acc.  = (HUs with type='ok') / total HUs            × 100
+ *
+ * We fetch only the two columns needed (scanned_bin, type) — no full row fetch.
+ */
+async function fetchKPIs() {
+  const { data, error } = await sb
+    .from('cycle_counts')
+    .select('scanned_bin, type')
+    .eq('session_id', SESSION_ID)
+    .neq('hu', 'EMPTY'); // Exclude sentinel empty-bin rows
+
+  if (error || !data) return;
+
+  const totalItems  = data.length;
+  const okItems     = data.filter(r => r.type === 'ok').length;
+
+  // Group by bin for Bin Accuracy calculation
+  const bins = {};
+  for (const r of data) {
+    if (!bins[r.scanned_bin]) bins[r.scanned_bin] = [];
+    bins[r.scanned_bin].push(r.type);
+  }
+  const totalBins   = Object.keys(bins).length;
+  const perfectBins = Object.values(bins).filter(types => types.every(t => t === 'ok')).length;
+
+  const binAcc = totalBins  ? Math.round((perfectBins / totalBins) * 100) : 0;
+  const invAcc = totalItems ? Math.round((okItems / totalItems) * 100)    : 0;
+
+  // Update sidebar KPIs
+  document.getElementById('kpi-bins').textContent    = totalBins;
+  document.getElementById('kpi-items').textContent   = totalItems;
+  document.getElementById('kpi-bin-acc').textContent = `${binAcc}%`;
+  document.getElementById('kpi-inv-acc').textContent = `${invAcc}%`;
+
+  // Update TV overlay KPIs with a brief flash to signal a new value
+  _tvSetVal('tv-bins',    totalBins);
+  _tvSetVal('tv-items',   totalItems);
+  _tvSetVal('tv-bin-acc', `${binAcc}%`);
+  _tvSetVal('tv-inv-acc', `${invAcc}%`);
+}
+
+/**
+ * _tvSetVal — updates a TV KPI element and flashes it if the value changed.
+ * Uses opacity transition only (hardware-accelerated, no layout).
+ */
+function _tvSetVal(id, val) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (el.textContent === String(val)) return; // No change — skip flash
+  el.classList.add('flash');
+  setTimeout(() => {
+    el.textContent = val;
+    el.classList.remove('flash');
+  }, 200);
+}
+
+/**
+ * fetchAisleBreakdown — shows per-aisle completion in sidebar and TV display.
+ *
+ * Cross-references sap_data (total bins per aisle) with cycle_counts
+ * (scanned bins per aisle) to compute a completion percentage per aisle.
+ */
+async function fetchAisleBreakdown() {
+  // Fetch both tables in parallel — one round-trip
+  const [sapRes, ccRes] = await Promise.all([
+    sb.from('sap_data').select('expected_bin').eq('session_id', SESSION_ID),
+    sb.from('cycle_counts').select('scanned_bin').eq('session_id', SESSION_ID),
+  ]);
+
+  // Total unique bins per aisle from SAP data
+  const sapBins = {};
+  for (const r of (sapRes.data || [])) {
+    const aisle = r.expected_bin?.[0] || '?';
+    if (!sapBins[aisle]) sapBins[aisle] = new Set();
+    sapBins[aisle].add(r.expected_bin);
+  }
+
+  // Scanned unique bins per aisle from cycle_counts
+  const scannedBins = {};
+  for (const r of (ccRes.data || [])) {
+    const aisle = r.scanned_bin?.[0] || '?';
+    if (!scannedBins[aisle]) scannedBins[aisle] = new Set();
+    scannedBins[aisle].add(r.scanned_bin);
+  }
+
+  // All aisles = union of SAP and scanned aisles
+  const allAisles = [...new Set([...Object.keys(sapBins), ...Object.keys(scannedBins)])].sort();
+
+  // ── Sidebar ──────────────────────────────────────────
+  let sidebarHtml = '';
+  for (const aisle of allAisles) {
+    const total   = sapBins[aisle]?.size    || 0;
+    const scanned = scannedBins[aisle]?.size || 0;
+    sidebarHtml += `<div class="aisle-row">
+      <span class="a-letter">${escHtml(aisle)}</span>
+      <span class="a-count">${scanned}/${total} bins</span>
+      <span class="a-done">${total ? Math.round((scanned/total)*100) : 0}%</span>
     </div>`;
-  }).join('');
+  }
+  document.getElementById('aisle-list').innerHTML =
+    sidebarHtml || '<div style="padding:8px;font-size:11px;color:var(--text-3)">No data yet</div>';
+
+  // ── TV Aisle Grid ─────────────────────────────────────
+  let tvHtml = '';
+  for (const aisle of allAisles) {
+    const total    = sapBins[aisle]?.size    || 0;
+    const scanned  = scannedBins[aisle]?.size || 0;
+    const pct      = total ? Math.round((scanned / total) * 100) : 0;
+    const complete = pct === 100;
+
+    // Use translateX to animate the bar fill — no width change = no layout thrash
+    tvHtml += `
+      <div class="tv-aisle-card">
+        <div class="tv-aisle-top">
+          <span class="tv-aisle-letter">${escHtml(aisle)}</span>
+          <span class="tv-aisle-pct${complete ? ' complete' : ''}">${pct}%</span>
+        </div>
+        <div class="tv-aisle-bar-track">
+          <div class="tv-aisle-bar-fill${complete ? ' complete' : ''}"
+               style="transform:scaleX(${pct/100});"></div>
+        </div>
+        <div class="tv-aisle-count">${scanned} / ${total} bins</div>
+      </div>`;
+  }
+  document.getElementById('tv-aisle-grid').innerHTML =
+    tvHtml || '<div style="color:rgba(255,255,255,.2);font-size:12px;padding:20px">Waiting for scan data…</div>';
 }
 
-function openSafetyDetail(idx){
-  const inc=safetyData[idx];if(!inc)return;
-  document.getElementById('sd-id').textContent=inc.id||'—';
-  const ts=inc.timestamp?new Date(inc.timestamp):null;
-  const tsd=ts?`${ts.toLocaleDateString()} · ${ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`:'—';
-  const hp=inc.photoUrl&&inc.photoUrl.length>10,isB64=hp&&inc.photoUrl.startsWith('data:'),isUrl=hp&&(inc.photoUrl.startsWith('http://')||inc.photoUrl.startsWith('https://'));
-  let photoHTML='';if(isB64)photoHTML=`<img src="${inc.photoUrl}" alt="Photo">`;else if(isUrl)photoHTML=`<img src="${escHtml(inc.photoUrl)}" alt="Photo" onerror="this.parentElement.innerHTML='<div class=sd-photo-empty>⚠ Image failed</div>'">`;else if(hp)photoHTML=`<img src="data:image/jpeg;base64,${inc.photoUrl}" alt="Photo">`;
-  document.getElementById('sd-body').innerHTML=`
-    <div class="sd-header">
-      <span class="inc-badge sev-${inc.severity||'low'}">${escHtml(inc.severity||'?')}</span>
-      <span class="inc-badge status-${inc.status||'open'}">${escHtml(inc.status||'open')}</span>
-      <span class="sd-timestamp">${tsd}</span>
-    </div>
-    <div class="sd-section"><div class="sd-section-title">📋 Details</div>
-      <div class="sd-meta-grid">
-        <div class="sd-meta-item"><div class="sd-meta-label">Reported By</div><div class="sd-meta-val">${escHtml(inc.reportedBy||'Anonymous')}</div></div>
-        <div class="sd-meta-item"><div class="sd-meta-label">Location</div><div class="sd-meta-val">${escHtml(inc.location||'Not specified')}</div></div>
-      </div>
-    </div>
-    <div class="sd-section"><div class="sd-section-title">📝 Description</div><div class="sd-text-block ${inc.description?'':'empty'}">${inc.description?escHtml(inc.description):'No description provided'}</div></div>
-    <div class="sd-section"><div class="sd-section-title">🔧 Resolution</div>${inc.resolution?.trim()?`<div class="sd-resolution-block">${escHtml(inc.resolution)}</div>`:`<div class="sd-text-block empty">No resolution recorded yet</div>`}</div>
-    <div class="sd-section"><div class="sd-section-title">📷 Photo</div><div class="sd-photo-frame">${hp?photoHTML:'<div class="sd-photo-empty">No photo attached</div>'}</div></div>`;
-  document.getElementById('safety-detail-modal').classList.add('open');
-}
-function closeSafetyDetail(){document.getElementById('safety-detail-modal').classList.remove('open');}
-function filterSafety(k){safetyFilter=k;renderSafetyView();}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('safety-detail-modal').classList.contains('open'))closeSafetyDetail();});
+/* ─────────────────────────────────────────
+   SAP UPLOAD
+───────────────────────────────────────── */
 
-/* ════════════════════════════════
-   TRAINING
-════════════════════════════════ */
-async function loadTrainingData(){
-  NovusLoader.start();
-  try{const res=await fetch(API_URL+'?type=training',{redirect:'follow'});const data=JSON.parse(await res.text());trainingData=data.categories||[];renderTrainingList();}
-  catch{toast('Could not load training data','red');}finally{NovusLoader.done();}
+function _onDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) _processXlsx(file);
 }
 
-function renderTrainingList(){
-  const c=document.getElementById('training-list-container');
-  if(!trainingData.length){c.innerHTML=`<div class="empty-state"><div class="icon">📚</div><h2>No training modules yet</h2><p>Click "+ New SOP" to add one</p></div>`;return;}
-  c.innerHTML=trainingData.map((sop,idx)=>{
-    const catCls=sop.category==='Safety'?'ok':sop.category==='Cycle Count'?'move':'adj';
-    let content='';
-    if(sop.type==='Link')content=`<div class="sop-body"><a href="${escHtml(sop.body)}" target="_blank" style="color:var(--accent);font-weight:700">🔗 Open Link</a></div>`;
-    else if(sop.type==='Flowchart'&&sop.mermaid)content=`<div class="mermaid-container" id="mermaid-view-${idx}"></div>`;
-    else if(sop.type==='Slides'&&sop.slides?.length)content=`<div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg-2);border-radius:var(--r-md);border:1px solid var(--border);cursor:pointer" onclick="openSlideViewer(${idx})"><span style="font-size:26px">🎞️</span><div><div style="font-size:13px;font-weight:800;color:var(--accent)">Slide Deck — ${sop.slides.length} slides</div><div style="font-size:10px;color:var(--text-3);margin-top:2px">Click to view</div></div><span style="margin-left:auto;font-size:16px;color:var(--teal)">▶</span></div>`;
-    else content=`<div class="sop-body">${escHtml(sop.body||'')}</div>`;
-    return`<div class="sop-card"><div class="sop-card-header"><div><span class="status-tag ${catCls}">${escHtml(sop.category)}</span><span class="status-tag" style="background:var(--surface-2);color:var(--text-3);border:1px solid var(--border);margin-left:4px">${escHtml(sop.type)}</span><h3 class="sop-title">${escHtml(sop.title)}</h3><p class="sop-date">Updated: ${new Date(sop.updatedAt).toLocaleDateString()}</p></div><button style="padding:7px 14px;border-radius:var(--r-md);background:var(--surface-3);color:var(--text-2);border:1px solid var(--border-2);font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;transition:background .15s,color .15s" onmouseover="this.style.background='var(--teal-dim)';this.style.color='var(--teal)'" onmouseout="this.style.background='var(--surface-3)';this.style.color='var(--text-2)'" onclick="openTrainingEditor(${idx})">Edit</button></div>${content}</div>`;
-  }).join('');
-  requestAnimationFrame(()=>{trainingData.forEach((sop,idx)=>{if(sop.type==='Flowchart'&&sop.mermaid){const el=document.getElementById(`mermaid-view-${idx}`);if(el)_renderMermaid(el,sop.mermaid,`mv-${idx}`);}});});
+function _onFileSelect(input) {
+  const file = input.files[0];
+  if (file) _processXlsx(file);
+  input.value = ''; // Reset so same file can be re-uploaded
 }
 
-async function _renderMermaid(el,code,id){if(typeof mermaid==='undefined'){el.innerHTML='<p style="color:var(--amber);font-size:11px">⚠ Mermaid not loaded</p>';return;}try{const{svg}=await mermaid.render(id+'-svg',code);el.innerHTML=svg;}catch(err){el.innerHTML=`<p style="color:var(--red);font-size:11px">⚠ ${escHtml(err.message)}</p>`;}}
-function toggleEditorSections(){const t=document.getElementById('sop-type').value;document.getElementById('editor-text-section').style.display=(t==='Text'||t==='Link')?'block':'none';document.getElementById('editor-mermaid-section').style.display=t==='Flowchart'?'block':'none';document.getElementById('editor-slides-section').style.display=t==='Slides'?'block':'none';}
-async function previewMermaid(){const code=document.getElementById('sop-mermaid').value.trim(),prev=document.getElementById('mermaid-preview');if(!code){prev.innerHTML='';return;}await _renderMermaid(prev,code,'mermaid-preview');}
-function renderSlideEditor(){document.getElementById('slide-editor-list').innerHTML=slideEditorData.map((s,i)=>`<div class="slide-editor-item"><span class="slide-num">${i+1}</span><div class="slide-fields"><input type="text" placeholder="Slide title" value="${escHtml(s.title)}" oninput="slideEditorData[${i}].title=this.value"><textarea rows="3" placeholder="Slide body" oninput="slideEditorData[${i}].body=this.value">${escHtml(s.body)}</textarea></div><button class="slide-remove-btn" onclick="removeSlideEditor(${i})">✕</button></div>`).join('');}
-function addSlideEditor(){slideEditorData.push({title:'',body:''});renderSlideEditor();}
-function removeSlideEditor(i){slideEditorData.splice(i,1);renderSlideEditor();}
+/**
+ * _processXlsx — parses SAP XLSX export and inserts rows into sap_data.
+ *
+ * Handles flexible SAP column headers via _col() fuzzy matcher.
+ * Inserts in batches of 200 to stay within Supabase payload limits.
+ */
+async function _processXlsx(file) {
+  const status = document.getElementById('upload-status');
+  status.textContent = '⏳ Parsing…';
 
-function openTrainingEditor(idx=null){
-  document.getElementById('training-modal').classList.add('open');
-  if(idx!==null){const sop=trainingData[idx];document.getElementById('sop-id').value=sop.id;document.getElementById('sop-title').value=sop.title;document.getElementById('sop-category').value=sop.category;document.getElementById('sop-type').value=sop.type;document.getElementById('sop-body').value=sop.body||'';document.getElementById('sop-mermaid').value=sop.mermaid||'';slideEditorData=(sop.slides||[]).map(s=>({...s}));document.getElementById('btn-delete-sop').style.display='block';document.getElementById('modal-title').textContent='Edit Training Module';}
-  else{document.getElementById('sop-id').value=Date.now().toString();document.getElementById('sop-title').value='';document.getElementById('sop-body').value='';document.getElementById('sop-mermaid').value='';slideEditorData=[{title:'',body:''}];document.getElementById('btn-delete-sop').style.display='none';document.getElementById('modal-title').textContent='New Training Module';}
-  toggleEditorSections();renderSlideEditor();document.getElementById('mermaid-preview').innerHTML='';
+  try {
+    const buf  = await file.arrayBuffer();
+    const wb   = XLSX.read(buf, { type: 'array' });
+    const ws   = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+    if (!rows.length) { status.textContent = '❌ No data found in file'; return; }
+
+    // Flexible column matching — handles varying SAP export headers
+    const headers = Object.keys(rows[0]);
+    const _col = (...candidates) =>
+      headers.find(h => candidates.some(c => h.toLowerCase().includes(c.toLowerCase()))) || '';
+
+    const huCol   = _col('hu','handling unit','hu number');
+    const binCol  = _col('bin','whse bin','warehouse bin','storage bin');
+    const qtyCol  = _col('qty','quantity','count');
+    const matCol  = _col('material','material number','matnr');
+    const descCol = _col('description','material description','text');
+
+    if (!huCol || !binCol) {
+      status.textContent = '❌ Could not find HU or Bin columns. Check your XLSX.';
+      return;
+    }
+
+    // First, clear existing sap_data for this session to avoid duplicates
+    await sb.from('sap_data').delete().eq('session_id', SESSION_ID);
+
+    const user     = NovusSettings.getUser() || 'Admin';
+    const sapRows  = rows
+      .filter(r => r[huCol] && r[binCol])
+      .map(r => ({
+        session_id:   SESSION_ID,
+        hu:           String(r[huCol]).trim(),
+        expected_bin: String(r[binCol]).trim().toUpperCase(),
+        expected_qty: parseFloat(r[qtyCol]) || 0,
+        material:     matCol  ? String(r[matCol]).trim()  : null,
+        description:  descCol ? String(r[descCol]).trim() : null,
+        uploaded_by:  user,
+      }));
+
+    // Batch insert in chunks of 200
+    const CHUNK = 200;
+    let   inserted = 0;
+    for (let i = 0; i < sapRows.length; i += CHUNK) {
+      const chunk = sapRows.slice(i, i + CHUNK);
+      const { error } = await sb.from('sap_data').insert(chunk);
+      if (error) throw error;
+      inserted += chunk.length;
+      status.textContent = `⏳ Uploading… ${inserted}/${sapRows.length}`;
+    }
+
+    // Invalidate scanner cache on all devices by updating a shared key
+    status.textContent = `✅ ${sapRows.length} items uploaded for ${SESSION_ID}`;
+    toast(`SAP upload complete — ${sapRows.length} HUs`, 'green');
+
+  } catch (err) {
+    console.error('[monitor] SAP upload error:', err);
+    status.textContent = `❌ Upload failed: ${err.message}`;
+    toast('Upload failed — see console', 'red');
+  }
 }
-function closeTrainingEditor(){document.getElementById('training-modal').classList.remove('open');}
-function deleteTrainingModule(){const id=document.getElementById('sop-id').value;if(!id||!confirm('Delete this module?'))return;trainingData=trainingData.filter(s=>s.id!==id);closeTrainingEditor();renderTrainingList();fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},redirect:'follow',body:JSON.stringify({action:'saveTraining',categories:trainingData})});toast('Module deleted','amber');}
-async function saveTrainingModule(){
-  const id=document.getElementById('sop-id').value,type=document.getElementById('sop-type').value;
-  const sop={id,title:document.getElementById('sop-title').value.trim(),category:document.getElementById('sop-category').value,type,body:document.getElementById('sop-body').value.trim(),mermaid:document.getElementById('sop-mermaid').value.trim(),slides:slideEditorData.filter(s=>s.title||s.body),updatedAt:new Date().toISOString()};
-  if(!sop.title){toast('Title required','amber');return;}if(type==='Flowchart'&&!sop.mermaid){toast('Flowchart required','amber');return;}if(type==='Slides'&&!sop.slides.length){toast('Add at least one slide','amber');return;}if((type==='Text'||type==='Link')&&!sop.body){toast('Content required','amber');return;}
-  const i=trainingData.findIndex(s=>s.id===id);if(i>-1)trainingData[i]=sop;else trainingData.push(sop);
-  closeTrainingEditor();renderTrainingList();toast('Saving…','blue');
-  try{await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},redirect:'follow',body:JSON.stringify({action:'saveTraining',categories:trainingData})});toast('Published','green');}catch{toast('Sync failed','red');}
+
+/* ─────────────────────────────────────────
+   SESSION FINALIZATION
+   Transitions 'missing_temp' → 'missing'
+   for all unresolved HUs at session close.
+───────────────────────────────────────── */
+
+async function finalizeSession() {
+  const { error } = await sb
+    .from('cycle_counts')
+    .update({ type: 'missing' })
+    .eq('session_id', SESSION_ID)
+    .eq('type', 'missing_temp');
+
+  if (error) {
+    toast('Finalize error: ' + error.message, 'red');
+    return;
+  }
+
+  toast('Session finalized — missing_temp → missing ✓', 'green');
+  fetchAndRender();
+  fetchKPIs();
 }
 
-let viewerSlides=[],viewerIdx=0;
-function openSlideViewer(sopIdx){const sop=trainingData[sopIdx];if(!sop?.slides?.length)return;viewerSlides=sop.slides;viewerIdx=0;document.getElementById('slide-viewer-modal').classList.add('open');_renderSlideViewer();}
-function closeSlideViewer(){document.getElementById('slide-viewer-modal').classList.remove('open');}
-function _renderSlideViewer(){document.getElementById('slide-viewport').innerHTML=viewerSlides.map((s,i)=>`<div class="slide ${i===viewerIdx?'active':''}"><span class="slide-number">${i+1} / ${viewerSlides.length}</span><h2>${escHtml(s.title||'Untitled')}</h2><p>${escHtml(s.body||'')}</p></div>`).join('');document.getElementById('slide-progress').innerHTML=viewerSlides.map((_,i)=>`<div class="slide-pip ${i===viewerIdx?'active':''}"></div>`).join('');document.getElementById('slide-prev').disabled=viewerIdx===0;document.getElementById('slide-next').disabled=viewerIdx===viewerSlides.length-1;}
-function slideNav(dir){const n=viewerIdx+dir;if(n<0||n>=viewerSlides.length)return;const cur=document.querySelector('.slide.active');if(cur){cur.classList.remove('active');cur.classList.add('exit');}viewerIdx=n;setTimeout(_renderSlideViewer,50);}
-document.addEventListener('keydown',e=>{if(!document.getElementById('slide-viewer-modal').classList.contains('open'))return;if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();slideNav(1);}if(e.key==='ArrowLeft'){e.preventDefault();slideNav(-1);}if(e.key==='Escape')closeSlideViewer();});
+/* ─────────────────────────────────────────
+   EXPORT CSV
+───────────────────────────────────────── */
 
-/* ════════════════════════════════
-   UTILITY
-════════════════════════════════ */
-function escHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+/* ─────────────────────────────────────────
+   EXPORT XLSX
+   Uses SheetJS (already loaded for SAP import) to produce
+   a proper .xlsx file with formatted headers and auto-column widths.
+───────────────────────────────────────── */
+
+async function exportXLSX() {
+  toast('Preparing export…', 'blue');
+
+  // Fetch all rows for this session — no pagination for exports
+  const { data, error } = await sb
+    .from('cycle_counts')
+    .select('*')
+    .eq('session_id', SESSION_ID)
+    .order('scanned_at', { ascending: false });
+
+  if (error || !data) { toast('Export failed: ' + (error?.message || 'no data'), 'red'); return; }
+
+  // Build rows array: header first, then data
+  const headers = [
+    'HU', 'Material', 'Expected Bin', 'Scanned Bin',
+    'Exp Qty', 'Scn Qty', 'Type', 'Notes', 'Scanned By', 'Time',
+  ];
+
+  const rows = data.map(r => [
+    r.hu            || '',
+    r.material      || '',
+    r.expected_bin  || '',
+    r.scanned_bin   || '',
+    r.expected_qty  ?? '',
+    r.scanned_qty   ?? '',
+    r.type          || '',
+    r.notes         || '',
+    r.scanned_by    || '',
+    r.scanned_at    ? new Date(r.scanned_at).toLocaleString('en-US') : '',
+  ]);
+
+  // Create workbook
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+
+  // Auto column widths — measure max character length per column
+  const colWidths = headers.map((h, ci) => {
+    const maxLen = Math.max(
+      h.length,
+      ...rows.map(r => String(r[ci] ?? '').length)
+    );
+    return { wch: Math.min(maxLen + 2, 50) }; // cap at 50 chars
+  });
+  ws['!cols'] = colWidths;
+
+  // Style header row bold via cell metadata
+  headers.forEach((_, ci) => {
+    const addr = XLSX.utils.encode_cell({ r: 0, c: ci });
+    if (!ws[addr]) return;
+    ws[addr].s = { font: { bold: true } };
+  });
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Cycle Count');
+
+  // Trigger download
+  XLSX.writeFile(wb, `novus-count-${SESSION_ID}.xlsx`);
+  toast(`Exported ${data.length} rows ✓`, 'green');
+}
+
+/* ─────────────────────────────────────────
+   SAFETY TAB
+───────────────────────────────────────── */
+
+async function fetchSafetyData() {
+  const { data, error } = await sb
+    .from('safety_incidents')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    document.getElementById('incident-list').innerHTML =
+      `<p style="color:var(--red);padding:20px">Error loading safety data: ${escHtml(error.message)}</p>`;
+    return;
+  }
+
+  const incidents = data || [];
+
+  // Update stat cards
+  document.getElementById('si-total').textContent    = incidents.length;
+  document.getElementById('si-open').textContent     = incidents.filter(i => i.status === 'open').length;
+  document.getElementById('si-critical').textContent = incidents.filter(i => i.status === 'critical').length;
+  document.getElementById('si-resolved').textContent = incidents.filter(i => i.status === 'resolved').length;
+
+  // Render incident cards — single innerHTML assignment
+  if (!incidents.length) {
+    document.getElementById('incident-list').innerHTML =
+      '<p style="color:var(--text-3);text-align:center;padding:48px">No safety incidents recorded</p>';
+    return;
+  }
+
+  let html = '';
+  for (const inc of incidents) {
+    html += `
+      <div class="incident-card" onclick="openIncident('${escHtml(inc.id)}')">
+        <div class="ic-header">
+          <span class="ic-reporter">${escHtml(inc.reporter)}</span>
+          <span class="ic-status ${escHtml(inc.status)}">${escHtml(inc.status)}</span>
+        </div>
+        <div class="ic-meta">
+          <span>📍 ${escHtml(inc.location || '—')}</span>
+          <span>🕐 ${fmtDate(inc.created_at)}</span>
+        </div>
+        <div class="ic-nature">${escHtml(inc.nature || '—')}</div>
+      </div>`;
+  }
+
+  document.getElementById('incident-list').innerHTML = html;
+}
+
+/* Incident detail modal */
+async function openIncident(id) {
+  activeIncidentId = id;
+  const { data: inc, error } = await sb
+    .from('safety_incidents')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error || !inc) { toast('Could not load incident', 'red'); return; }
+
+  let body = '';
+  if (inc.image_url) {
+    body += `<img class="modal-img" src="${escHtml(inc.image_url)}" alt="Incident photo">`;
+  }
+  body += `
+    <div class="modal-field"><label>Reporter</label><p>${escHtml(inc.reporter)}</p></div>
+    <div class="modal-field"><label>Location</label><p>${escHtml(inc.location || '—')}</p></div>
+    <div class="modal-field"><label>Nature of Incident</label><p>${escHtml(inc.nature || '—')}</p></div>
+    <div class="modal-field"><label>Resolution</label><p>${escHtml(inc.resolution || 'Not yet resolved')}</p></div>
+    <div class="modal-field"><label>Reported</label><p>${fmtDate(inc.created_at)}</p></div>`;
+
+  document.getElementById('modal-incident-body').innerHTML = body;
+
+  // Hide resolve button if already resolved
+  document.getElementById('btn-resolve').style.display    = inc.status === 'resolved' ? 'none' : '';
+  document.getElementById('btn-mark-critical').style.display = inc.status === 'critical' ? 'none' : '';
+
+  document.getElementById('modal-incident').classList.add('open');
+}
+
+function closeIncidentModal() {
+  document.getElementById('modal-incident').classList.remove('open');
+  activeIncidentId = null;
+}
+
+async function _markIncident(newStatus) {
+  if (!activeIncidentId) return;
+  const { error } = await sb
+    .from('safety_incidents')
+    .update({ status: newStatus })
+    .eq('id', activeIncidentId);
+
+  if (error) { toast('Update failed', 'red'); return; }
+  closeIncidentModal();
+  fetchSafetyData();
+  toast(`Incident marked ${newStatus} ✓`, 'green');
+}
+
+/* ─────────────────────────────────────────
+   ADMIN — Double-confirm destructive actions
+───────────────────────────────────────── */
+
+/*
+  CONFIRM_PHRASES and CONFIRM_COPY are now defined INSIDE _confirmAction.
+  Previously they were top-level consts that referenced SESSION_ID at script
+  boot time — if novus-core.js had not yet run, SESSION_ID was undefined and
+  the initializer threw a ReferenceError, aborting the entire script block
+  before enterTVMode could be registered on window.
+*/
+function _confirmAction(action) {
+  pendingAction = action;
+
+  // Lazily built — SESSION_ID is guaranteed available by the time the user
+  // opens the Admin tab and clicks a destructive action button.
+  const CONFIRM_PHRASES = {
+    'clear-counts': `DELETE ${SESSION_ID}`,
+    'archive-sap':  'ARCHIVE SAP',
+  };
+
+  const CONFIRM_COPY = {
+    'clear-counts': {
+      title: '⚠ Delete Cycle Count Data',
+      body:  `This will permanently delete ALL cycle count records for session <strong>${SESSION_ID}</strong>. This cannot be undone.`,
+    },
+    'archive-sap': {
+      title: '🗃 Archive SAP Data',
+      body:  `This will delete all SAP upload rows for session <strong>${SESSION_ID}</strong>. Scanner devices will need a fresh XLSX upload.`,
+    },
+  };
+
+  const copy    = CONFIRM_COPY[action];
+  const phrase  = CONFIRM_PHRASES[action];
+
+  document.getElementById('confirm-title').textContent     = copy.title;
+  document.getElementById('confirm-body').innerHTML        = copy.body;
+  document.getElementById('confirm-phrase').textContent    = phrase;
+  document.getElementById('confirm-input').value           = '';
+  document.getElementById('btn-destroy').disabled          = true;
+
+  document.getElementById('confirm-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('confirm-input').focus(), 200);
+}
+
+function _onConfirmInput() {
+  // Derive the required phrase directly — no longer relies on the top-level const
+  const phrase  = pendingAction === 'clear-counts' ? `DELETE ${SESSION_ID}` : 'ARCHIVE SAP';
+  const entered = document.getElementById('confirm-input').value;
+  document.getElementById('btn-destroy').disabled = (entered !== phrase);
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  pendingAction = null;
+}
+
+async function _executeConfirm() {
+  if (!pendingAction) return;
+  closeConfirm();
+
+  if (pendingAction === 'clear-counts') {
+    const { error } = await sb
+      .from('cycle_counts')
+      .delete()
+      .eq('session_id', SESSION_ID);
+
+    if (error) { toast('Delete failed: ' + error.message, 'red'); return; }
+    toast(`${SESSION_ID} count data cleared ✓`, 'green');
+    fetchAndRender();
+    fetchKPIs();
+
+  } else if (pendingAction === 'archive-sap') {
+    const { error } = await sb
+      .from('sap_data')
+      .delete()
+      .eq('session_id', SESSION_ID);
+
+    if (error) { toast('Archive failed: ' + error.message, 'red'); return; }
+    toast('SAP data archived ✓', 'green');
+  }
+}/* ─────────────────────────────────────────
+   TV MODE
+───────────────────────────────────────── */
+
+let _tvClockInterval = null;
+
+function enterTVMode() {
+  const overlay = document.getElementById('tv-overlay');
+  overlay.classList.add('open');
+
+  // Populate session label
+  document.getElementById('tv-session-id').textContent = SESSION_ID;
+
+  // Start live clock
+  _tvTick();
+  _tvClockInterval = setInterval(_tvTick, 1000);
+
+  // Push current data immediately (no waiting for next Realtime event)
+  fetchKPIs();
+  fetchAisleBreakdown();
+
+  // Request fullscreen if supported
+  if (overlay.requestFullscreen) overlay.requestFullscreen().catch(() => {});
+}
+
+function exitTVMode() {
+  document.getElementById('tv-overlay').classList.remove('open');
+  clearInterval(_tvClockInterval);
+  _tvClockInterval = null;
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+}
+
+function _tvTick() {
+  document.getElementById('tv-clock').textContent = new Date().toLocaleTimeString('en-US', {
+    hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true,
+  });
+}
+
+// Also exit TV mode on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('tv-overlay').classList.contains('open')) {
+    exitTVMode();
+  }
+});
 </script>
+
 </body>
 </html>
